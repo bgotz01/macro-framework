@@ -12,6 +12,10 @@ interface SidebarItem {
 
 const sidebarData: SidebarItem[] = [
     {
+        title: 'Paradigm',
+        href: '/paradigm',
+    },
+    {
         title: 'Macro Data',
         href: '/macro-data',
         children: [
@@ -186,15 +190,7 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                         </nav>
                     </div>
 
-                    {/* Footer */}
-                    {!isCollapsed && (
-                        <div className="mt-auto p-6 border-t border-border/40">
-                            <div className="text-xs text-muted-foreground">
-                                <p className="font-medium mb-1">Power Law</p>
-                                <p>Economic Analysis Platform</p>
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* Collapse toggle for desktop */}
                     <div className="hidden lg:block absolute -right-3 top-6">

@@ -33,6 +33,9 @@ interface ChartProps {
     colors?: string[];
     timePeriod?: TimePeriod;
     chartType?: ChartType;
+    startDate?: string; // YYYY-MM-DD format
+    endDate?: string; // YYYY-MM-DD format
+    showMetadata?: boolean; // Show data points count and time period
 }
 
 export default function Chart({
@@ -47,6 +50,9 @@ export default function Chart({
     colors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'],
     timePeriod = '5yr',
     chartType = 'line',
+    startDate,
+    endDate,
+    showMetadata = true,
 }: ChartProps) {
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -70,7 +76,29 @@ export default function Chart({
     }, [filePath]);
 
     const filterDataByTimePeriod = (data: DataPoint[], period: TimePeriod, dateKey: string): DataPoint[] => {
-        if (period === 'all' || !data.length) return data;
+        if (!data.length) return data;
+
+        // If custom date range is provided, use that instead of period
+        if (startDate || endDate) {
+            return data.filter(row => {
+                const dateValue = row[dateKey];
+                if (typeof dateValue === 'string') {
+                    try {
+                        const date = parseISO(dateValue);
+                        if (isValid(date)) {
+                            if (startDate && date < parseISO(startDate)) return false;
+                            if (endDate && date > parseISO(endDate)) return false;
+                            return true;
+                        }
+                    } catch {
+                        return true;
+                    }
+                }
+                return true;
+            });
+        }
+
+        if (period === 'all') return data;
 
         const now = new Date();
         let cutoffDate: Date;
@@ -224,9 +252,11 @@ export default function Chart({
                     <h3 className="text-lg font-semibold text-card-foreground mb-1">{displayTitle}</h3>
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">{chartData.metadata.category}</p>
-                        <p className="text-xs text-muted-foreground">
-                            {filteredData.length} data points • {timePeriod === 'all' ? 'All time' : timePeriod.toUpperCase()}
-                        </p>
+                        {showMetadata && (
+                            <p className="text-xs text-muted-foreground">
+                                {filteredData.length} data points • {timePeriod === 'all' ? 'All time' : timePeriod.toUpperCase()}
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
