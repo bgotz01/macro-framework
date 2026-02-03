@@ -1,0 +1,226 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+
+interface SidebarItem {
+    title: string;
+    href: string;
+    children?: SidebarItem[];
+}
+
+const sidebarData: SidebarItem[] = [
+    {
+        title: 'Macro Data',
+        href: '/macro-data',
+        children: [
+            { title: 'US Data', href: '/macro-data/us' },
+            { title: 'Japan Data', href: '/macro-data/japan' },
+            { title: 'UK Data', href: '/macro-data/uk' },
+            { title: 'Canada Data', href: '/macro-data/canada' },
+            { title: 'Bond Yields', href: '/macro-data/bond-yields' },
+            { title: 'FX', href: '/macro-data/fx' },
+            { title: 'Equity Indexes', href: '/macro-data/equity-indexes' },
+        ],
+    },
+    {
+        title: 'Framework',
+        href: '/framework',
+        children: [
+            { title: 'O1: Swing', href: '/framework/swing' },
+            { title: 'O2: Signal', href: '/framework/signal' },
+            { title: 'O3: Story', href: '/framework/story' },
+        ],
+    },
+    {
+        title: 'Major Money Events',
+        href: '/major-events',
+        children: [
+            { title: '1971 Gold Depeg', href: '/major-events/1971-gold-depeg' },
+            { title: '1979 Volcker Rate Hikes', href: '/major-events/1979-volcker-rates' },
+            { title: '2000 Low Rates', href: '/major-events/2000-low-rates' },
+            { title: '2006 Yield Curve', href: '/major-events/2006-yield-curve' },
+            { title: '2008 QE', href: '/major-events/2008-qe' },
+        ],
+    },
+    {
+        title: 'Other Macro Events',
+        href: '/other-events',
+        children: [
+            { title: '2001 China joins WTO', href: '/other-events/2001-china-wto' },
+        ],
+    },
+];
+
+interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+    isCollapsed: boolean;
+    onToggleCollapse: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProps) {
+    const pathname = usePathname();
+    const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+    const toggleExpanded = (href: string) => {
+        if (isCollapsed) return; // Don't expand when collapsed
+        setExpandedItems(prev =>
+            prev.includes(href)
+                ? prev.filter(item => item !== href)
+                : [...prev, href]
+        );
+    };
+
+    const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+    const isExpanded = (href: string) => !isCollapsed && (expandedItems.includes(href) || pathname.startsWith(href));
+
+    return (
+        <>
+            {/* Mobile overlay */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+                    onClick={onClose}
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside
+                className={`
+          fixed top-20 left-0 z-50 h-[calc(100vh-5rem)] bg-card/95 backdrop-blur-xl transition-all duration-300 ease-out lg:static lg:z-0
+          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isCollapsed ? 'w-16 lg:w-16' : 'w-80 lg:w-80'}
+        `}
+            >
+                <div className="flex h-full flex-col overflow-y-auto">
+                    <div className="p-6">
+                        {!isCollapsed && (
+                            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">
+                                Navigation
+                            </h2>
+                        )}
+
+                        <nav className={`space-y-2 ${isCollapsed ? 'hidden' : ''}`}>
+                            {sidebarData.map((item) => (
+                                <div key={item.href} className="animate-slide-in">
+                                    <div className="flex items-center">
+                                        <Link
+                                            href={item.href}
+                                            className={`
+                        flex-1 flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 group
+                        ${isActive(item.href)
+                                                    ? 'bg-muted/60 text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                                                }
+                        ${isCollapsed ? 'justify-center' : ''}
+                      `}
+                                            onClick={() => {
+                                                // Only close sidebar on mobile
+                                                if (window.innerWidth < 1024) {
+                                                    onClose();
+                                                }
+                                            }}
+                                            title={isCollapsed ? item.title : undefined}
+                                        >
+                                            {isCollapsed ? (
+                                                // Hide content when collapsed - only show hamburger menu
+                                                null
+                                            ) : (
+                                                <span className="flex-1">{item.title}</span>
+                                            )}
+                                        </Link>
+                                        {item.children && !isCollapsed && (
+                                            <button
+                                                onClick={() => toggleExpanded(item.href)}
+                                                className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
+                                                aria-label={`Toggle ${item.title} submenu`}
+                                            >
+                                                <svg
+                                                    className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(item.href) ? 'rotate-90' : ''
+                                                        }`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9 5l7 7-7 7"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Submenu */}
+                                    {item.children && isExpanded(item.href) && !isCollapsed && (
+                                        <div className="ml-6 mt-2 space-y-1 animate-fade-in">
+                                            {item.children.map((child) => (
+                                                <Link
+                                                    key={child.href}
+                                                    href={child.href}
+                                                    className={`
+                            flex items-center rounded-lg px-4 py-2.5 text-sm transition-all duration-200 group
+                            ${isActive(child.href)
+                                                            ? 'bg-muted/50 text-foreground'
+                                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                                        }
+                          `}
+                                                    onClick={() => {
+                                                        // Only close sidebar on mobile
+                                                        if (window.innerWidth < 1024) {
+                                                            onClose();
+                                                        }
+                                                    }}
+                                                >
+                                                    <span>{child.title}</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* Footer */}
+                    {!isCollapsed && (
+                        <div className="mt-auto p-6 border-t border-border/40">
+                            <div className="text-xs text-muted-foreground">
+                                <p className="font-medium mb-1">Power Law</p>
+                                <p>Economic Analysis Platform</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Collapse toggle for desktop */}
+                    <div className="hidden lg:block absolute -right-3 top-6">
+                        <button
+                            onClick={onToggleCollapse}
+                            className="p-1.5 rounded-full bg-card hover:bg-muted/80 transition-all duration-200 group shadow-sm"
+                            aria-label="Toggle sidebar"
+                        >
+                            {/* Hamburger menu icon */}
+                            <svg
+                                className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 6h16M4 12h16M4 18h16"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </>
+    );
+}
