@@ -50,6 +50,7 @@ interface ChartFixedProps {
     chartType?: ChartType;
     description?: string;
     referenceLine?: number; // Add reference line at specific Y value
+    yAxisDomain?: [number | 'auto', number | 'auto']; // Y-axis domain [min, max]
 }
 
 export default function ChartFixed({
@@ -67,7 +68,8 @@ export default function ChartFixed({
     colors = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'],
     chartType = 'line',
     description,
-    referenceLine
+    referenceLine,
+    yAxisDomain
 }: ChartFixedProps) {
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -258,6 +260,7 @@ export default function ChartFixed({
 
     const yAxisProps = {
         className: 'text-xs fill-muted-foreground',
+        domain: yAxisDomain,
     };
 
     return (

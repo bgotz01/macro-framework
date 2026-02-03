@@ -42,7 +42,7 @@ const sidebarData: SidebarItem[] = [
         href: '/major-events',
         children: [
             { title: '1971 Gold Depeg', href: '/major-events/1971-gold-depeg' },
-            { title: '1979 Volcker Rate Hikes', href: '/major-events/1979-volcker-rates' },
+            { title: '1970s Inflation Trap', href: '/major-events/1970s-inflation' },
             { title: '2000 Low Rates', href: '/major-events/2000-low-rates' },
             { title: '2006 Yield Curve', href: '/major-events/2006-yield-curve' },
             { title: '2008 QE', href: '/major-events/2008-qe' },

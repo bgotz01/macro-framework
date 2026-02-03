@@ -1,8 +1,9 @@
-//major-events/1979-volcker-rates/page.tsx
+//major-events/1970s-inflation/page.tsx
 import Timeline, { TimelineEvent } from '../../../components/timeline';
 import ChartFixed from '../../../components/chart-fixed';
+import ScrollNav from '../../../components/scroll-nav';
 
-const volckerEvents: TimelineEvent[] = [
+const pivotEvents: TimelineEvent[] = [
     {
         date: '1979-08-06',
         title: 'Paul Volcker Becomes Fed Chairman',
@@ -30,24 +31,34 @@ const volckerEvents: TimelineEvent[] = [
     }
 ];
 
-export default function VolckerRatesPage() {
+const scrollNavItems = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'us-evidence', label: 'US Evidence' },
+    { id: 'german-contrast', label: 'German Contrast' },
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'policy-reversal', label: 'Swing' },
+];
+
+export default function SeventiesInflationPage() {
     return (
         <div className="max-w-4xl mx-auto">
+            <ScrollNav items={scrollNavItems} />
+
             {/* Header */}
             <div className="text-center mb-16">
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-500/10 text-red-600 text-sm font-medium mb-6">
                     Major Events • 1979-1980
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    The Volcker Shock
+                    Breaking the 1970s Inflation Trap
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    How Paul Volcker's aggressive monetary policy broke the back of 1970s inflation through unprecedented interest rate hikes.
+                    How negative real rates and FX pressure forced a credibility reset—and rewired markets.
                 </p>
             </div>
 
             {/* Overview */}
-            <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
+            <div id="overview" className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
                 <h2 className="text-2xl font-bold text-card-foreground mb-8 text-center">Case Study Overview</h2>
 
                 {/* The Problem */}
@@ -70,35 +81,48 @@ export default function VolckerRatesPage() {
                         <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center font-bold mr-3 text-sm">1980+</div>
                         <h3 className="text-xl font-bold text-card-foreground">The Solution</h3>
                     </div>
-                    <div className="pl-11 space-y-3">
-                        <div className="flex items-start space-x-3">
-                            <span className="inline-flex items-center px-2 py-1 rounded bg-muted text-muted-foreground text-xs font-medium mt-0.5">O2</span>
-                            <div>
-                                <span className="font-medium text-card-foreground">Obvious Signal:</span>
-                                <span className="text-muted-foreground ml-2">Policy in Germany was working; in America it was not</span>
-                            </div>
+                    <div className="pl-11 space-y-2">
+                        <p className="text-muted-foreground">• Policy needed to restore credibility by making real rates positive</p>
+                        <p className="text-muted-foreground">• The US converged toward a Bundesbank-style stance</p>
+                        <p className="text-muted-foreground">• Unprecedented rate hikes to break the inflation psychology</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* OS Triad Header */}
+            <div className="p-10 rounded-3xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 mb-16">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-card-foreground mb-3">The OS Triad</h2>
+                    <p className="text-muted-foreground">How the Operating System identified and capitalized on this opportunity</p>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                    <div className="text-center p-6 rounded-2xl bg-card/50 border border-border/50">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                            <span className="text-primary font-bold text-lg">O1</span>
                         </div>
-                        <div className="flex items-start space-x-3">
-                            <span className="inline-flex items-center px-2 py-1 rounded bg-muted text-muted-foreground text-xs font-medium mt-0.5">O1</span>
-                            <div>
-                                <span className="font-medium text-card-foreground">Opposite Swing:</span>
-                                <span className="text-muted-foreground ml-2">Adopt the policy of the Bundesbank and raise interest rates above the inflation rate</span>
-                            </div>
+                        <h3 className="font-semibold text-card-foreground mb-2">Signal</h3>
+                        <p className="text-sm text-muted-foreground">Negative real rates + FX pressure</p>
+                    </div>
+                    <div className="text-center p-6 rounded-2xl bg-card/50 border border-border/50">
+                        <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+                            <span className="text-orange-600 font-bold text-lg">O2</span>
                         </div>
-                        <div className="flex items-start space-x-3">
-                            <span className="inline-flex items-center px-2 py-1 rounded bg-muted text-muted-foreground text-xs font-medium mt-0.5">O3</span>
-                            <div>
-                                <span className="font-medium text-card-foreground">Outlier Story:</span>
-                                <span className="text-muted-foreground ml-2">Unprecedentedly high Fed Funds rate to crush inflation</span>
-                            </div>
+                        <h3 className="font-semibold text-card-foreground mb-2">Swing</h3>
+                        <p className="text-sm text-muted-foreground">Regime reversal to restore credibility</p>
+                    </div>
+                    <div className="text-center p-6 rounded-2xl bg-card/50 border border-border/50">
+                        <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
+                            <span className="text-purple-600 font-bold text-lg">O3</span>
                         </div>
+                        <h3 className="font-semibold text-card-foreground mb-2">Story</h3>
+                        <p className="text-sm text-muted-foreground">"Volcker Shock" becomes the mythic turning point</p>
                     </div>
                 </div>
             </div>
 
             {/* Crisis Context */}
             <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
-                <h2 className="text-2xl font-bold text-card-foreground mb-8">The Crisis Context - The Obvious</h2>
+                <h2 className="text-2xl font-bold text-card-foreground mb-8">The Crisis Context — The Pain</h2>
 
                 <div className="grid md:grid-cols-2 gap-8 mb-8">
                     <div>
@@ -156,6 +180,12 @@ export default function VolckerRatesPage() {
                 </div>
             </div>
 
+            {/* United States: The Evidence */}
+            <div id="us-evidence" className="mb-8">
+                <h2 className="text-2xl font-bold text-card-foreground mb-2">🇺🇸 United States: The Evidence</h2>
+                <div className="h-1 w-20 bg-gradient-to-r from-red-500 to-red-300 rounded-full"></div>
+            </div>
+
             {/* The Evidence: US Problem */}
             <div className="mb-12">
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -165,9 +195,13 @@ export default function VolckerRatesPage() {
                 </div>
                 <div className="mb-4 p-6 rounded-xl bg-primary/10 border-2 border-primary/20">
                     <p className="text-base font-medium text-card-foreground">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O2: Signal</span>
-                        CPI was consistently higher than US short term bond yields after 1973.
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O1: Signal</span>
+                        Negative Real Rates
                     </p>
+                    <div className="mt-3 pl-16 space-y-1">
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> CPI consistently higher than US 3-month yield after 1973</p>
+                        <p className="text-sm text-muted-foreground"><strong>Pain:</strong> "Saving in USD bonds leads to purchasing power loss"</p>
+                    </div>
                 </div>
                 <ChartFixed
                     filePath="events/USCPI3mo.csv"
@@ -190,12 +224,16 @@ export default function VolckerRatesPage() {
                 </div>
                 <div className="mb-4 p-6 rounded-xl bg-primary/10 border-2 border-primary/20">
                     <p className="text-base font-medium text-card-foreground">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O2: Signal</span>
-                        US dollar losing value to the DeutscheMark
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O1: Signal</span>
+                        FX Pressure
                     </p>
+                    <div className="mt-3 pl-16 space-y-1">
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> DM per $ fell (USD weakened)</p>
+                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "USD credibility leak"</p>
+                    </div>
                 </div>
                 <ChartFixed
-                    filePath="fx/dm-usd-monthly.csv"
+                    filePath="events/DMUSDMonthly.csv"
                     title="DM/USD Exchange Rate (1971-1979)"
                     startDate="1971-01-01"
                     endDate="1979-12-31"
@@ -203,7 +241,7 @@ export default function VolckerRatesPage() {
                     colors={['#dc2626']}
                     xAxisKey="observation_date"
                     yAxisKey="DMUSD"
-                    description="Deutsche Mark per US Dollar - Lower values = stronger DM"
+                    description="DM per $1 — higher = stronger USD, lower = weaker USD"
                 />
             </div>
 
@@ -222,7 +260,11 @@ export default function VolckerRatesPage() {
                 </div>
             </div>
 
-
+            {/* Germany: The Contrast */}
+            <div id="german-contrast" className="mb-8">
+                <h2 className="text-2xl font-bold text-card-foreground mb-2">🇩🇪 Germany: The Contrast</h2>
+                <div className="h-1 w-20 bg-gradient-to-r from-green-500 to-green-300 rounded-full"></div>
+            </div>
 
             {/* Germany: The Solution */}
             <div className="mb-12">
@@ -233,9 +275,13 @@ export default function VolckerRatesPage() {
                 </div>
                 <div className="mb-4 p-6 rounded-xl bg-primary/10 border-2 border-primary/20">
                     <p className="text-base font-medium text-card-foreground">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O2: Signal</span>
-                        German Bundesbank was "ahead" of inflation
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O1: Signal</span>
+                        German Positive Real Rates
                     </p>
+                    <div className="mt-3 pl-16 space-y-1">
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> German 3-month rates consistently above VPI inflation</p>
+                        <p className="text-sm text-muted-foreground"><strong>Gain:</strong> "Saving in German bonds leads to purchasing power growth"</p>
+                    </div>
                 </div>
                 <ChartFixed
                     filePath="events/GermanyVPI3mo.csv"
@@ -269,9 +315,13 @@ export default function VolckerRatesPage() {
                 </div>
                 <div className="mb-4 p-6 rounded-xl bg-primary/10 border-2 border-primary/20">
                     <p className="text-base font-medium text-card-foreground">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O2: Signal</span>
-                        German inflation consistently lower than US inflation after 1973
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O1: Signal</span>
+                        German Inflation Control
                     </p>
+                    <div className="mt-3 pl-16 space-y-1">
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> German VPI consistently lower than US CPI after 1973</p>
+                        <p className="text-sm text-muted-foreground"><strong>Gain:</strong> "German monetary policy maintaining price stability"</p>
+                    </div>
                 </div>
                 <ChartFixed
                     filePath="events/VPICPI.csv"
@@ -294,7 +344,7 @@ export default function VolckerRatesPage() {
                 </div>
                 <div className="mb-4 p-6 rounded-xl bg-primary/10 border-2 border-primary/20">
                     <p className="text-base font-medium text-card-foreground">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O2: Signal</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold mr-3">O1: Signal</span>
                         German real rates consistently positive while US real rates were negative
                     </p>
                 </div>
@@ -312,63 +362,102 @@ export default function VolckerRatesPage() {
                 />
             </div>
 
+            {/* Divider */}
+            <div className="my-12">
+                <hr className="border-t-2 border-gray-300 dark:border-gray-600" />
+            </div>
+
             {/* Timeline */}
-            <div className="mb-12">
+            <div id="timeline" className="mb-12">
                 <Timeline
-                    events={volckerEvents}
-                    title="Volcker's Response: Key Moments"
+                    events={pivotEvents}
+                    title="The Pivot: Key Moments"
                     showCategories={true}
+                    horizontal={true}
+                />
+            </div>
+
+            {/* Divider */}
+            <div className="my-12">
+                <hr className="border-t-2 border-gray-300 dark:border-gray-600" />
+            </div>
+
+            {/* O2: Policy Reversal */}
+            <div id="policy-reversal" className="mb-8">
+                <h2 className="text-2xl font-bold text-card-foreground mb-2">The Swing: Policy Pivot</h2>
+                <div className="h-1 w-20 bg-gradient-to-r from-orange-500 to-orange-300 rounded-full"></div>
+            </div>
+
+            {/* The Swing: Policy Reversal */}
+            <div className="mb-12">
+                <div className="flex gap-2 mb-2">
+                    <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                        Pivot: 1979-10-06
+                    </span>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">🇺🇸 United States</span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">Real Interest Rates</span>
+                </div>
+                <div className="mb-4 p-6 rounded-xl bg-orange-100 border-2 border-orange-200">
+                    <p className="text-base font-medium text-card-foreground">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-500 text-white text-sm font-bold mr-3">O2: Swing</span>
+                        The Policy Reversal
+                    </p>
+                    <div className="mt-3 pl-16 space-y-1">
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> US real rates swing from deeply negative to strongly positive</p>
+                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "America adopts the Bundesbank model - rates above inflation"</p>
+                    </div>
+                </div>
+                <ChartFixed
+                    filePath="events/USRealRate3mo.csv"
+                    title="US Real Interest Rates: The Great Reversal (1975-1985)"
+                    startDate="1975-01-01"
+                    endDate="1985-12-31"
+                    height={400}
+                    yAxisKeys={['3moReal']}
+                    colors={['#2563eb']}
+                    showLegend={true}
+                    referenceLine={0}
+                    description="Real rates = 3-month Treasury yield minus CPI inflation"
+                />
+            </div>
+
+            {/* Dollar Recovery */}
+            <div className="mb-12">
+                <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">🇺🇸 United States</span>
+                    <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm font-medium">🇩🇪 Germany</span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">Exchange Rate</span>
+                </div>
+                <div className="mb-4 p-6 rounded-xl bg-orange-100 border-2 border-orange-200">
+                    <p className="text-base font-medium text-card-foreground">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-orange-500 text-white text-sm font-bold mr-3">O2: Swing</span>
+                        Dollar Strength Returns
+                    </p>
+                    <div className="mt-3 pl-16 space-y-1">
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> DM per $ rose (USD strengthened)</p>
+                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "Credibility restored - capital flows back to America"</p>
+                    </div>
+                </div>
+                <ChartFixed
+                    filePath="events/DMUSDMonthly.csv"
+                    title="DM/USD Exchange Rate: The Dollar Recovery (1980-1990)"
+                    startDate="1980-01-01"
+                    endDate="1985-12-31"
+                    height={400}
+                    colors={['#16a34a']}
+                    xAxisKey="observation_date"
+                    yAxisKey="DMUSD"
+                    yAxisDomain={[1.5, 3.5]}
+                    description="DM per $1 — higher = stronger USD, lower = weaker USD"
                 />
             </div>
 
 
 
-            {/* Economic Impact */}
-            <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
-                <h2 className="text-2xl font-bold text-card-foreground mb-8">The Economic Impact</h2>
 
-                <div className="grid md:grid-cols-2 gap-8 mb-8">
-                    <div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-4">Immediate Effects</h3>
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-red-600">Recession</span>
-                                    <span className="text-sm text-red-500">1981-1982</span>
-                                </div>
-                                <p className="text-sm text-red-600">Economy plunged into severe recession</p>
-                            </div>
-                            <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-red-600">Unemployment</span>
-                                    <span className="text-sm text-red-500">10%+</span>
-                                </div>
-                                <p className="text-sm text-red-600">Highest since Great Depression</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-4">Long-term Success</h3>
-                        <div className="space-y-4">
-                            <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-green-600">Inflation Tamed</span>
-                                    <span className="text-sm text-green-500">14% → 4%</span>
-                                </div>
-                                <p className="text-sm text-green-600">Price stability restored</p>
-                            </div>
-                            <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="font-medium text-green-600">Credibility</span>
-                                    <span className="text-sm text-green-500">Restored</span>
-                                </div>
-                                <p className="text-sm text-green-600">Fed's commitment established</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
 
         </div>
