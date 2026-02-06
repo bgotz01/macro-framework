@@ -65,7 +65,8 @@ export default function MacroChart({
         };
 
         loadAvailableFiles();
-    }, [assetClass, defaultFiles]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [assetClass]);
 
     // Load and combine selected datasets
     useEffect(() => {
@@ -177,8 +178,8 @@ export default function MacroChart({
                                 key={file.filename}
                                 onClick={() => handleFileToggle(file.filename)}
                                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${file.selected
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
                                 style={file.selected ? { backgroundColor: file.color } : {}}
                             >

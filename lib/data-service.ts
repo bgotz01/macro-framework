@@ -18,6 +18,7 @@ export interface ChartData {
 
 export class DataService {
     private static cache = new Map<string, ChartData>();
+    private static USE_API = true;  // Toggle to use SQLite API vs CSV files
 
     static async loadCSV(filePath: string): Promise<ChartData> {
         // Check cache first
@@ -26,46 +27,61 @@ export class DataService {
         }
 
         try {
-            const response = await fetch(`/data/${filePath}`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch ${filePath}: ${response.statusText}`);
+            if (this.USE_API) {
+                // Use SQLite API
+                const [assetClass, filename] = filePath.split('/');
+                const response = await fetch(`/api/data/${assetClass}?series=${filename}`);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${filePath}: ${response.statusText}`);
+                }
+
+                const chartData = await response.json();
+                this.cache.set(filePath, chartData);
+                return chartData;
+            } else {
+                // Fallback to CSV files
+                const response = await fetch(`/data/${filePath}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${filePath}: ${response.statusText}`);
+                }
+
+                const csvText = await response.text();
+
+                const result = Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,
+                    transformHeader: (header: string) => header.trim(),
+                });
+
+                if (result.errors.length > 0) {
+                    console.warn(`CSV parsing warnings for ${filePath}:`, result.errors);
+                }
+
+                const data = result.data as DataPoint[];
+                const columns = result.meta.fields || [];
+
+                // Extract metadata from file path
+                const pathParts = filePath.split('/');
+                const filename = pathParts[pathParts.length - 1].replace('.csv', '');
+                const category = pathParts[pathParts.length - 2] || 'data';
+
+                const chartData: ChartData = {
+                    data: this.processData(data, columns),
+                    columns,
+                    metadata: {
+                        title: this.formatTitle(filename),
+                        category: this.formatTitle(category),
+                        filename,
+                    },
+                };
+
+                // Cache the result
+                this.cache.set(filePath, chartData);
+
+                return chartData;
             }
-
-            const csvText = await response.text();
-
-            const result = Papa.parse(csvText, {
-                header: true,
-                skipEmptyLines: true,
-                dynamicTyping: true,
-                transformHeader: (header: string) => header.trim(),
-            });
-
-            if (result.errors.length > 0) {
-                console.warn(`CSV parsing warnings for ${filePath}:`, result.errors);
-            }
-
-            const data = result.data as DataPoint[];
-            const columns = result.meta.fields || [];
-
-            // Extract metadata from file path
-            const pathParts = filePath.split('/');
-            const filename = pathParts[pathParts.length - 1].replace('.csv', '');
-            const category = pathParts[pathParts.length - 2] || 'data';
-
-            const chartData: ChartData = {
-                data: this.processData(data, columns),
-                columns,
-                metadata: {
-                    title: this.formatTitle(filename),
-                    category: this.formatTitle(category),
-                    filename,
-                },
-            };
-
-            // Cache the result
-            this.cache.set(filePath, chartData);
-
-            return chartData;
         } catch (error) {
             console.error(`Error loading CSV ${filePath}:`, error);
             throw error;
@@ -175,9 +191,18 @@ export class DataService {
 
     // New method for getting datasets by asset class
     static async getDatasetsByAssetClass(assetClass: string): Promise<string[]> {
-        const datasets = await this.getAvailableDatasets();
-        const category = datasets.find(d => d.category === assetClass);
-        return category ? category.files : [];
+        if (this.USE_API) {
+            const response = await fetch(`/api/data/${assetClass}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch datasets for ${assetClass}`);
+            }
+            const { datasets } = await response.json();
+            return datasets;
+        } else {
+            const datasets = await this.getAvailableDatasets();
+            const category = datasets.find(d => d.category === assetClass);
+            return category ? category.files : [];
+        }
     }
 
     // Method to load multiple related datasets (e.g., all bond yields)

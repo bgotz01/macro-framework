@@ -7,19 +7,19 @@ export default function ParadigmPage() {
                     Framework • Operating System
                 </div>
                 <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    The O3 Paradigm
+                    The OS Paradigm
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    Our Operating System for identifying and capitalizing on market opportunities through the interplay of three fundamental forces.
+                    An Operating System for reading reality: Signal, Swing, Story.
                 </p>
             </div>
 
             {/* Taglines */}
             <div className="text-center mb-16">
                 <div className="space-y-2">
-                    <p className="text-lg font-medium text-card-foreground">You spot the Signal.</p>
-                    <p className="text-lg font-medium text-card-foreground">You anticipate the Swing.</p>
-                    <p className="text-lg font-medium text-card-foreground">You tell the Story.</p>
+                    <p className="text-lg font-medium text-card-foreground">Spot the Signal.</p>
+                    <p className="text-lg font-medium text-card-foreground">Anticipate the Swing.</p>
+                    <p className="text-lg font-medium text-card-foreground">Write the Story.</p>
                 </div>
             </div>
 
@@ -38,90 +38,27 @@ export default function ParadigmPage() {
                         </thead>
                         <tbody>
                             <tr className="border-b border-border/50">
-                                <td className="py-6 px-6">
-                                    <span className="inline-flex items-center px-3 py-1 rounded bg-muted text-muted-foreground text-sm font-medium">O1</span>
-                                </td>
+                                <td className="py-6 px-6 font-medium text-card-foreground">O1 <span className="italic">(obvious)</span></td>
                                 <td className="py-6 px-6 font-medium text-card-foreground">Signal</td>
-                                <td className="py-6 px-6 text-muted-foreground">What is visible, dominant, rewarded, and socially reinforced</td>
+                                <td className="py-6 px-6 text-muted-foreground">The problem is obvious. So is the fix. </td>
                             </tr>
                             <tr className="border-b border-border/50">
-                                <td className="py-6 px-6">
-                                    <span className="inline-flex items-center px-3 py-1 rounded bg-muted text-muted-foreground text-sm font-medium">O2</span>
-                                </td>
+                                <td className="py-6 px-6 font-medium text-card-foreground">O2 <span className="italic">(opposite)</span></td>
                                 <td className="py-6 px-6 font-medium text-card-foreground">Swing</td>
-                                <td className="py-6 px-6 text-muted-foreground">The counterforce, tension, cyclic pressure, and structural reversal</td>
+                                <td className="py-6 px-6 text-muted-foreground">The counterforce. Inversion pressure. The opposite regime unfolds.</td>
                             </tr>
                             <tr>
-                                <td className="py-6 px-6">
-                                    <span className="inline-flex items-center px-3 py-1 rounded bg-muted text-muted-foreground text-sm font-medium">O3</span>
-                                </td>
+                                <td className="py-6 px-6 font-medium text-card-foreground">O3 <span className="italic">(outlier)</span></td>
                                 <td className="py-6 px-6 font-medium text-card-foreground">Story</td>
-                                <td className="py-6 px-6 text-muted-foreground">The meaning layer: how outcomes are explained, remembered, and mythologized</td>
+                                <td className="py-6 px-6 text-muted-foreground">The winner is the outlier with a new story. That story defines the next era.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* The OS Loop */}
-            <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
-                <h2 className="text-2xl font-bold text-card-foreground mb-6 text-center">The Full OS Loop</h2>
-                <p className="text-center text-muted-foreground mb-8 italic">Non-causal, experiential — Not a flowchart, a lens:</p>
 
-                <div className="space-y-6">
-                    <div className="flex items-start space-x-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded bg-muted text-muted-foreground text-sm font-medium mt-1">Signal</span>
-                        <div>
-                            <p className="text-lg font-medium text-card-foreground">"This hurts / breaks / feels wrong"</p>
-                        </div>
-                    </div>
 
-                    <div className="flex items-start space-x-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded bg-muted text-muted-foreground text-sm font-medium mt-1">Swing</span>
-                        <div>
-                            <p className="text-lg font-medium text-card-foreground">"If this persists, structure must adjust"</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-start space-x-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded bg-muted text-muted-foreground text-sm font-medium mt-1">Story</span>
-                        <div>
-                            <p className="text-lg font-medium text-card-foreground">"Here's why this outcome makes sense"</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Explanation */}
-            <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
-                <h2 className="text-2xl font-bold text-card-foreground mb-6">How the OS Works</h2>
-
-                <div className="space-y-6">
-                    <div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-3">The Cycle</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            Markets and societies operate in cycles driven by the tension between what is obvious (O1) and what is opposite (O2).
-                            The stories we tell (O3) shape how we interpret these cycles and prepare for the next swing.
-                        </p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-3">The Opportunity</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            By identifying the dominant signal (O1), recognizing the building counterforce (O2), and understanding
-                            the narrative framework (O3), we can position ourselves ahead of major market shifts.
-                        </p>
-                    </div>
-
-                    <div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-3">The Operating System</h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                            This isn't just a framework—it's our Operating System for processing market information,
-                            identifying patterns, and making decisions that capitalize on the inevitable swings between extremes.
-                        </p>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

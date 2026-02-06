@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sqlite database
+data/macro-data.db
+data/macro-data.db-shm
+data/macro-data.db-wal
+
+# python virtual environment
+venv/
+*.pyc
+__pycache__/
+.python-version

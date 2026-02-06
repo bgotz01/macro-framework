@@ -1,0 +1,108 @@
+{
+  "equities": {
+    "US/SPX": {
+      "displayName": "S&P 500",
+      "description": "S&P 500 Index"
+    },
+    "US/GSPC": {
+      "displayName": "S&P 500",
+      "description": "S&P 500 Index"
+    },
+    "US/IXIC": {
+      "displayName": "NASDAQ Composite",
+      "description": "NASDAQ Composite Index"
+    },
+    "US/RUT": {
+      "displayName": "Russell 2000",
+      "description": "Russell 2000 Small Cap Index"
+    },
+    "US/DJI": {
+      "displayName": "Dow Jones",
+      "description": "Dow Jones Industrial Average"
+    },
+    "DJI": {
+      "displayName": "Dow Jones",
+      "description": "Dow Jones Industrial Average"
+    },
+    "FTSE": {
+      "displayName": "FTSE 100",
+      "description": "UK FTSE 100 Index"
+    },
+    "GDAXI": {
+      "displayName": "DAX",
+      "description": "German DAX Index"
+    },
+    "N225": {
+      "displayName": "Nikkei 225",
+      "description": "Japan Nikkei 225 Index"
+    },
+    "HSI": {
+      "displayName": "Hang Seng",
+      "description": "Hong Kong Hang Seng Index"
+    }
+  },
+  "commodities": {
+    "GC=F": {
+      "displayName": "Gold",
+      "description": "Gold Futures ($/oz)"
+    },
+    "CL=F": {
+      "displayName": "Crude Oil",
+      "description": "Crude Oil Futures ($/barrel)"
+    },
+    "SI=F": {
+      "displayName": "Silver",
+      "description": "Silver Futures ($/oz)"
+    }
+  },
+  "fx": {
+    "EURUSD": {
+      "displayName": "EUR/USD",
+      "description": "Euro to US Dollar Exchange Rate"
+    },
+    "GBPUSD": {
+      "displayName": "GBP/USD",
+      "description": "British Pound to US Dollar Exchange Rate"
+    },
+    "USDJPY": {
+      "displayName": "USD/JPY",
+      "description": "US Dollar to Japanese Yen Exchange Rate"
+    }
+  },
+  "economic": {
+    "ShillerPE": {
+      "displayName": "Shiller P/E Ratio",
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)"
+    },
+    "Shiller-PE": {
+      "displayName": "Shiller P/E Ratio",
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)"
+    }
+  },
+  "bonds": {
+    "US/US-2yr": {
+      "displayName": "US 2-Year Yield",
+      "description": "US Treasury 2-Year Bond Yield"
+    },
+    "US/US-BankRate": {
+      "displayName": "US Bank Rate",
+      "description": "US Federal Funds Rate"
+    },
+    "US/IRX": {
+      "displayName": "US 3-Month Yield",
+      "description": "US Treasury 3-Month (13-Week) Bill Yield"
+    },
+    "US/FVX": {
+      "displayName": "US 5-Year Yield",
+      "description": "US Treasury 5-Year Note Yield"
+    },
+    "US/TNX": {
+      "displayName": "US 10-Year Yield",
+      "description": "US Treasury 10-Year Note Yield"
+    },
+    "US/TYX": {
+      "displayName": "US 30-Year Yield",
+      "description": "US Treasury 30-Year Bond Yield"
+    }
+  }
+}
