@@ -8,6 +8,7 @@ const LEVELS = {
     bondYieldsReal: { low: 0, mid: 2 },
     yieldCurve: { low: -0.5, mid: 0.5 },
     equityPE: { low: 15, mid: 20 },
+    earningsYield: { low: 5, mid: 6.67 }, // Inverse of P/E: 1/20 = 5%, 1/15 = 6.67%
     fedFunds: { low: 2, mid: 4 },
 };
 
@@ -19,6 +20,7 @@ interface DecadeData {
     realYield: number | null;
     yieldCurve: number | null;
     equityPE: number | null;
+    earningsYield: number | null;
     fedFunds: number | null;
 }
 
@@ -92,6 +94,7 @@ async function getDecadeData(): Promise<DecadeData[]> {
 
         const realYield = tenYear !== null && cpi !== null ? tenYear - cpi : null;
         const yieldCurve = tenYear !== null && twoYear !== null ? tenYear - twoYear : null;
+        const earningsYield = shillerPE !== null && shillerPE > 0 ? (100 / shillerPE) : null;
 
         data.push({
             decade,
@@ -101,6 +104,7 @@ async function getDecadeData(): Promise<DecadeData[]> {
             realYield,
             yieldCurve,
             equityPE: shillerPE,
+            earningsYield,
             fedFunds,
         });
     }
@@ -178,6 +182,14 @@ export default async function DecadesPage() {
                             <div className={`px-2 py-1 rounded ${getLevelColor('HIGH')}`}>EXP: &gt; 20x</div>
                         </div>
                     </div>
+                    <div>
+                        <div className="font-semibold mb-2">Earnings Yield</div>
+                        <div className="space-y-1">
+                            <div className={`px-2 py-1 rounded ${getLevelColor('HIGH')}`}>HIGH: &gt; 6.67%</div>
+                            <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>MID: 5-6.67%</div>
+                            <div className={`px-2 py-1 rounded ${getLevelColor('LOW')}`}>LOW: &lt; 5%</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -194,6 +206,7 @@ export default async function DecadesPage() {
                             <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                             <th className="border border-border p-4 text-center font-bold">Yield Curve</th>
                             <th className="border border-border p-4 text-center font-bold">Equity P/E</th>
+                            <th className="border border-border p-4 text-center font-bold">Earnings Yield</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -204,6 +217,7 @@ export default async function DecadesPage() {
                             const fedFundsLevel = getLevel(row.fedFunds, LEVELS.fedFunds);
                             const yieldCurveLevel = getLevel(row.yieldCurve, LEVELS.yieldCurve);
                             const equityPELevel = getLevel(row.equityPE, LEVELS.equityPE);
+                            const earningsYieldLevel = getLevel(row.earningsYield, LEVELS.earningsYield);
 
                             return (
                                 <tr key={row.decade} className="hover:bg-muted/30 transition-colors">
@@ -266,6 +280,16 @@ export default async function DecadesPage() {
                                             </div>
                                             <div className="text-sm font-mono">
                                                 {row.equityPE !== null ? `${row.equityPE.toFixed(1)}x` : '-'}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="border border-border p-4">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldLevel)}`}>
+                                                {earningsYieldLevel}
+                                            </div>
+                                            <div className="text-sm font-mono">
+                                                {row.earningsYield !== null ? `${row.earningsYield.toFixed(2)}%` : '-'}
                                             </div>
                                         </div>
                                     </td>

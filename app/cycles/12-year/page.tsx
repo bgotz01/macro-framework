@@ -8,8 +8,8 @@ export default function TwelveYearCyclePage() {
                 <p className="text-lg mb-6">This is where your model really tightens.</p>
             </div>
 
-            <div className="space-y-8">
-                <div className="border-l-4 border-blue-500 pl-6 py-2">
+            <div className="space-y-6">
+                <div className="p-6 rounded-lg border-2 border-border bg-card">
                     <h3 className="text-xl font-bold mb-2">1972 (Rat) — Monetary Reconfiguration</h3>
                     <p className="text-lg font-semibold mb-3">💥 Money untethered from gold</p>
                     <ul className="list-disc list-inside space-y-1 mb-3">
@@ -21,7 +21,7 @@ export default function TwelveYearCyclePage() {
                     <p className="italic text-muted-foreground">This is the root OS change.</p>
                 </div>
 
-                <div className="border-l-4 border-purple-500 pl-6 py-2">
+                <div className="p-6 rounded-lg border-2 border-border bg-card">
                     <h3 className="text-xl font-bold mb-2">1984 (Rat) — Financial OS Replatform</h3>
                     <p className="text-lg font-semibold mb-3">💥 How fiat is exploited</p>
                     <ul className="list-disc list-inside space-y-1 mb-3">
@@ -33,7 +33,7 @@ export default function TwelveYearCyclePage() {
                     <p className="italic text-muted-foreground">This is fiat learning how to scale.</p>
                 </div>
 
-                <div className="border-l-4 border-green-500 pl-6 py-2">
+                <div className="p-6 rounded-lg border-2 border-border bg-card">
                     <h3 className="text-xl font-bold mb-2">1996 (Rat) — Digital Execution Layer</h3>
                     <p className="text-lg font-semibold mb-3">💥 How fiat moves</p>
                     <ul className="list-disc list-inside space-y-1 mb-3">
@@ -45,7 +45,7 @@ export default function TwelveYearCyclePage() {
                     <p className="italic text-muted-foreground">This is fiat learning how to flow.</p>
                 </div>
 
-                <div className="border-l-4 border-red-500 pl-6 py-2">
+                <div className="p-6 rounded-lg border-2 border-border bg-card">
                     <h3 className="text-xl font-bold mb-2">2008 (Rat) — Constraint Reset</h3>
                     <p className="text-lg font-semibold mb-3">💥 What breaks under fiat</p>
                     <ul className="list-disc list-inside space-y-1 mb-3">
@@ -57,7 +57,7 @@ export default function TwelveYearCyclePage() {
                     <p className="italic text-muted-foreground">This is fiat revealing its limits.</p>
                 </div>
 
-                <div className="border-l-4 border-orange-500 pl-6 py-2">
+                <div className="p-6 rounded-lg border-2 border-border bg-card">
                     <h3 className="text-xl font-bold mb-2">2020 (Rat) — Monetary–Social Fusion</h3>
                     <p className="text-lg font-semibold mb-3">💥 Fiat enters daily life</p>
                     <ul className="list-disc list-inside space-y-1 mb-3">

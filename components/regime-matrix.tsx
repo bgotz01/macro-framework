@@ -123,15 +123,15 @@ export default function RegimeMatrix({
                         )}
                     </div>
                     {currentValue !== undefined && (
-                        <div className="flex gap-3">
+                        <div className="flex gap-2">
                             {/* Latest */}
-                            <div className="text-center px-6 py-4 rounded-xl bg-primary/10 border-2 border-primary/30">
-                                <div className="text-xs font-semibold text-muted-foreground mb-1">Latest</div>
-                                <div className="text-3xl font-bold text-primary">
+                            <div className="text-center px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700">
+                                <div className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-0.5">Latest</div>
+                                <div className="text-xl font-bold text-blue-900 dark:text-blue-100">
                                     {formatValue(currentValue)}
                                 </div>
                                 {currentDate && (
-                                    <div className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
                                         {new Date(currentDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                     </div>
                                 )}
@@ -139,17 +139,17 @@ export default function RegimeMatrix({
 
                             {/* 1-Year Moving Average */}
                             {ma12 !== undefined && ma12 !== null && (
-                                <div className="text-center px-6 py-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-300 dark:border-purple-700">
-                                    <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">MA 1yr</div>
-                                    <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                                <div className="text-center px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-0.5">MA 1yr</div>
+                                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
                                         {formatValue(ma12)}
                                     </div>
                                     {ma12Date && (
-                                        <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                                             {new Date(ma12Date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                         </div>
                                     )}
-                                    <div className="text-sm font-semibold text-purple-600 dark:text-purple-400 mt-1">
+                                    <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-0.5">
                                         {currentValue !== undefined && (
                                             <span className={currentValue > ma12 ? 'text-green-600 dark:text-green-400' : currentValue < ma12 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}>
                                                 {currentValue > ma12 ? '↑' : currentValue < ma12 ? '↓' : '→'}

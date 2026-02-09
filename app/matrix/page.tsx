@@ -29,6 +29,16 @@ const LEVELS = {
         fair: { min: 15, max: 20, label: '15x – 20x' },
         expensive: { min: 20, label: '> 20x' }
     },
+    earningsYieldPremium: {
+        negative: { max: 0, label: '< 0%', description: 'Bonds more attractive' },
+        neutral: { min: 0, max: 2, label: '0% – 2%', description: 'Fair compensation' },
+        positive: { min: 2, label: '> 2%', description: 'Equities attractive' }
+    },
+    realEarningsYield: {
+        negative: { max: 0, label: '< 0%', description: 'Negative real return' },
+        low: { min: 0, max: 3, label: '0% – 3%', description: 'Low real return' },
+        positive: { min: 3, label: '> 3%', description: 'Attractive real return' }
+    },
     vix: {
         low: { max: 15, label: '< 15' },
         mid: { min: 15, max: 25, label: '15 – 25' },
@@ -134,20 +144,22 @@ function calculateTrend(current: number | null, ma12: number | null, threshold: 
 
 export default async function MatrixPage() {
     // Fetch all data server-side
-    const [cpi, tenYear, twoYear, shillerPE, vix, fedFunds] = await Promise.all([
+    const [cpi, tenYear, twoYear, threeMonth, shillerPE, vix, fedFunds] = await Promise.all([
         getLatestValue('economic', 'CPI'),
         getLatestValue('bonds', 'US/TNX'),
         getLatestValue('bonds', 'US/US-2yr'),
+        getLatestValue('bonds', 'US/IRX'),
         getLatestValue('economic', 'Shiller-PE'),
         getLatestValue('volatility', 'VIX'),
         getLatestValue('economic', 'US/FEDFUNDS'),
     ]);
 
     // Fetch 1-year moving averages (MA12)
-    const [cpiMA12, tenYearMA12, twoYearMA12, peMA12, vixMA12, fedFundsMA12] = await Promise.all([
+    const [cpiMA12, tenYearMA12, twoYearMA12, threeMonthMA12, peMA12, vixMA12, fedFundsMA12] = await Promise.all([
         getLatestMA12('economic', 'CPI'),
         getLatestMA12('bonds', 'US/TNX'),
         getLatestMA12('bonds', 'US/US-2yr'),
+        getLatestMA12('bonds', 'US/IRX'),
         getLatestMA12('economic', 'Shiller-PE'),
         getLatestMA12('volatility', 'VIX'),
         getLatestMA12('economic', 'US/FEDFUNDS'),
@@ -195,6 +207,26 @@ export default async function MatrixPage() {
             date: fedFunds.date,
             ma12: fedFundsMA12.value,
             ma12Date: fedFundsMA12.date
+        },
+        earningsYieldPremium: {
+            value: shillerPE.value !== null && shillerPE.value > 0 && threeMonth.value !== null
+                ? (100 / shillerPE.value) - threeMonth.value
+                : null,
+            date: shillerPE.date,
+            ma12: peMA12.value !== null && peMA12.value > 0 && threeMonthMA12.value !== null
+                ? (100 / peMA12.value) - threeMonthMA12.value
+                : null,
+            ma12Date: peMA12.date
+        },
+        realEarningsYield: {
+            value: shillerPE.value !== null && shillerPE.value > 0 && cpi.value !== null
+                ? (100 / shillerPE.value) - cpi.value
+                : null,
+            date: shillerPE.date,
+            ma12: peMA12.value !== null && peMA12.value > 0 && cpiMA12.value !== null
+                ? (100 / peMA12.value) - cpiMA12.value
+                : null,
+            ma12Date: peMA12.date
         },
     };
 
@@ -312,242 +344,334 @@ export default async function MatrixPage() {
                 <p className="text-sm text-muted-foreground">Constraint and expectation variables that define market pressure</p>
             </div>
 
-            <RegimeMatrix
-                title="1. Inflation Matrix"
-                subtitle="CPI / PCE — Valuation of money and purchasing power"
-                levels={[
-                    { label: 'LOW', value: LEVELS.inflation.low.label, color: 'green' },
-                    { label: 'MID', value: LEVELS.inflation.mid.label, color: 'yellow' },
-                    { label: 'HIGH', value: LEVELS.inflation.high.label, color: 'red' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Disinflation tail' },
-                        { label: 'Soft landing' },
-                        { label: 'Policy victory' },
-                    ],
-                    stable: [
-                        { label: 'Goldilocks' },
-                        { label: 'Nominal stability' },
-                        { label: 'Stagflation risk' },
-                    ],
-                    rising: [
-                        { label: 'Early reflation' },
-                        { label: 'Late-cycle pressure' },
-                        { label: 'Inflation shock' },
-                    ],
-                }}
-                currentValue={currentValues.inflation.value ?? undefined}
-                currentDate={currentValues.inflation.date ?? undefined}
-                ma12={currentValues.inflation.ma12 ?? undefined}
-                ma12Date={currentValues.inflation.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.inflation.value, currentValues.inflation.ma12, 0.2)}
-                levelThresholds={{ low: 3, mid: 6 }}
-            />
+            {/* INFLATION SECTION */}
+            <div className="mb-16">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold mb-2">Inflation</h2>
+                    <p className="text-sm text-muted-foreground">Purchasing power and monetary constraint</p>
+                </div>
 
-            <RegimeMatrix
-                title="2. Bond Yield Matrix (Nominal)"
-                subtitle="10Y Treasury — Nominal yield levels"
-                levels={[
-                    { label: 'LOW', value: LEVELS.bondYieldsNominal.low.label, description: LEVELS.bondYieldsNominal.low.description, color: 'green' },
-                    { label: 'MID', value: LEVELS.bondYieldsNominal.mid.label, description: LEVELS.bondYieldsNominal.mid.description, color: 'yellow' },
-                    { label: 'HIGH', value: LEVELS.bondYieldsNominal.high.label, description: LEVELS.bondYieldsNominal.high.description, color: 'red' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Deflation scare' },
-                        { label: 'Growth scare' },
-                        { label: 'Crisis hedge' },
-                    ],
-                    stable: [
-                        { label: 'ZIRP trap' },
-                        { label: 'Neutral' },
-                        { label: 'Restrictive hold' },
-                    ],
-                    rising: [
-                        { label: 'Reflation signal' },
-                        { label: 'Tightening phase' },
-                        { label: 'Policy accident risk' },
-                    ],
-                }}
-                currentValue={currentValues.bondYieldNominal.value ?? undefined}
-                currentDate={currentValues.bondYieldNominal.date ?? undefined}
-                ma12={currentValues.bondYieldNominal.ma12 ?? undefined}
-                ma12Date={currentValues.bondYieldNominal.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.bondYieldNominal.value, currentValues.bondYieldNominal.ma12, 0.2)}
-                levelThresholds={{ low: 2, mid: 5 }}
-            />
+                <RegimeMatrix
+                    title="1. Inflation Matrix"
+                    subtitle="CPI / PCE — Valuation of money and purchasing power"
+                    levels={[
+                        { label: 'LOW', value: LEVELS.inflation.low.label, color: 'green' },
+                        { label: 'MID', value: LEVELS.inflation.mid.label, color: 'yellow' },
+                        { label: 'HIGH', value: LEVELS.inflation.high.label, color: 'red' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Disinflation tail' },
+                            { label: 'Soft landing' },
+                            { label: 'Policy victory' },
+                        ],
+                        stable: [
+                            { label: 'Goldilocks' },
+                            { label: 'Nominal stability' },
+                            { label: 'Stagflation risk' },
+                        ],
+                        rising: [
+                            { label: 'Early reflation' },
+                            { label: 'Late-cycle pressure' },
+                            { label: 'Inflation shock' },
+                        ],
+                    }}
+                    currentValue={currentValues.inflation.value ?? undefined}
+                    currentDate={currentValues.inflation.date ?? undefined}
+                    ma12={currentValues.inflation.ma12 ?? undefined}
+                    ma12Date={currentValues.inflation.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.inflation.value, currentValues.inflation.ma12, 0.2)}
+                    levelThresholds={{ low: 3, mid: 6 }}
+                />
+            </div>
 
-            <RegimeMatrix
-                title="3. Real Yield Matrix"
-                subtitle="10Y nominal − inflation — Real return on duration"
-                levels={[
-                    { label: 'LOW', value: LEVELS.bondYieldsReal.low.label, description: LEVELS.bondYieldsReal.low.description, color: 'green' },
-                    { label: 'MID', value: LEVELS.bondYieldsReal.mid.label, description: LEVELS.bondYieldsReal.mid.description, color: 'yellow' },
-                    { label: 'HIGH', value: LEVELS.bondYieldsReal.high.label, description: LEVELS.bondYieldsReal.high.description, color: 'red' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Inflation surge' },
-                        { label: 'Real erosion' },
-                        { label: 'Disinflation trade' },
-                    ],
-                    stable: [
-                        { label: 'Negative carry' },
-                        { label: 'Fair compensation' },
-                        { label: 'Premium hold' },
-                    ],
-                    rising: [
-                        { label: 'Breakeven tightening' },
-                        { label: 'Real normalization' },
-                        { label: 'Volcker moment' },
-                    ],
-                }}
-                insight="Real yields below zero = financial repression. Above 2% = restrictive policy."
-                currentValue={currentValues.bondYieldReal.value ?? undefined}
-                currentDate={currentValues.bondYieldReal.date ?? undefined}
-                ma12={currentValues.bondYieldReal.ma12 ?? undefined}
-                ma12Date={currentValues.bondYieldReal.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.bondYieldReal.value, currentValues.bondYieldReal.ma12, 0.2)}
-                levelThresholds={{ low: 0, mid: 2 }}
-            />
+            {/* RATES (BONDS) SECTION */}
+            <div className="mb-16">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold mb-2">Rates (Bonds)</h2>
+                    <p className="text-sm text-muted-foreground">Interest rates, yields, and fixed income valuation</p>
+                </div>
 
-            <RegimeMatrix
-                title="4. Fed Funds Rate Matrix"
-                subtitle="Federal Funds Rate — Policy stance and overnight rate"
-                levels={[
-                    { label: 'LOW', value: LEVELS.fedFunds.low.label, description: LEVELS.fedFunds.low.description, color: 'green' },
-                    { label: 'MID', value: LEVELS.fedFunds.mid.label, description: LEVELS.fedFunds.mid.description, color: 'yellow' },
-                    { label: 'HIGH', value: LEVELS.fedFunds.high.label, description: LEVELS.fedFunds.high.description, color: 'red' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Easing cycle' },
-                        { label: 'Dovish pivot' },
-                        { label: 'Emergency cuts' },
-                    ],
-                    stable: [
-                        { label: 'Accommodative hold' },
-                        { label: 'Neutral stance' },
-                        { label: 'Higher for longer' },
-                    ],
-                    rising: [
-                        { label: 'Liftoff' },
-                        { label: 'Tightening cycle' },
-                        { label: 'Inflation fight' },
-                    ],
-                }}
-                insight="Fed Funds below 2% = accommodative. Above 4% = restrictive. Direction signals policy intent."
-                currentValue={currentValues.fedFunds.value ?? undefined}
-                currentDate={currentValues.fedFunds.date ?? undefined}
-                ma12={currentValues.fedFunds.ma12 ?? undefined}
-                ma12Date={currentValues.fedFunds.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.fedFunds.value, currentValues.fedFunds.ma12, 0.2)}
-                levelThresholds={{ low: 2, mid: 4 }}
-            />
+                <RegimeMatrix
+                    title="2. Bond Yield Matrix (Nominal)"
+                    subtitle="10Y Treasury — Nominal yield levels"
+                    levels={[
+                        { label: 'LOW', value: LEVELS.bondYieldsNominal.low.label, description: LEVELS.bondYieldsNominal.low.description, color: 'green' },
+                        { label: 'MID', value: LEVELS.bondYieldsNominal.mid.label, description: LEVELS.bondYieldsNominal.mid.description, color: 'yellow' },
+                        { label: 'HIGH', value: LEVELS.bondYieldsNominal.high.label, description: LEVELS.bondYieldsNominal.high.description, color: 'red' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Deflation scare' },
+                            { label: 'Growth scare' },
+                            { label: 'Crisis hedge' },
+                        ],
+                        stable: [
+                            { label: 'ZIRP trap' },
+                            { label: 'Neutral' },
+                            { label: 'Restrictive hold' },
+                        ],
+                        rising: [
+                            { label: 'Reflation signal' },
+                            { label: 'Tightening phase' },
+                            { label: 'Policy accident risk' },
+                        ],
+                    }}
+                    currentValue={currentValues.bondYieldNominal.value ?? undefined}
+                    currentDate={currentValues.bondYieldNominal.date ?? undefined}
+                    ma12={currentValues.bondYieldNominal.ma12 ?? undefined}
+                    ma12Date={currentValues.bondYieldNominal.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.bondYieldNominal.value, currentValues.bondYieldNominal.ma12, 0.2)}
+                    levelThresholds={{ low: 2, mid: 5 }}
+                />
 
-            <RegimeMatrix
-                title="5. Yield Curve Matrix"
-                subtitle="10Y − 2Y spread — Term premium and recession signal"
-                levels={[
-                    { label: 'INVERTED', value: LEVELS.yieldCurve.inverted.label, description: LEVELS.yieldCurve.inverted.description, color: 'red' },
-                    { label: 'FLAT', value: LEVELS.yieldCurve.flat.label, description: LEVELS.yieldCurve.flat.description, color: 'yellow' },
-                    { label: 'STEEP', value: LEVELS.yieldCurve.steep.label, description: LEVELS.yieldCurve.steep.description, color: 'green' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Bear flattening' },
-                        { label: 'Policy tightening' },
-                        { label: 'Bull steepening' },
-                    ],
-                    stable: [
-                        { label: 'Recession signal' },
-                        { label: 'Neutral stance' },
-                        { label: 'Expansion mode' },
-                    ],
-                    rising: [
-                        { label: 'Disinversion rally' },
-                        { label: 'Normalization' },
-                        { label: 'Reflation surge' },
-                    ],
-                }}
-                insight="Inversion (negative spread) historically precedes recessions. Steepening after inversion signals recovery."
-                currentValue={currentValues.yieldCurve.value ?? undefined}
-                currentDate={currentValues.yieldCurve.date ?? undefined}
-                ma12={currentValues.yieldCurve.ma12 ?? undefined}
-                ma12Date={currentValues.yieldCurve.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.yieldCurve.value, currentValues.yieldCurve.ma12, 0.1)}
-                levelThresholds={{ low: -0.5, mid: 0.5 }}
-            />
+                <RegimeMatrix
+                    title="3. Real Yield Matrix"
+                    subtitle="10Y nominal − inflation — Real return on duration"
+                    levels={[
+                        { label: 'LOW', value: LEVELS.bondYieldsReal.low.label, description: LEVELS.bondYieldsReal.low.description, color: 'green' },
+                        { label: 'MID', value: LEVELS.bondYieldsReal.mid.label, description: LEVELS.bondYieldsReal.mid.description, color: 'yellow' },
+                        { label: 'HIGH', value: LEVELS.bondYieldsReal.high.label, description: LEVELS.bondYieldsReal.high.description, color: 'red' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Inflation surge' },
+                            { label: 'Real erosion' },
+                            { label: 'Disinflation trade' },
+                        ],
+                        stable: [
+                            { label: 'Negative carry' },
+                            { label: 'Fair compensation' },
+                            { label: 'Premium hold' },
+                        ],
+                        rising: [
+                            { label: 'Breakeven tightening' },
+                            { label: 'Real normalization' },
+                            { label: 'Volcker moment' },
+                        ],
+                    }}
+                    insight="Real yields below zero = financial repression. Above 2% = restrictive policy."
+                    currentValue={currentValues.bondYieldReal.value ?? undefined}
+                    currentDate={currentValues.bondYieldReal.date ?? undefined}
+                    ma12={currentValues.bondYieldReal.ma12 ?? undefined}
+                    ma12Date={currentValues.bondYieldReal.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.bondYieldReal.value, currentValues.bondYieldReal.ma12, 0.2)}
+                    levelThresholds={{ low: 0, mid: 2 }}
+                />
 
-            <RegimeMatrix
-                title="6. Equity Valuation Matrix"
-                subtitle="P/E, ERP, CAPE — Valuation metrics (not price)"
-                levels={[
-                    { label: 'CHEAP', value: LEVELS.equityPE.cheap.label, color: 'green' },
-                    { label: 'FAIR', value: LEVELS.equityPE.fair.label, color: 'yellow' },
-                    { label: 'EXPENSIVE', value: LEVELS.equityPE.expensive.label, color: 'red' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Panic / capitulation' },
-                        { label: 'Correction' },
-                        { label: 'Distribution' },
-                    ],
-                    stable: [
-                        { label: 'Base building' },
-                        { label: 'Range-bound' },
-                        { label: 'Narrow leadership' },
-                    ],
-                    rising: [
-                        { label: 'Bear-market rally' },
-                        { label: 'Healthy advance' },
-                        { label: 'Melt-up' },
-                    ],
-                }}
-                insight="High & rising ≠ healthy. High & stable is often the most dangerous state."
-                currentValue={currentValues.equityPE.value ?? undefined}
-                currentDate={currentValues.equityPE.date ?? undefined}
-                ma12={currentValues.equityPE.ma12 ?? undefined}
-                ma12Date={currentValues.equityPE.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.equityPE.value, currentValues.equityPE.ma12, 1.0)}
-                levelThresholds={{ low: 15, mid: 20 }}
-                valueFormat="number"
-            />
+                <RegimeMatrix
+                    title="4. Fed Funds Rate Matrix"
+                    subtitle="Federal Funds Rate — Policy stance and overnight rate"
+                    levels={[
+                        { label: 'LOW', value: LEVELS.fedFunds.low.label, description: LEVELS.fedFunds.low.description, color: 'green' },
+                        { label: 'MID', value: LEVELS.fedFunds.mid.label, description: LEVELS.fedFunds.mid.description, color: 'yellow' },
+                        { label: 'HIGH', value: LEVELS.fedFunds.high.label, description: LEVELS.fedFunds.high.description, color: 'red' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Easing cycle' },
+                            { label: 'Dovish pivot' },
+                            { label: 'Emergency cuts' },
+                        ],
+                        stable: [
+                            { label: 'Accommodative hold' },
+                            { label: 'Neutral stance' },
+                            { label: 'Higher for longer' },
+                        ],
+                        rising: [
+                            { label: 'Liftoff' },
+                            { label: 'Tightening cycle' },
+                            { label: 'Inflation fight' },
+                        ],
+                    }}
+                    insight="Fed Funds below 2% = accommodative. Above 4% = restrictive. Direction signals policy intent."
+                    currentValue={currentValues.fedFunds.value ?? undefined}
+                    currentDate={currentValues.fedFunds.date ?? undefined}
+                    ma12={currentValues.fedFunds.ma12 ?? undefined}
+                    ma12Date={currentValues.fedFunds.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.fedFunds.value, currentValues.fedFunds.ma12, 0.2)}
+                    levelThresholds={{ low: 2, mid: 4 }}
+                />
 
-            <RegimeMatrix
-                title="7. VIX Matrix"
-                subtitle="Volatility / Fear Premium — Price of optionality"
-                levels={[
-                    { label: 'LOW', value: LEVELS.vix.low.label, color: 'green' },
-                    { label: 'MID', value: LEVELS.vix.mid.label, color: 'yellow' },
-                    { label: 'HIGH', value: LEVELS.vix.high.label, color: 'red' },
-                ]}
-                cells={{
-                    falling: [
-                        { label: 'Complacent grind' },
-                        { label: 'Volatility compression' },
-                        { label: 'Post-panic' },
-                    ],
-                    stable: [
-                        { label: 'Suppressed risk' },
-                        { label: 'Normal risk' },
-                        { label: 'Structural fear' },
-                    ],
-                    rising: [
-                        { label: 'Fragile calm' },
-                        { label: 'Early stress' },
-                        { label: 'Crisis' },
-                    ],
-                }}
-                currentValue={currentValues.vix.value ?? undefined}
-                currentDate={currentValues.vix.date ?? undefined}
-                ma12={currentValues.vix.ma12 ?? undefined}
-                ma12Date={currentValues.vix.ma12Date ?? undefined}
-                currentTrend={calculateTrend(currentValues.vix.value, currentValues.vix.ma12, 2.0)}
-                levelThresholds={{ low: 15, mid: 25 }}
-                valueFormat="number"
-            />
+                <RegimeMatrix
+                    title="5. Yield Curve Matrix"
+                    subtitle="10Y − 2Y spread — Term premium and recession signal"
+                    levels={[
+                        { label: 'INVERTED', value: LEVELS.yieldCurve.inverted.label, description: LEVELS.yieldCurve.inverted.description, color: 'red' },
+                        { label: 'FLAT', value: LEVELS.yieldCurve.flat.label, description: LEVELS.yieldCurve.flat.description, color: 'yellow' },
+                        { label: 'STEEP', value: LEVELS.yieldCurve.steep.label, description: LEVELS.yieldCurve.steep.description, color: 'green' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Bear flattening' },
+                            { label: 'Policy tightening' },
+                            { label: 'Bull steepening' },
+                        ],
+                        stable: [
+                            { label: 'Recession signal' },
+                            { label: 'Neutral stance' },
+                            { label: 'Expansion mode' },
+                        ],
+                        rising: [
+                            { label: 'Disinversion rally' },
+                            { label: 'Normalization' },
+                            { label: 'Reflation surge' },
+                        ],
+                    }}
+                    insight="Inversion (negative spread) historically precedes recessions. Steepening after inversion signals recovery."
+                    currentValue={currentValues.yieldCurve.value ?? undefined}
+                    currentDate={currentValues.yieldCurve.date ?? undefined}
+                    ma12={currentValues.yieldCurve.ma12 ?? undefined}
+                    ma12Date={currentValues.yieldCurve.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.yieldCurve.value, currentValues.yieldCurve.ma12, 0.1)}
+                    levelThresholds={{ low: -0.5, mid: 0.5 }}
+                />
+            </div>
+
+            {/* EQUITIES SECTION */}
+            <div className="mb-16">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold mb-2">Equities</h2>
+                    <p className="text-sm text-muted-foreground">Equity valuation and risk premium measures</p>
+                </div>
+
+                <RegimeMatrix
+                    title="6. Equity Valuation Matrix"
+                    subtitle="P/E, ERP, CAPE — Valuation metrics (not price)"
+                    levels={[
+                        { label: 'CHEAP', value: LEVELS.equityPE.cheap.label, color: 'green' },
+                        { label: 'FAIR', value: LEVELS.equityPE.fair.label, color: 'yellow' },
+                        { label: 'EXPENSIVE', value: LEVELS.equityPE.expensive.label, color: 'red' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Panic / capitulation' },
+                            { label: 'Correction' },
+                            { label: 'Distribution' },
+                        ],
+                        stable: [
+                            { label: 'Base building' },
+                            { label: 'Range-bound' },
+                            { label: 'Narrow leadership' },
+                        ],
+                        rising: [
+                            { label: 'Bear-market rally' },
+                            { label: 'Healthy advance' },
+                            { label: 'Melt-up' },
+                        ],
+                    }}
+                    insight="High & rising ≠ healthy. High & stable is often the most dangerous state."
+                    currentValue={currentValues.equityPE.value ?? undefined}
+                    currentDate={currentValues.equityPE.date ?? undefined}
+                    ma12={currentValues.equityPE.ma12 ?? undefined}
+                    ma12Date={currentValues.equityPE.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.equityPE.value, currentValues.equityPE.ma12, 1.0)}
+                    levelThresholds={{ low: 15, mid: 20 }}
+                    valueFormat="number"
+                />
+
+                <RegimeMatrix
+                    title="7. Earnings Yield Premium Matrix"
+                    subtitle="Earnings Yield (E/P) − 3M Treasury — Equity risk premium vs cash"
+                    levels={[
+                        { label: 'NEGATIVE', value: LEVELS.earningsYieldPremium.negative.label, description: LEVELS.earningsYieldPremium.negative.description, color: 'red' },
+                        { label: 'NEUTRAL', value: LEVELS.earningsYieldPremium.neutral.label, description: LEVELS.earningsYieldPremium.neutral.description, color: 'yellow' },
+                        { label: 'POSITIVE', value: LEVELS.earningsYieldPremium.positive.label, description: LEVELS.earningsYieldPremium.positive.description, color: 'green' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Valuation compression' },
+                            { label: 'Premium erosion' },
+                            { label: 'Normalization' },
+                        ],
+                        stable: [
+                            { label: 'Bonds dominate' },
+                            { label: 'Balanced' },
+                            { label: 'Equity advantage' },
+                        ],
+                        rising: [
+                            { label: 'Equity selloff' },
+                            { label: 'Premium expansion' },
+                            { label: 'Deep value' },
+                        ],
+                    }}
+                    insight="Negative premium = equities expensive vs cash. Positive premium > 2% = equities attractive vs risk-free rate."
+                    currentValue={currentValues.earningsYieldPremium.value ?? undefined}
+                    currentDate={currentValues.earningsYieldPremium.date ?? undefined}
+                    ma12={currentValues.earningsYieldPremium.ma12 ?? undefined}
+                    ma12Date={currentValues.earningsYieldPremium.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.earningsYieldPremium.value, currentValues.earningsYieldPremium.ma12, 0.3)}
+                    levelThresholds={{ low: 0, mid: 2 }}
+                />
+
+                <RegimeMatrix
+                    title="8. Real Earnings Yield Matrix"
+                    subtitle="Earnings Yield (E/P) − CPI — Real equity return potential"
+                    levels={[
+                        { label: 'NEGATIVE', value: LEVELS.realEarningsYield.negative.label, description: LEVELS.realEarningsYield.negative.description, color: 'red' },
+                        { label: 'LOW', value: LEVELS.realEarningsYield.low.label, description: LEVELS.realEarningsYield.low.description, color: 'yellow' },
+                        { label: 'POSITIVE', value: LEVELS.realEarningsYield.positive.label, description: LEVELS.realEarningsYield.positive.description, color: 'green' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Inflation surge' },
+                            { label: 'Real erosion' },
+                            { label: 'Disinflation boost' },
+                        ],
+                        stable: [
+                            { label: 'Real loss' },
+                            { label: 'Modest real return' },
+                            { label: 'Strong real return' },
+                        ],
+                        rising: [
+                            { label: 'Multiple compression' },
+                            { label: 'Real improvement' },
+                            { label: 'Value expansion' },
+                        ],
+                    }}
+                    insight="Real earnings yield shows inflation-adjusted return potential. Negative = equities losing to inflation."
+                    currentValue={currentValues.realEarningsYield.value ?? undefined}
+                    currentDate={currentValues.realEarningsYield.date ?? undefined}
+                    ma12={currentValues.realEarningsYield.ma12 ?? undefined}
+                    ma12Date={currentValues.realEarningsYield.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.realEarningsYield.value, currentValues.realEarningsYield.ma12, 0.3)}
+                    levelThresholds={{ low: 0, mid: 3 }}
+                />
+
+                <RegimeMatrix
+                    title="9. VIX Matrix"
+                    subtitle="Volatility / Fear Premium — Price of optionality"
+                    levels={[
+                        { label: 'LOW', value: LEVELS.vix.low.label, color: 'green' },
+                        { label: 'MID', value: LEVELS.vix.mid.label, color: 'yellow' },
+                        { label: 'HIGH', value: LEVELS.vix.high.label, color: 'red' },
+                    ]}
+                    cells={{
+                        falling: [
+                            { label: 'Complacent grind' },
+                            { label: 'Volatility compression' },
+                            { label: 'Post-panic' },
+                        ],
+                        stable: [
+                            { label: 'Suppressed risk' },
+                            { label: 'Normal risk' },
+                            { label: 'Structural fear' },
+                        ],
+                        rising: [
+                            { label: 'Fragile calm' },
+                            { label: 'Early stress' },
+                            { label: 'Crisis' },
+                        ],
+                    }}
+                    currentValue={currentValues.vix.value ?? undefined}
+                    currentDate={currentValues.vix.date ?? undefined}
+                    ma12={currentValues.vix.ma12 ?? undefined}
+                    ma12Date={currentValues.vix.ma12Date ?? undefined}
+                    currentTrend={calculateTrend(currentValues.vix.value, currentValues.vix.ma12, 2.0)}
+                    levelThresholds={{ low: 15, mid: 25 }}
+                    valueFormat="number"
+                />
+            </div>
 
             {/* Compact Matrix Test */}
             <div className="mt-16 pt-16 border-t border-border">
