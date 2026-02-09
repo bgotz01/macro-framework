@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { formatTooltipValue } from '@/lib/format-utils';
 
 export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto';
 
@@ -49,8 +50,9 @@ export default function MADBChart({
     className = ''
 }: MADBChartProps) {
     const [assetClass, setAssetClass] = useState<AssetClass>('economic');
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string }>>([]);
+    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
+    const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
     const [datePreset, setDatePreset] = useState<string>('all');
@@ -70,13 +72,15 @@ export default function MADBChart({
                 const result = await response.json();
                 const seriesWithNames = result.seriesInfo.map((s: any) => ({
                     series_name: s.series_name,
-                    display_name: s.display_name
+                    display_name: s.display_name,
+                    units: s.units
                 }));
                 setAvailableSeries(seriesWithNames);
 
                 // Auto-select first series
                 if (seriesWithNames.length > 0) {
                     setSelectedSeries(seriesWithNames[0].series_name);
+                    setSelectedUnits(seriesWithNames[0].units);
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
@@ -230,6 +234,20 @@ export default function MADBChart({
                             stroke="#9ca3af"
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             domain={['auto', 'auto']}
+                            tickFormatter={(value) => {
+                                // For Y-axis, use compact formatting
+                                if (selectedUnits === 'billions') {
+                                    return `${(value / 1).toFixed(0)}B`;
+                                } else if (selectedUnits === 'millions') {
+                                    return `${(value / 1).toFixed(0)}M`;
+                                } else if (selectedUnits === 'percent') {
+                                    return `${value.toFixed(1)}%`;
+                                } else if (selectedUnits === 'index' || selectedUnits === 'usd') {
+                                    return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                                } else {
+                                    return value.toFixed(2);
+                                }
+                            }}
                         />
                         <Tooltip
                             contentStyle={{
@@ -239,6 +257,7 @@ export default function MADBChart({
                                 color: '#f9fafb'
                             }}
                             labelStyle={{ color: '#9ca3af' }}
+                            formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
                         <Legend wrapperStyle={{ color: '#9ca3af' }} />
                         <Line
@@ -321,7 +340,11 @@ export default function MADBChart({
                         </label>
                         <select
                             value={selectedSeries}
-                            onChange={(e) => setSelectedSeries(e.target.value)}
+                            onChange={(e) => {
+                                setSelectedSeries(e.target.value);
+                                const series = availableSeries.find(s => s.series_name === e.target.value);
+                                setSelectedUnits(series?.units);
+                            }}
                             className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             disabled={availableSeries.length === 0}
                         >

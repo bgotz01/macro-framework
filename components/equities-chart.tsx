@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
-import { formatTooltipValue, formatValue } from '@/lib/format-utils';
+import { formatTooltipValue } from '@/lib/format-utils';
 
-export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto';
+export type EquityAssetClass = 'equities' | 'commodities' | 'crypto' | 'volatility';
 
-interface DBChartProps {
+interface EquitiesChartProps {
     height?: number;
     className?: string;
+    onSelectionChange?: (assetClass: string, series: string) => void;
+    onDateRangeChange?: (startDate: string, endDate: string) => void;
 }
 
 interface ChartDataPoint {
@@ -16,7 +18,7 @@ interface ChartDataPoint {
     [key: string]: any;
 }
 
-const CHART_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
+const CHART_COLORS = ['#2563eb', '#dc2626'];
 
 const DECADE_COLORS = [
     { start: '1960-01-01', end: '1969-12-31', color: '#3b82f6', opacity: 0.05 },
@@ -45,22 +47,20 @@ const DATE_PRESETS: Array<
         { label: 'Custom', value: 'custom' },
     ];
 
-const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
-    { value: 'bonds', label: 'Bonds' },
+const ASSET_CLASSES: { value: EquityAssetClass; label: string }[] = [
+    { value: 'equities', label: 'Equities' },
     { value: 'commodities', label: 'Commodities' },
     { value: 'crypto', label: 'Crypto' },
-    { value: 'economic', label: 'Economic' },
-    { value: 'equities', label: 'Equities' },
-    { value: 'fx', label: 'Foreign Exchange' },
-    { value: 'moneysupply', label: 'Money Supply' },
     { value: 'volatility', label: 'Volatility' }
 ];
 
-export default function DBChart({
+export default function EquitiesChart({
     height = 400,
-    className = ''
-}: DBChartProps) {
-    const [assetClass, setAssetClass] = useState<AssetClass>('bonds');
+    className = '',
+    onSelectionChange,
+    onDateRangeChange
+}: EquitiesChartProps) {
+    const [assetClass, setAssetClass] = useState<EquityAssetClass>('equities');
     const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
@@ -72,15 +72,15 @@ export default function DBChart({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Spread/Ratio calculation state
-    const [calculationMode, setCalculationMode] = useState<'none' | 'spread' | 'ratio'>('none');
-    const [spreadAssetClass1, setSpreadAssetClass1] = useState<AssetClass>('economic');
-    const [spreadAssetClass2, setSpreadAssetClass2] = useState<AssetClass>('bonds');
-    const [spreadSeries1, setSpreadSeries1] = useState<string>('');
-    const [spreadSeries2, setSpreadSeries2] = useState<string>('');
-    const [availableSpreadSeries1, setAvailableSpreadSeries1] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
-    const [availableSpreadSeries2, setAvailableSpreadSeries2] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
-    const [spreadData, setSpreadData] = useState<ChartDataPoint[]>([]);
+    // Ratio calculation state
+    const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
+    const [assetClass1, setAssetClass1] = useState<EquityAssetClass>('equities');
+    const [assetClass2, setAssetClass2] = useState<EquityAssetClass>('equities');
+    const [series1, setSeries1] = useState<string>('');
+    const [series2, setSeries2] = useState<string>('');
+    const [availableSeries1, setAvailableSeries1] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [availableSeries2, setAvailableSeries2] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [ratioData, setRatioData] = useState<ChartDataPoint[]>([]);
 
     // Load available series when asset class changes
     useEffect(() => {
@@ -98,10 +98,11 @@ export default function DBChart({
                 }));
                 setAvailableSeries(seriesWithNames);
 
-                // Auto-select first series
+                // Auto-select S&P 500 (US/GSPC) if available, otherwise first series
                 if (seriesWithNames.length > 0) {
-                    setSelectedSeries(seriesWithNames[0].series_name);
-                    setSelectedUnits(seriesWithNames[0].units);
+                    const sp500 = seriesWithNames.find((s: { series_name: string; display_name: string; units?: string }) => s.series_name === 'US/GSPC');
+                    setSelectedSeries(sp500 ? sp500.series_name : seriesWithNames[0].series_name);
+                    setSelectedUnits(sp500 ? sp500.units : seriesWithNames[0].units);
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
@@ -112,11 +113,11 @@ export default function DBChart({
         loadSeries();
     }, [assetClass]);
 
-    // Load available series for spread calculation - Series 1
+    // Load available series for ratio calculation - Series 1
     useEffect(() => {
         const loadSeries = async () => {
             try {
-                const response = await fetch(`/api/data/${spreadAssetClass1}`);
+                const response = await fetch(`/api/data/${assetClass1}`);
                 if (!response.ok) {
                     throw new Error('Failed to load series list');
                 }
@@ -126,28 +127,28 @@ export default function DBChart({
                     display_name: s.display_name,
                     units: s.units
                 }));
-                setAvailableSpreadSeries1(seriesWithNames);
+                setAvailableSeries1(seriesWithNames);
 
                 // Auto-select first series
-                if (seriesWithNames.length > 0 && !spreadSeries1) {
-                    setSpreadSeries1(seriesWithNames[0].series_name);
+                if (seriesWithNames.length > 0 && !series1) {
+                    setSeries1(seriesWithNames[0].series_name);
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
-                setAvailableSpreadSeries1([]);
+                setAvailableSeries1([]);
             }
         };
 
-        if (calculationMode !== 'none') {
+        if (calculationMode === 'ratio') {
             loadSeries();
         }
-    }, [spreadAssetClass1, calculationMode]);
+    }, [assetClass1, calculationMode]);
 
-    // Load available series for spread calculation - Series 2
+    // Load available series for ratio calculation - Series 2
     useEffect(() => {
         const loadSeries = async () => {
             try {
-                const response = await fetch(`/api/data/${spreadAssetClass2}`);
+                const response = await fetch(`/api/data/${assetClass2}`);
                 if (!response.ok) {
                     throw new Error('Failed to load series list');
                 }
@@ -157,26 +158,26 @@ export default function DBChart({
                     display_name: s.display_name,
                     units: s.units
                 }));
-                setAvailableSpreadSeries2(seriesWithNames);
+                setAvailableSeries2(seriesWithNames);
 
                 // Auto-select first series
-                if (seriesWithNames.length > 0 && !spreadSeries2) {
-                    setSpreadSeries2(seriesWithNames[0].series_name);
+                if (seriesWithNames.length > 0 && !series2) {
+                    setSeries2(seriesWithNames[0].series_name);
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
-                setAvailableSpreadSeries2([]);
+                setAvailableSeries2([]);
             }
         };
 
-        if (calculationMode !== 'none') {
+        if (calculationMode === 'ratio') {
             loadSeries();
         }
-    }, [spreadAssetClass2, calculationMode]);
+    }, [assetClass2, calculationMode]);
 
     // Load data when series changes
     useEffect(() => {
-        if (!selectedSeries) return;
+        if (calculationMode !== 'single' || !selectedSeries) return;
 
         const loadData = async () => {
             try {
@@ -191,6 +192,11 @@ export default function DBChart({
 
                 const result = await response.json();
                 setData(result.data);
+
+                // Notify parent of selection change
+                if (onSelectionChange) {
+                    onSelectionChange(assetClass, selectedSeries);
+                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load data');
             } finally {
@@ -199,16 +205,74 @@ export default function DBChart({
         };
 
         loadData();
-    }, [assetClass, selectedSeries]);
+    }, [assetClass, selectedSeries, calculationMode, onSelectionChange]);
+
+    // Calculate ratio when in ratio mode
+    useEffect(() => {
+        if (calculationMode !== 'ratio' || !series1 || !series2 || !assetClass1 || !assetClass2) {
+            setRatioData([]);
+            return;
+        }
+
+        const loadRatioData = async () => {
+            try {
+                setLoading(true);
+
+                const [response1, response2] = await Promise.all([
+                    fetch(`/api/data/${assetClass1}?series=${encodeURIComponent(series1)}`),
+                    fetch(`/api/data/${assetClass2}?series=${encodeURIComponent(series2)}`)
+                ]);
+
+                if (!response1.ok || !response2.ok) {
+                    throw new Error('Failed to load data');
+                }
+
+                const [result1, result2] = await Promise.all([
+                    response1.json(),
+                    response2.json()
+                ]);
+
+                // Create a map of dates to values for series 2
+                const series2Map = new Map<string, number>();
+                result2.data.forEach((point: ChartDataPoint) => {
+                    series2Map.set(point.date, point.Value);
+                });
+
+                // Calculate ratio (series1 / series2)
+                const calculated = result1.data
+                    .map((point: ChartDataPoint) => {
+                        const value2 = series2Map.get(point.date);
+                        if (value2 === undefined || value2 === 0) return null;
+
+                        return {
+                            date: point.date,
+                            Value: point.Value / value2
+                        };
+                    })
+                    .filter((point: ChartDataPoint | null) => point !== null) as ChartDataPoint[];
+
+                setRatioData(calculated);
+                setSelectedUnits('ratio'); // Ratios are unitless
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to calculate ratio');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadRatioData();
+    }, [calculationMode, series1, series2, assetClass1, assetClass2]);
 
     // Filter data based on date range
     useEffect(() => {
-        if (data.length === 0) {
+        const sourceData = calculationMode === 'ratio' ? ratioData : data;
+
+        if (sourceData.length === 0) {
             setFilteredData([]);
             return;
         }
 
-        let filtered = [...data];
+        let filtered = [...sourceData];
 
         if (datePreset === 'all') {
             setFilteredData(filtered);
@@ -232,7 +296,6 @@ export default function DBChart({
             startDate = tenYearsAgo.toISOString().split('T')[0];
             endDate = now.toISOString().split('T')[0];
         } else {
-            // Decade preset
             const preset = DATE_PRESETS.find(p => p.value === datePreset);
             if (preset && 'start' in preset && preset.start && preset.end) {
                 startDate = preset.start;
@@ -248,85 +311,16 @@ export default function DBChart({
         }
 
         setFilteredData(filtered);
-    }, [data, datePreset, customStartDate, customEndDate]);
+    }, [data, ratioData, datePreset, customStartDate, customEndDate, calculationMode]);
 
-    // Calculate spread/ratio when calculation mode is enabled
+    // Notify parent of date range changes
     useEffect(() => {
-        if (calculationMode === 'none' || !spreadSeries1 || !spreadSeries2) {
-            setSpreadData([]);
-            return;
+        if (calculationMode === 'single' && filteredData.length > 0 && onDateRangeChange) {
+            const startDate = filteredData[0].date;
+            const endDate = filteredData[filteredData.length - 1].date;
+            onDateRangeChange(startDate, endDate);
         }
-
-        const loadCalculationData = async () => {
-            try {
-                setLoading(true);
-
-                // Load both series from their respective asset classes
-                const [response1, response2] = await Promise.all([
-                    fetch(`/api/data/${spreadAssetClass1}?series=${encodeURIComponent(spreadSeries1)}`),
-                    fetch(`/api/data/${spreadAssetClass2}?series=${encodeURIComponent(spreadSeries2)}`)
-                ]);
-
-                if (!response1.ok || !response2.ok) {
-                    throw new Error('Failed to load data');
-                }
-
-                const [result1, result2] = await Promise.all([
-                    response1.json(),
-                    response2.json()
-                ]);
-
-                // Get units for both series
-                const series1Units = availableSpreadSeries1.find(s => s.series_name === spreadSeries1)?.units;
-                const series2Units = availableSpreadSeries2.find(s => s.series_name === spreadSeries2)?.units;
-
-                // Determine result units
-                // For spreads: if both have same units, keep them; otherwise no units
-                // For ratios: result is unitless (ratio)
-                let resultUnits: string | undefined;
-                if (calculationMode === 'spread') {
-                    resultUnits = (series1Units === series2Units) ? series1Units : undefined;
-                } else {
-                    resultUnits = 'ratio';
-                }
-                setSelectedUnits(resultUnits);
-
-                // Create a map of dates to values for series 2
-                const series2Map = new Map<string, number>();
-                result2.data.forEach((point: ChartDataPoint) => {
-                    series2Map.set(point.date, point.Value);
-                });
-
-                // Calculate spread (series1 - series2) or ratio (series1 / series2)
-                const calculated = result1.data
-                    .map((point: ChartDataPoint) => {
-                        const value2 = series2Map.get(point.date);
-                        if (value2 === undefined) return null;
-
-                        let calculatedValue: number;
-                        if (calculationMode === 'spread') {
-                            calculatedValue = point.Value - value2;
-                        } else { // ratio
-                            calculatedValue = value2 !== 0 ? point.Value / value2 : 0;
-                        }
-
-                        return {
-                            date: point.date,
-                            Value: calculatedValue
-                        };
-                    })
-                    .filter((point: ChartDataPoint | null) => point !== null) as ChartDataPoint[];
-
-                setSpreadData(calculated);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : `Failed to calculate ${calculationMode}`);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadCalculationData();
-    }, [calculationMode, spreadSeries1, spreadSeries2, spreadAssetClass1, spreadAssetClass2, availableSpreadSeries1, availableSpreadSeries2]);
+    }, [filteredData, calculationMode, onDateRangeChange]);
 
     const renderContent = () => {
         if (loading) {
@@ -348,7 +342,7 @@ export default function DBChart({
             );
         }
 
-        if (data.length === 0 && spreadData.length === 0) {
+        if (data.length === 0) {
             return (
                 <div className="flex items-center justify-center" style={{ height }}>
                     <p className="text-muted-foreground">No data available</p>
@@ -356,24 +350,18 @@ export default function DBChart({
             );
         }
 
-        // Use calculated data if calculation mode is enabled, otherwise use regular data
-        const sourceData = calculationMode !== 'none' ? spreadData : data;
-        const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
-        const chartData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
-        const noDataInRange = datePreset !== 'all' && sourceFilteredData.length === 0;
+        const sourceData = calculationMode === 'ratio' ? ratioData : data;
+        const chartData = filteredData.length > 0 ? filteredData : sourceData;
+        const noDataInRange = datePreset !== 'all' && filteredData.length === 0;
 
-        // Get actual data range for decade bands
         const dataStartDate = chartData.length > 0 ? chartData[0].date : null;
         const dataEndDate = chartData.length > 0 ? chartData[chartData.length - 1].date : null;
 
-        // Filter decade colors to only show within data range
         const visibleDecades = dataStartDate && dataEndDate
             ? DECADE_COLORS.filter(decade => {
-                // Check if decade overlaps with data range
                 return decade.end >= dataStartDate && decade.start <= dataEndDate;
             }).map(decade => ({
                 ...decade,
-                // Clamp decade boundaries to data range
                 start: decade.start < dataStartDate ? dataStartDate : decade.start,
                 end: decade.end > dataEndDate ? dataEndDate : decade.end
             }))
@@ -390,7 +378,6 @@ export default function DBChart({
                 )}
                 <ResponsiveContainer width="100%" height={height}>
                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        {/* Decade background bands */}
                         {visibleDecades.map((decade, index) => (
                             <ReferenceArea
                                 key={index}
@@ -418,14 +405,7 @@ export default function DBChart({
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => {
-                                // For Y-axis, use compact formatting
-                                if (selectedUnits === 'billions') {
-                                    return `${(value / 1).toFixed(0)}B`;
-                                } else if (selectedUnits === 'millions') {
-                                    return `${(value / 1).toFixed(0)}M`;
-                                } else if (selectedUnits === 'percent') {
-                                    return `${value.toFixed(1)}%`;
-                                } else if (selectedUnits === 'index' || selectedUnits === 'usd') {
+                                if (selectedUnits === 'index' || selectedUnits === 'usd') {
                                     return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
                                 } else {
                                     return value.toFixed(2);
@@ -442,18 +422,16 @@ export default function DBChart({
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
-                        <Legend
-                            wrapperStyle={{ color: '#9ca3af' }}
-                        />
+                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
                         <Line
                             type="monotone"
                             dataKey="Value"
                             stroke={CHART_COLORS[0]}
                             strokeWidth={2}
                             dot={false}
-                            name={calculationMode !== 'none'
-                                ? `${availableSpreadSeries1.find(s => s.series_name === spreadSeries1)?.display_name || spreadSeries1} ${calculationMode === 'spread' ? '-' : '/'} ${availableSpreadSeries2.find(s => s.series_name === spreadSeries2)?.display_name || spreadSeries2}`
-                                : selectedSeries.replace('.csv', '').replace(/[-_]/g, ' ')
+                            name={calculationMode === 'ratio'
+                                ? `${availableSeries1.find(s => s.series_name === series1)?.display_name || series1} / ${availableSeries2.find(s => s.series_name === series2)?.display_name || series2}`
+                                : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
                             }
                         />
                     </LineChart>
@@ -466,29 +444,20 @@ export default function DBChart({
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Controls */}
             <div className="mb-6 space-y-4">
-                {/* Calculation Mode Selector */}
+                {/* Mode Selector */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <label className="text-sm font-medium text-card-foreground">
-                        Calculation Mode:
+                        Chart Mode:
                     </label>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => setCalculationMode('none')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'none'
+                            onClick={() => setCalculationMode('single')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'single'
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
                         >
                             Single Series
-                        </button>
-                        <button
-                            onClick={() => setCalculationMode('spread')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'spread'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Spread (S1 - S2)
                         </button>
                         <button
                             onClick={() => setCalculationMode('ratio')}
@@ -502,8 +471,8 @@ export default function DBChart({
                     </div>
                 </div>
 
-                {calculationMode !== 'none' ? (
-                    /* Spread Mode: Two Series Selectors with Asset Classes */
+                {calculationMode === 'ratio' ? (
+                    /* Ratio Mode: Two Series Selectors with Asset Classes */
                     <div className="space-y-4">
                         <div className="flex gap-4">
                             <div className="flex-1">
@@ -511,10 +480,10 @@ export default function DBChart({
                                     Asset Class 1
                                 </label>
                                 <select
-                                    value={spreadAssetClass1}
+                                    value={assetClass1}
                                     onChange={(e) => {
-                                        setSpreadAssetClass1(e.target.value as AssetClass);
-                                        setSpreadSeries1(''); // Reset series selection
+                                        setAssetClass1(e.target.value as EquityAssetClass);
+                                        setSeries1('');
                                     }}
                                     className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
@@ -530,12 +499,12 @@ export default function DBChart({
                                     Series 1
                                 </label>
                                 <select
-                                    value={spreadSeries1}
-                                    onChange={(e) => setSpreadSeries1(e.target.value)}
+                                    value={series1}
+                                    onChange={(e) => setSeries1(e.target.value)}
                                     className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                    disabled={availableSpreadSeries1.length === 0}
+                                    disabled={availableSeries1.length === 0}
                                 >
-                                    {availableSpreadSeries1.map(series => (
+                                    {availableSeries1.map(series => (
                                         <option key={series.series_name} value={series.series_name}>
                                             {series.display_name}
                                         </option>
@@ -549,10 +518,10 @@ export default function DBChart({
                                     Asset Class 2
                                 </label>
                                 <select
-                                    value={spreadAssetClass2}
+                                    value={assetClass2}
                                     onChange={(e) => {
-                                        setSpreadAssetClass2(e.target.value as AssetClass);
-                                        setSpreadSeries2(''); // Reset series selection
+                                        setAssetClass2(e.target.value as EquityAssetClass);
+                                        setSeries2('');
                                     }}
                                     className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                                 >
@@ -568,12 +537,12 @@ export default function DBChart({
                                     Series 2
                                 </label>
                                 <select
-                                    value={spreadSeries2}
-                                    onChange={(e) => setSpreadSeries2(e.target.value)}
+                                    value={series2}
+                                    onChange={(e) => setSeries2(e.target.value)}
                                     className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                    disabled={availableSpreadSeries2.length === 0}
+                                    disabled={availableSeries2.length === 0}
                                 >
-                                    {availableSpreadSeries2.map(series => (
+                                    {availableSeries2.map(series => (
                                         <option key={series.series_name} value={series.series_name}>
                                             {series.display_name}
                                         </option>
@@ -585,14 +554,13 @@ export default function DBChart({
                 ) : (
                     /* Single Series Mode: Asset Class and Series Selector */
                     <div className="flex gap-4">
-                        {/* Asset Class Selector */}
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-card-foreground mb-2">
                                 Asset Class
                             </label>
                             <select
                                 value={assetClass}
-                                onChange={(e) => setAssetClass(e.target.value as AssetClass)}
+                                onChange={(e) => setAssetClass(e.target.value as EquityAssetClass)}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
                                 {ASSET_CLASSES.map(ac => (
@@ -603,7 +571,6 @@ export default function DBChart({
                             </select>
                         </div>
 
-                        {/* Series Selector */}
                         <div className="flex-1">
                             <label className="block text-sm font-medium text-card-foreground mb-2">
                                 Time Series
@@ -648,7 +615,6 @@ export default function DBChart({
                         ))}
                     </div>
 
-                    {/* Custom Date Inputs */}
                     {datePreset === 'custom' && (
                         <div className="flex gap-3 mt-3">
                             <div className="flex-1">
@@ -674,23 +640,19 @@ export default function DBChart({
                 </div>
 
                 {/* Info */}
-                {data.length > 0 && (
+                {(data.length > 0 || ratioData.length > 0) && (
                     <div className="flex items-center justify-between text-sm">
                         <p className="text-muted-foreground">
-                            {filteredData.length > 0 ? filteredData.length : data.length} data points
-                            {filteredData.length > 0 && filteredData.length !== data.length && (
-                                <span className="text-xs ml-1">of {data.length} total</span>
-                            )}
-                            {datePreset !== 'all' && filteredData.length === 0 && (
-                                <span className="text-xs ml-1 text-yellow-600 dark:text-yellow-400">
-                                    (no data in range)
-                                </span>
-                            )}
+                            {filteredData.length > 0 ? filteredData.length : (calculationMode === 'ratio' ? ratioData.length : data.length)} data points
                         </p>
                         <p className="text-muted-foreground">
                             {filteredData.length > 0
                                 ? `${filteredData[0]?.date} to ${filteredData[filteredData.length - 1]?.date}`
-                                : `${data[0]?.date} to ${data[data.length - 1]?.date}`
+                                : calculationMode === 'ratio' && ratioData.length > 0
+                                    ? `${ratioData[0]?.date} to ${ratioData[ratioData.length - 1]?.date}`
+                                    : data.length > 0
+                                        ? `${data[0]?.date} to ${data[data.length - 1]?.date}`
+                                        : ''
                             }
                         </p>
                     </div>

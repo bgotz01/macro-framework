@@ -17,6 +17,9 @@ interface CSVRow {
 interface SeriesMetadata {
     displayName?: string;
     description?: string;
+    geography?: string;
+    frequency?: string;
+    units?: string;
 }
 
 interface MetadataFile {
@@ -121,8 +124,8 @@ async function importData() {
     `);
 
     const updateMetaStmt = db.prepare(`
-        INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, description, last_updated)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, description, geography, units, last_updated)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     let totalRows = 0;
@@ -198,6 +201,8 @@ async function importData() {
                     const metaEntry = metadata[assetClass]?.[seriesName];
                     const displayName = metaEntry?.displayName || seriesName.replace(/[-_]/g, ' ');
                     const description = metaEntry?.description || null;
+                    const geography = metaEntry?.geography || null;
+                    const units = metaEntry?.units || null;
 
                     // Update metadata
                     updateMetaStmt.run(
@@ -205,6 +210,8 @@ async function importData() {
                         seriesName,
                         displayName,
                         description,
+                        geography,
+                        units,
                         Date.now()
                     );
 

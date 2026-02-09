@@ -2,135 +2,264 @@
   "equities": {
     "US/SPX": {
       "displayName": "S&P 500",
-      "description": "S&P 500 Index"
+      "description": "S&P 500 Index",
+      "geography": "US",
+      "units": "index"
     },
     "US/GSPC": {
       "displayName": "S&P 500",
-      "description": "S&P 500 Index"
+      "description": "S&P 500 Index",
+      "geography": "US",
+      "units": "index"
     },
     "US/IXIC": {
       "displayName": "NASDAQ Composite",
-      "description": "NASDAQ Composite Index"
+      "description": "NASDAQ Composite Index",
+      "geography": "US",
+      "units": "index"
     },
     "US/RUT": {
       "displayName": "Russell 2000",
-      "description": "Russell 2000 Small Cap Index"
+      "description": "Russell 2000 Small Cap Index",
+      "geography": "US",
+      "units": "index"
     },
     "US/DJI": {
       "displayName": "Dow Jones",
-      "description": "Dow Jones Industrial Average"
+      "description": "Dow Jones Industrial Average",
+      "geography": "US",
+      "units": "index"
     },
     "DJI": {
-      "displayName": "Dow Jones",
-      "description": "Dow Jones Industrial Average"
+      "displayName": "Dow Jones (Historical)",
+      "description": "Dow Jones Industrial Average",
+      "geography": "US",
+      "units": "index"
     },
     "FTSE": {
       "displayName": "FTSE 100",
-      "description": "UK FTSE 100 Index"
+      "description": "UK FTSE 100 Index",
+      "geography": "UK",
+      "units": "index"
     },
     "GDAXI": {
       "displayName": "DAX",
-      "description": "German DAX Index"
+      "description": "German DAX Index",
+      "geography": "DE",
+      "units": "index"
     },
     "N225": {
       "displayName": "Nikkei 225",
-      "description": "Japan Nikkei 225 Index"
+      "description": "Japan Nikkei 225 Index",
+      "geography": "JP",
+      "units": "index"
     },
     "HSI": {
       "displayName": "Hang Seng",
-      "description": "Hong Kong Hang Seng Index"
+      "description": "Hong Kong Hang Seng Index",
+      "geography": "HK",
+      "units": "index"
     }
   },
   "commodities": {
     "GC=F": {
       "displayName": "Gold",
-      "description": "Gold Futures ($/oz)"
+      "description": "Gold Futures ($/oz)",
+      "units": "usd_per_oz"
     },
     "CL=F": {
       "displayName": "Crude Oil",
-      "description": "Crude Oil Futures ($/barrel)"
+      "description": "Crude Oil Futures ($/barrel)",
+      "units": "usd_per_barrel"
     },
     "SI=F": {
       "displayName": "Silver",
-      "description": "Silver Futures ($/oz)"
+      "description": "Silver Futures ($/oz)",
+      "units": "usd_per_oz"
     }
   },
   "fx": {
     "EURUSD": {
       "displayName": "EUR/USD",
-      "description": "Euro to US Dollar Exchange Rate"
+      "description": "Euro to US Dollar Exchange Rate",
+      "units": "exchange_rate"
     },
     "GBPUSD": {
       "displayName": "GBP/USD",
-      "description": "British Pound to US Dollar Exchange Rate"
+      "description": "British Pound to US Dollar Exchange Rate",
+      "units": "exchange_rate"
     },
     "USDJPY": {
       "displayName": "USD/JPY",
-      "description": "US Dollar to Japanese Yen Exchange Rate"
+      "description": "US Dollar to Japanese Yen Exchange Rate",
+      "units": "exchange_rate"
     }
   },
   "economic": {
     "CPI": {
       "displayName": "CPI (YoY %)",
-      "description": "Consumer Price Index Year-over-Year Change"
+      "description": "Consumer Price Index Year-over-Year Change",
+      "geography": "US",
+      "units": "percent"
     },
     "CPIAUCSL": {
       "displayName": "CPI Nominal",
-      "description": "Consumer Price Index for All Urban Consumers (Nominal Level)"
+      "description": "Consumer Price Index for All Urban Consumers (Nominal Level)",
+      "geography": "US",
+      "units": "index"
     },
     "ShillerPE": {
       "displayName": "Shiller P/E Ratio",
-      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)"
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)",
+      "geography": "US",
+      "units": "ratio"
     },
     "Shiller-PE": {
       "displayName": "Shiller P/E Ratio",
-      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)"
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)",
+      "geography": "US",
+      "units": "ratio"
+    },
+    "GFDEBTN": {
+      "displayName": "Total Public Debt",
+      "description": "US Total Public Debt (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "GFDEGDQ188S": {
+      "displayName": "Public Debt % GDP",
+      "description": "US Total Public Debt as % of GDP (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "percent"
+    },
+    "GDP": {
+      "displayName": "GDP",
+      "description": "US Gross Domestic Product (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "CMDEBT": {
+      "displayName": "Household Debt",
+      "description": "US Household Debt Outstanding (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "BCNSDODNS": {
+      "displayName": "Corporate Debt",
+      "description": "US Nonfinancial Corporate Business Debt Securities (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "A091RC1Q027SBEA": {
+      "displayName": "Federal Interest Payments",
+      "description": "US Federal Government Interest Payments (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "DPI": {
+      "displayName": "Disposable Personal Income",
+      "description": "US Disposable Personal Income (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "PCE": {
+      "displayName": "Personal Consumption",
+      "description": "US Personal Consumption Expenditures (Monthly)",
+      "geography": "US",
+      "frequency": "monthly",
+      "units": "billions"
+    },
+    "FYGFD": {
+      "displayName": "Gross Federal Debt",
+      "description": "US Federal Government Gross Debt",
+      "geography": "US",
+      "frequency": "annual",
+      "units": "billions"
+    },
+    "M1SL": {
+      "displayName": "M1 Money Supply",
+      "description": "US M1 Money Stock (Monthly)",
+      "geography": "US",
+      "frequency": "monthly",
+      "units": "billions"
+    },
+    "M2SL": {
+      "displayName": "M2 Money Supply",
+      "description": "US M2 Money Stock (Monthly)",
+      "geography": "US",
+      "frequency": "monthly",
+      "units": "billions"
     }
   },
   "bonds": {
     "US/FEDFUNDS": {
       "displayName": "Federal Funds Rate",
-      "description": "US Federal Funds Effective Rate"
+      "description": "US Federal Funds Effective Rate",
+      "geography": "US",
+      "units": "percent"
     },
     "US/US-2yr": {
       "displayName": "US 2-Year Yield",
-      "description": "US Treasury 2-Year Bond Yield"
+      "description": "US Treasury 2-Year Bond Yield",
+      "geography": "US",
+      "units": "percent"
     },
     "US/US-BankRate": {
       "displayName": "US Bank Rate",
-      "description": "US Federal Funds Rate"
+      "description": "US Federal Funds Rate",
+      "geography": "US",
+      "units": "percent"
     },
     "US/IRX": {
       "displayName": "US 3-Month Yield",
-      "description": "US Treasury 3-Month (13-Week) Bill Yield"
+      "description": "US Treasury 3-Month (13-Week) Bill Yield",
+      "geography": "US",
+      "units": "percent"
     },
     "US/FVX": {
       "displayName": "US 5-Year Yield",
-      "description": "US Treasury 5-Year Note Yield"
+      "description": "US Treasury 5-Year Note Yield",
+      "geography": "US",
+      "units": "percent"
     },
     "US/TNX": {
       "displayName": "US 10-Year Yield",
-      "description": "US Treasury 10-Year Note Yield"
+      "description": "US Treasury 10-Year Note Yield",
+      "geography": "US",
+      "units": "percent"
     },
     "US/TYX": {
       "displayName": "US 30-Year Yield",
-      "description": "US Treasury 30-Year Bond Yield"
+      "description": "US Treasury 30-Year Bond Yield",
+      "geography": "US",
+      "units": "percent"
     }
   },
   "volatility": {
     "VIX": {
       "displayName": "VIX",
-      "description": "CBOE Volatility Index (S&P 500 Implied Volatility)"
+      "description": "CBOE Volatility Index (S&P 500 Implied Volatility)",
+      "geography": "US",
+      "units": "index"
     }
   },
   "crypto": {
     "BTCUSD": {
       "displayName": "Bitcoin",
-      "description": "Bitcoin to US Dollar"
+      "description": "Bitcoin to US Dollar",
+      "units": "usd"
     },
     "ETHUSD": {
       "displayName": "Ethereum",
-      "description": "Ethereum to US Dollar"
+      "description": "Ethereum to US Dollar",
+      "units": "usd"
     }
   }
 }

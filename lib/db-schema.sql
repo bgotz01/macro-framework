@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS series_metadata (
   series_name TEXT NOT NULL,
   display_name TEXT,
   description TEXT,
+  geography TEXT,  -- Country/region code (e.g., 'US', 'UK', 'EU')
+  units TEXT,  -- Units of measurement (e.g., 'billions', 'millions', 'percent', 'index')
   source TEXT,
   last_updated INTEGER,  -- Unix timestamp
   PRIMARY KEY(asset_class, series_name)

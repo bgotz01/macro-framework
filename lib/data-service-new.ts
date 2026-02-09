@@ -69,7 +69,7 @@ export class DataServiceNew {
                 if (!dateKey) return;
 
                 if (!dateMap.has(dateKey)) {
-                    dateMap.set(dateKey, { [dateColumn]: dateKey });
+                    dateMap.set(dateKey, { date: dateKey, [dateColumn]: dateKey });
                 }
 
                 const combinedRow = dateMap.get(dateKey)!;
@@ -104,7 +104,7 @@ export class DataServiceNew {
     }
 
     // Get available datasets (for compatibility)
-    static async getAvailableDatasets(): Promise<{ category: string; files: string[] }[]> {
+    static async getAvailableDatasets(): Promise<{ category: string; files: SeriesInfo[] }[]> {
         const assetClasses = ['bonds', 'fx', 'equities', 'macro', 'moneysupply'];
 
         return Promise.all(
