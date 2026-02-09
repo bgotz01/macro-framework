@@ -16,6 +16,14 @@ const sidebarData: SidebarItem[] = [
         href: '/paradigm',
     },
     {
+        title: 'Matrix',
+        href: '/matrix',
+    },
+    {
+        title: 'Chart',
+        href: '/chart',
+    },
+    {
         title: 'Macro Data',
         href: '/macro-data',
         children: [
@@ -35,6 +43,17 @@ const sidebarData: SidebarItem[] = [
             { title: 'O1: Swing', href: '/framework/swing' },
             { title: 'O2: Signal', href: '/framework/signal' },
             { title: 'O3: Story', href: '/framework/story' },
+        ],
+    },
+    {
+        title: 'Cycles',
+        href: '/cycles',
+        children: [
+            { title: '12-Year Cycle', href: '/cycles/12-year' },
+            { title: '80-Year Cycle', href: '/cycles/80-year' },
+            { title: 'Debt Cycle', href: '/cycles/debt-cycle' },
+            { title: 'Credit Cycle', href: '/cycles/credit-cycle' },
+            { title: 'Business Cycle', href: '/cycles/business-cycle' },
         ],
     },
     {

@@ -1,4 +1,5 @@
 import MacroDashboard from '../../components/macro-dashboard';
+import LatestData from '../../components/latest-data';
 
 export default function MacroDataPage() {
     return (
@@ -16,10 +17,10 @@ export default function MacroDataPage() {
                 </p>
             </div>
 
-            {/* Interactive Dashboard */}
-            <div className="mb-16">
-                <MacroDashboard />
-            </div>
+            {/* Latest Data Component */}
+            <LatestData />
+
+
 
             <div className="grid lg:grid-cols-2 gap-8 mb-12">
                 {/* Countries Section */}

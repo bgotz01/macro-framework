@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 
-export type AssetClass = 'bonds' | 'fx' | 'equities' | 'macro' | 'moneysupply';
+export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto';
 
 interface DBChartProps {
     height?: number;
@@ -46,10 +46,13 @@ const DATE_PRESETS: Array<
 
 const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
     { value: 'bonds', label: 'Bonds' },
+    { value: 'commodities', label: 'Commodities' },
+    { value: 'crypto', label: 'Crypto' },
+    { value: 'economic', label: 'Economic' },
     { value: 'equities', label: 'Equities' },
     { value: 'fx', label: 'Foreign Exchange' },
-    { value: 'macro', label: 'Economic' },
-    { value: 'moneysupply', label: 'Money Supply' }
+    { value: 'moneysupply', label: 'Money Supply' },
+    { value: 'volatility', label: 'Volatility' }
 ];
 
 export default function DBChart({
@@ -67,10 +70,14 @@ export default function DBChart({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Spread calculation state
-    const [showSpread, setShowSpread] = useState(false);
+    // Spread/Ratio calculation state
+    const [calculationMode, setCalculationMode] = useState<'none' | 'spread' | 'ratio'>('none');
+    const [spreadAssetClass1, setSpreadAssetClass1] = useState<AssetClass>('economic');
+    const [spreadAssetClass2, setSpreadAssetClass2] = useState<AssetClass>('bonds');
     const [spreadSeries1, setSpreadSeries1] = useState<string>('');
     const [spreadSeries2, setSpreadSeries2] = useState<string>('');
+    const [availableSpreadSeries1, setAvailableSpreadSeries1] = useState<Array<{ series_name: string; display_name: string }>>([]);
+    const [availableSpreadSeries2, setAvailableSpreadSeries2] = useState<Array<{ series_name: string; display_name: string }>>([]);
     const [spreadData, setSpreadData] = useState<ChartDataPoint[]>([]);
 
     // Load available series when asset class changes
@@ -91,9 +98,6 @@ export default function DBChart({
                 // Auto-select first series
                 if (seriesWithNames.length > 0) {
                     setSelectedSeries(seriesWithNames[0].series_name);
-                    // Auto-select first two for spread
-                    setSpreadSeries1(seriesWithNames[0]?.series_name || '');
-                    setSpreadSeries2(seriesWithNames[1]?.series_name || '');
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
@@ -103,6 +107,66 @@ export default function DBChart({
 
         loadSeries();
     }, [assetClass]);
+
+    // Load available series for spread calculation - Series 1
+    useEffect(() => {
+        const loadSeries = async () => {
+            try {
+                const response = await fetch(`/api/data/${spreadAssetClass1}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load series list');
+                }
+                const result = await response.json();
+                const seriesWithNames = result.seriesInfo.map((s: any) => ({
+                    series_name: s.series_name,
+                    display_name: s.display_name
+                }));
+                setAvailableSpreadSeries1(seriesWithNames);
+
+                // Auto-select first series
+                if (seriesWithNames.length > 0 && !spreadSeries1) {
+                    setSpreadSeries1(seriesWithNames[0].series_name);
+                }
+            } catch (err) {
+                console.error('Error loading series:', err);
+                setAvailableSpreadSeries1([]);
+            }
+        };
+
+        if (calculationMode !== 'none') {
+            loadSeries();
+        }
+    }, [spreadAssetClass1, calculationMode]);
+
+    // Load available series for spread calculation - Series 2
+    useEffect(() => {
+        const loadSeries = async () => {
+            try {
+                const response = await fetch(`/api/data/${spreadAssetClass2}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load series list');
+                }
+                const result = await response.json();
+                const seriesWithNames = result.seriesInfo.map((s: any) => ({
+                    series_name: s.series_name,
+                    display_name: s.display_name
+                }));
+                setAvailableSpreadSeries2(seriesWithNames);
+
+                // Auto-select first series
+                if (seriesWithNames.length > 0 && !spreadSeries2) {
+                    setSpreadSeries2(seriesWithNames[0].series_name);
+                }
+            } catch (err) {
+                console.error('Error loading series:', err);
+                setAvailableSpreadSeries2([]);
+            }
+        };
+
+        if (calculationMode !== 'none') {
+            loadSeries();
+        }
+    }, [spreadAssetClass2, calculationMode]);
 
     // Load data when series changes
     useEffect(() => {
@@ -180,25 +244,25 @@ export default function DBChart({
         setFilteredData(filtered);
     }, [data, datePreset, customStartDate, customEndDate]);
 
-    // Calculate spread when spread mode is enabled
+    // Calculate spread/ratio when calculation mode is enabled
     useEffect(() => {
-        if (!showSpread || !spreadSeries1 || !spreadSeries2) {
+        if (calculationMode === 'none' || !spreadSeries1 || !spreadSeries2) {
             setSpreadData([]);
             return;
         }
 
-        const loadSpreadData = async () => {
+        const loadCalculationData = async () => {
             try {
                 setLoading(true);
 
-                // Load both series
+                // Load both series from their respective asset classes
                 const [response1, response2] = await Promise.all([
-                    fetch(`/api/data/${assetClass}?series=${encodeURIComponent(spreadSeries1)}`),
-                    fetch(`/api/data/${assetClass}?series=${encodeURIComponent(spreadSeries2)}`)
+                    fetch(`/api/data/${spreadAssetClass1}?series=${encodeURIComponent(spreadSeries1)}`),
+                    fetch(`/api/data/${spreadAssetClass2}?series=${encodeURIComponent(spreadSeries2)}`)
                 ]);
 
                 if (!response1.ok || !response2.ok) {
-                    throw new Error('Failed to load spread data');
+                    throw new Error('Failed to load data');
                 }
 
                 const [result1, result2] = await Promise.all([
@@ -212,28 +276,36 @@ export default function DBChart({
                     series2Map.set(point.date, point.Value);
                 });
 
-                // Calculate spread (series1 - series2)
-                const spread = result1.data
+                // Calculate spread (series1 - series2) or ratio (series1 / series2)
+                const calculated = result1.data
                     .map((point: ChartDataPoint) => {
                         const value2 = series2Map.get(point.date);
                         if (value2 === undefined) return null;
+
+                        let calculatedValue: number;
+                        if (calculationMode === 'spread') {
+                            calculatedValue = point.Value - value2;
+                        } else { // ratio
+                            calculatedValue = value2 !== 0 ? point.Value / value2 : 0;
+                        }
+
                         return {
                             date: point.date,
-                            Value: point.Value - value2
+                            Value: calculatedValue
                         };
                     })
                     .filter((point: ChartDataPoint | null) => point !== null) as ChartDataPoint[];
 
-                setSpreadData(spread);
+                setSpreadData(calculated);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to calculate spread');
+                setError(err instanceof Error ? err.message : `Failed to calculate ${calculationMode}`);
             } finally {
                 setLoading(false);
             }
         };
 
-        loadSpreadData();
-    }, [showSpread, spreadSeries1, spreadSeries2, assetClass]);
+        loadCalculationData();
+    }, [calculationMode, spreadSeries1, spreadSeries2, spreadAssetClass1, spreadAssetClass2]);
 
     const renderContent = () => {
         if (loading) {
@@ -263,9 +335,9 @@ export default function DBChart({
             );
         }
 
-        // Use spread data if spread mode is enabled, otherwise use regular data
-        const sourceData = showSpread ? spreadData : data;
-        const sourceFilteredData = showSpread ? spreadData : filteredData;
+        // Use calculated data if calculation mode is enabled, otherwise use regular data
+        const sourceData = calculationMode !== 'none' ? spreadData : data;
+        const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
         const chartData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
         const noDataInRange = datePreset !== 'all' && sourceFilteredData.length === 0;
 
@@ -343,8 +415,8 @@ export default function DBChart({
                             stroke={CHART_COLORS[0]}
                             strokeWidth={2}
                             dot={false}
-                            name={showSpread
-                                ? `${availableSeries.find(s => s.series_name === spreadSeries1)?.display_name || spreadSeries1} - ${availableSeries.find(s => s.series_name === spreadSeries2)?.display_name || spreadSeries2}`
+                            name={calculationMode !== 'none'
+                                ? `${availableSpreadSeries1.find(s => s.series_name === spreadSeries1)?.display_name || spreadSeries1} ${calculationMode === 'spread' ? '-' : '/'} ${availableSpreadSeries2.find(s => s.series_name === spreadSeries2)?.display_name || spreadSeries2}`
                                 : selectedSeries.replace('.csv', '').replace(/[-_]/g, ' ')
                             }
                         />
@@ -358,60 +430,124 @@ export default function DBChart({
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Controls */}
             <div className="mb-6 space-y-4">
-                {/* Spread Mode Toggle */}
+                {/* Calculation Mode Selector */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <input
-                        type="checkbox"
-                        id="spread-mode"
-                        checked={showSpread}
-                        onChange={(e) => setShowSpread(e.target.checked)}
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
-                    />
-                    <label htmlFor="spread-mode" className="text-sm font-medium text-card-foreground cursor-pointer">
-                        Calculate Spread (Series 1 - Series 2)
+                    <label className="text-sm font-medium text-card-foreground">
+                        Calculation Mode:
                     </label>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCalculationMode('none')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'none'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                        >
+                            Single Series
+                        </button>
+                        <button
+                            onClick={() => setCalculationMode('spread')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'spread'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                        >
+                            Spread (S1 - S2)
+                        </button>
+                        <button
+                            onClick={() => setCalculationMode('ratio')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'ratio'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                        >
+                            Ratio (S1 / S2)
+                        </button>
+                    </div>
                 </div>
 
-                {showSpread ? (
-                    /* Spread Mode: Two Series Selectors */
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Series 1
-                            </label>
-                            <select
-                                value={spreadSeries1}
-                                onChange={(e) => setSpreadSeries1(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                disabled={availableSeries.length === 0}
-                            >
-                                {availableSeries.map(series => (
-                                    <option key={series.series_name} value={series.series_name}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
-                            </select>
+                {calculationMode !== 'none' ? (
+                    /* Spread Mode: Two Series Selectors with Asset Classes */
+                    <div className="space-y-4">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Asset Class 1
+                                </label>
+                                <select
+                                    value={spreadAssetClass1}
+                                    onChange={(e) => {
+                                        setSpreadAssetClass1(e.target.value as AssetClass);
+                                        setSpreadSeries1(''); // Reset series selection
+                                    }}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                    {ASSET_CLASSES.map(ac => (
+                                        <option key={ac.value} value={ac.value}>
+                                            {ac.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Series 1
+                                </label>
+                                <select
+                                    value={spreadSeries1}
+                                    onChange={(e) => setSpreadSeries1(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    disabled={availableSpreadSeries1.length === 0}
+                                >
+                                    {availableSpreadSeries1.map(series => (
+                                        <option key={series.series_name} value={series.series_name}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Series 2
-                            </label>
-                            <select
-                                value={spreadSeries2}
-                                onChange={(e) => setSpreadSeries2(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                disabled={availableSeries.length === 0}
-                            >
-                                {availableSeries.map(series => (
-                                    <option key={series.series_name} value={series.series_name}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Asset Class 2
+                                </label>
+                                <select
+                                    value={spreadAssetClass2}
+                                    onChange={(e) => {
+                                        setSpreadAssetClass2(e.target.value as AssetClass);
+                                        setSpreadSeries2(''); // Reset series selection
+                                    }}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                    {ASSET_CLASSES.map(ac => (
+                                        <option key={ac.value} value={ac.value}>
+                                            {ac.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Series 2
+                                </label>
+                                <select
+                                    value={spreadSeries2}
+                                    onChange={(e) => setSpreadSeries2(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    disabled={availableSpreadSeries2.length === 0}
+                                >
+                                    {availableSpreadSeries2.map(series => (
+                                        <option key={series.series_name} value={series.series_name}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
                 ) : (
-                    /* Normal Mode: Asset Class and Series Selector */
+                    /* Single Series Mode: Asset Class and Series Selector */
                     <div className="flex gap-4">
                         {/* Asset Class Selector */}
                         <div className="flex-1">

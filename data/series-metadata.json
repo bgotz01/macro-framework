@@ -70,6 +70,14 @@
     }
   },
   "economic": {
+    "CPI": {
+      "displayName": "CPI (YoY %)",
+      "description": "Consumer Price Index Year-over-Year Change"
+    },
+    "CPIAUCSL": {
+      "displayName": "CPI Nominal",
+      "description": "Consumer Price Index for All Urban Consumers (Nominal Level)"
+    },
     "ShillerPE": {
       "displayName": "Shiller P/E Ratio",
       "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)"
@@ -80,6 +88,10 @@
     }
   },
   "bonds": {
+    "US/FEDFUNDS": {
+      "displayName": "Federal Funds Rate",
+      "description": "US Federal Funds Effective Rate"
+    },
     "US/US-2yr": {
       "displayName": "US 2-Year Yield",
       "description": "US Treasury 2-Year Bond Yield"
@@ -103,6 +115,22 @@
     "US/TYX": {
       "displayName": "US 30-Year Yield",
       "description": "US Treasury 30-Year Bond Yield"
+    }
+  },
+  "volatility": {
+    "VIX": {
+      "displayName": "VIX",
+      "description": "CBOE Volatility Index (S&P 500 Implied Volatility)"
+    }
+  },
+  "crypto": {
+    "BTCUSD": {
+      "displayName": "Bitcoin",
+      "description": "Bitcoin to US Dollar"
+    },
+    "ETHUSD": {
+      "displayName": "Ethereum",
+      "description": "Ethereum to US Dollar"
     }
   }
 }

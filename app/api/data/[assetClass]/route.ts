@@ -28,7 +28,10 @@ export async function GET(
         }
 
         // Load specific series
-        const data = await DataServiceNew.loadCSV(`${assetClass}/${series}`);
+        const columnsParam = searchParams.get('columns');
+        const columns = columnsParam ? columnsParam.split(',') : undefined;
+
+        const data = await DataServiceNew.loadCSV(`${assetClass}/${series}`, columns);
         return NextResponse.json(data, {
             headers: {
                 'Cache-Control': 'no-store, max-age=0',

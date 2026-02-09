@@ -1,14 +1,6 @@
 import RegimeMatrix from '../../components/regime-matrix';
-
-// Current market values (hardcoded for now)
-const CURRENT_VALUES = {
-    inflation: 2.9, // CPI YoY %
-    bondYieldNominal: 4.5, // 10Y Treasury %
-    bondYieldReal: 1.6, // 10Y - inflation
-    yieldCurve: 0.3, // 10Y - 2Y spread
-    equityPE: 21, // S&P 500 P/E
-    vix: 16, // VIX level
-};
+import CompactRegimeMatrix from '../../components/compact-regime-matrix';
+import { DataServiceNew } from '@/lib/data-service-new';
 
 // Configurable absolute levels for each matrix
 const LEVELS = {
@@ -41,10 +33,171 @@ const LEVELS = {
         low: { max: 15, label: '< 15' },
         mid: { min: 15, max: 25, label: '15 – 25' },
         high: { min: 25, label: '> 25' }
+    },
+    fedFunds: {
+        low: { max: 2, label: '< 2%', description: 'Accommodative' },
+        mid: { min: 2, max: 4, label: '2% – 4%', description: 'Neutral' },
+        high: { min: 4, label: '> 4%', description: 'Restrictive' }
     }
 };
 
-export default function MatrixPage() {
+async function getLatestValue(assetClass: string, seriesName: string): Promise<{ value: number | null; date: string | null; timestamp: number | null }> {
+    try {
+        const data = await DataServiceNew.loadCSV(`${assetClass}/${seriesName}`);
+        if (data.data && data.data.length > 0) {
+            const latest = data.data[data.data.length - 1];
+            const columns = Object.keys(latest).filter(k => k !== 'date');
+            const value = columns.length > 0 ? latest[columns[0]] : null;
+            const dateStr = latest.date as string;
+            const timestamp = new Date(dateStr).getTime();
+            return {
+                value: typeof value === 'number' ? value : null,
+                date: dateStr,
+                timestamp: timestamp
+            };
+        }
+        return { value: null, date: null, timestamp: null };
+    } catch (error) {
+        console.error(`Error fetching ${assetClass}/${seriesName}:`, error);
+        return { value: null, date: null, timestamp: null };
+    }
+}
+
+async function getLatestMA12(assetClass: string, seriesName: string): Promise<{ value: number | null; date: string | null }> {
+    try {
+        const Database = (await import('better-sqlite3')).default;
+        const path = await import('path');
+        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
+        const db = new Database(dbPath, { readonly: true });
+
+        // Try MA12 first (monthly data), then MA252 (daily data)
+        const query = `
+            SELECT value, date, column_name
+            FROM time_series
+            WHERE asset_class = ? AND series_name = ? AND (column_name = 'Value_MA12' OR column_name = 'Value_MA252')
+            ORDER BY date DESC
+            LIMIT 1
+        `;
+
+        const result = db.prepare(query).get(assetClass, seriesName) as { value: number; date: number; column_name: string } | undefined;
+        db.close();
+
+        if (result) {
+            const dateStr = new Date(result.date).toISOString().split('T')[0];
+            return { value: result.value, date: dateStr };
+        }
+        return { value: null, date: null };
+    } catch (error) {
+        console.error(`Error fetching MA for ${assetClass}/${seriesName}:`, error);
+        return { value: null, date: null };
+    }
+}
+
+async function getValueMonthsAgo(assetClass: string, seriesName: string, monthsAgo: number): Promise<number | null> {
+    try {
+        const data = await DataServiceNew.loadCSV(`${assetClass}/${seriesName}`);
+        if (data.data && data.data.length > 0) {
+            // Calculate target date (monthsAgo months back from latest)
+            const latestDate = new Date(data.data[data.data.length - 1].date as string);
+            const targetDate = new Date(latestDate);
+            targetDate.setMonth(targetDate.getMonth() - monthsAgo);
+            const targetYearMonth = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+
+            // Find closest match
+            const matchingPoints = data.data.filter((point: any) =>
+                (point.date as string).startsWith(targetYearMonth)
+            );
+
+            if (matchingPoints.length > 0) {
+                const point = matchingPoints[matchingPoints.length - 1];
+                const columns = Object.keys(point).filter(k => k !== 'date');
+                const value = columns.length > 0 ? point[columns[0]] : null;
+                return typeof value === 'number' ? value : null;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error(`Error fetching ${assetClass}/${seriesName} ${monthsAgo}mo ago:`, error);
+        return null;
+    }
+}
+
+function calculateTrend(current: number | null, ma12: number | null, threshold: number): 'falling' | 'stable' | 'rising' {
+    if (current === null || ma12 === null) return 'stable';
+
+    const change = current - ma12;
+
+    if (Math.abs(change) < threshold) return 'stable';
+    return change > 0 ? 'rising' : 'falling';
+}
+
+
+export default async function MatrixPage() {
+    // Fetch all data server-side
+    const [cpi, tenYear, twoYear, shillerPE, vix, fedFunds] = await Promise.all([
+        getLatestValue('economic', 'CPI'),
+        getLatestValue('bonds', 'US/TNX'),
+        getLatestValue('bonds', 'US/US-2yr'),
+        getLatestValue('economic', 'Shiller-PE'),
+        getLatestValue('volatility', 'VIX'),
+        getLatestValue('economic', 'US/FEDFUNDS'),
+    ]);
+
+    // Fetch 1-year moving averages (MA12)
+    const [cpiMA12, tenYearMA12, twoYearMA12, peMA12, vixMA12, fedFundsMA12] = await Promise.all([
+        getLatestMA12('economic', 'CPI'),
+        getLatestMA12('bonds', 'US/TNX'),
+        getLatestMA12('bonds', 'US/US-2yr'),
+        getLatestMA12('economic', 'Shiller-PE'),
+        getLatestMA12('volatility', 'VIX'),
+        getLatestMA12('economic', 'US/FEDFUNDS'),
+    ]);
+
+    const currentValues = {
+        inflation: {
+            value: cpi.value,
+            date: cpi.date,
+            ma12: cpiMA12.value,
+            ma12Date: cpiMA12.date
+        },
+        bondYieldNominal: {
+            value: tenYear.value,
+            date: tenYear.date,
+            ma12: tenYearMA12.value,
+            ma12Date: tenYearMA12.date
+        },
+        bondYieldReal: {
+            value: tenYear.value !== null && cpi.value !== null ? tenYear.value - cpi.value : null,
+            date: tenYear.date,
+            ma12: tenYearMA12.value !== null && cpiMA12.value !== null ? tenYearMA12.value - cpiMA12.value : null,
+            ma12Date: tenYearMA12.date // Use 10Y date as reference
+        },
+        yieldCurve: {
+            value: tenYear.value !== null && twoYear.value !== null ? tenYear.value - twoYear.value : null,
+            date: tenYear.date,
+            ma12: tenYearMA12.value !== null && twoYearMA12.value !== null ? tenYearMA12.value - twoYearMA12.value : null,
+            ma12Date: tenYearMA12.date // Use 10Y date as reference
+        },
+        equityPE: {
+            value: shillerPE.value,
+            date: shillerPE.date,
+            ma12: peMA12.value,
+            ma12Date: peMA12.date
+        },
+        vix: {
+            value: vix.value,
+            date: vix.date,
+            ma12: vixMA12.value,
+            ma12Date: vixMA12.date
+        },
+        fedFunds: {
+            value: fedFunds.value,
+            date: fedFunds.date,
+            ma12: fedFundsMA12.value,
+            ma12Date: fedFundsMA12.date
+        },
+    };
+
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
@@ -58,6 +211,22 @@ export default function MatrixPage() {
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                     A systematic approach to classifying market regimes through constraints and expectations
                 </p>
+
+                {/* Quick Links */}
+                <div className="mt-8 flex justify-center gap-4">
+                    <a
+                        href="/matrix/chart"
+                        className="px-6 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-all duration-200 border border-primary/20"
+                    >
+                        📊 Interactive Charts
+                    </a>
+                    <a
+                        href="/matrix/decades"
+                        className="px-6 py-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-medium transition-all duration-200 border border-purple-500/20"
+                    >
+                        📅 Decade-End Levels
+                    </a>
+                </div>
             </div>
 
             {/* Conceptual Architecture */}
@@ -168,8 +337,11 @@ export default function MatrixPage() {
                         { label: 'Inflation shock' },
                     ],
                 }}
-                currentValue={CURRENT_VALUES.inflation}
-                currentTrend="stable"
+                currentValue={currentValues.inflation.value ?? undefined}
+                currentDate={currentValues.inflation.date ?? undefined}
+                ma12={currentValues.inflation.ma12 ?? undefined}
+                ma12Date={currentValues.inflation.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.inflation.value, currentValues.inflation.ma12, 0.2)}
                 levelThresholds={{ low: 3, mid: 6 }}
             />
 
@@ -198,8 +370,11 @@ export default function MatrixPage() {
                         { label: 'Policy accident risk' },
                     ],
                 }}
-                currentValue={CURRENT_VALUES.bondYieldNominal}
-                currentTrend="stable"
+                currentValue={currentValues.bondYieldNominal.value ?? undefined}
+                currentDate={currentValues.bondYieldNominal.date ?? undefined}
+                ma12={currentValues.bondYieldNominal.ma12 ?? undefined}
+                ma12Date={currentValues.bondYieldNominal.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.bondYieldNominal.value, currentValues.bondYieldNominal.ma12, 0.2)}
                 levelThresholds={{ low: 2, mid: 5 }}
             />
 
@@ -229,13 +404,50 @@ export default function MatrixPage() {
                     ],
                 }}
                 insight="Real yields below zero = financial repression. Above 2% = restrictive policy."
-                currentValue={CURRENT_VALUES.bondYieldReal}
-                currentTrend="stable"
+                currentValue={currentValues.bondYieldReal.value ?? undefined}
+                currentDate={currentValues.bondYieldReal.date ?? undefined}
+                ma12={currentValues.bondYieldReal.ma12 ?? undefined}
+                ma12Date={currentValues.bondYieldReal.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.bondYieldReal.value, currentValues.bondYieldReal.ma12, 0.2)}
                 levelThresholds={{ low: 0, mid: 2 }}
             />
 
             <RegimeMatrix
-                title="4. Yield Curve Matrix"
+                title="4. Fed Funds Rate Matrix"
+                subtitle="Federal Funds Rate — Policy stance and overnight rate"
+                levels={[
+                    { label: 'LOW', value: LEVELS.fedFunds.low.label, description: LEVELS.fedFunds.low.description, color: 'green' },
+                    { label: 'MID', value: LEVELS.fedFunds.mid.label, description: LEVELS.fedFunds.mid.description, color: 'yellow' },
+                    { label: 'HIGH', value: LEVELS.fedFunds.high.label, description: LEVELS.fedFunds.high.description, color: 'red' },
+                ]}
+                cells={{
+                    falling: [
+                        { label: 'Easing cycle' },
+                        { label: 'Dovish pivot' },
+                        { label: 'Emergency cuts' },
+                    ],
+                    stable: [
+                        { label: 'Accommodative hold' },
+                        { label: 'Neutral stance' },
+                        { label: 'Higher for longer' },
+                    ],
+                    rising: [
+                        { label: 'Liftoff' },
+                        { label: 'Tightening cycle' },
+                        { label: 'Inflation fight' },
+                    ],
+                }}
+                insight="Fed Funds below 2% = accommodative. Above 4% = restrictive. Direction signals policy intent."
+                currentValue={currentValues.fedFunds.value ?? undefined}
+                currentDate={currentValues.fedFunds.date ?? undefined}
+                ma12={currentValues.fedFunds.ma12 ?? undefined}
+                ma12Date={currentValues.fedFunds.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.fedFunds.value, currentValues.fedFunds.ma12, 0.2)}
+                levelThresholds={{ low: 2, mid: 4 }}
+            />
+
+            <RegimeMatrix
+                title="5. Yield Curve Matrix"
                 subtitle="10Y − 2Y spread — Term premium and recession signal"
                 levels={[
                     { label: 'INVERTED', value: LEVELS.yieldCurve.inverted.label, description: LEVELS.yieldCurve.inverted.description, color: 'red' },
@@ -260,13 +472,16 @@ export default function MatrixPage() {
                     ],
                 }}
                 insight="Inversion (negative spread) historically precedes recessions. Steepening after inversion signals recovery."
-                currentValue={CURRENT_VALUES.yieldCurve}
-                currentTrend="stable"
+                currentValue={currentValues.yieldCurve.value ?? undefined}
+                currentDate={currentValues.yieldCurve.date ?? undefined}
+                ma12={currentValues.yieldCurve.ma12 ?? undefined}
+                ma12Date={currentValues.yieldCurve.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.yieldCurve.value, currentValues.yieldCurve.ma12, 0.1)}
                 levelThresholds={{ low: -0.5, mid: 0.5 }}
             />
 
             <RegimeMatrix
-                title="5. Equity Valuation Matrix"
+                title="6. Equity Valuation Matrix"
                 subtitle="P/E, ERP, CAPE — Valuation metrics (not price)"
                 levels={[
                     { label: 'CHEAP', value: LEVELS.equityPE.cheap.label, color: 'green' },
@@ -291,14 +506,17 @@ export default function MatrixPage() {
                     ],
                 }}
                 insight="High & rising ≠ healthy. High & stable is often the most dangerous state."
-                currentValue={CURRENT_VALUES.equityPE}
-                currentTrend="stable"
+                currentValue={currentValues.equityPE.value ?? undefined}
+                currentDate={currentValues.equityPE.date ?? undefined}
+                ma12={currentValues.equityPE.ma12 ?? undefined}
+                ma12Date={currentValues.equityPE.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.equityPE.value, currentValues.equityPE.ma12, 1.0)}
                 levelThresholds={{ low: 15, mid: 20 }}
                 valueFormat="number"
             />
 
             <RegimeMatrix
-                title="6. VIX Matrix"
+                title="7. VIX Matrix"
                 subtitle="Volatility / Fear Premium — Price of optionality"
                 levels={[
                     { label: 'LOW', value: LEVELS.vix.low.label, color: 'green' },
@@ -322,11 +540,34 @@ export default function MatrixPage() {
                         { label: 'Crisis' },
                     ],
                 }}
-                currentValue={CURRENT_VALUES.vix}
-                currentTrend="stable"
+                currentValue={currentValues.vix.value ?? undefined}
+                currentDate={currentValues.vix.date ?? undefined}
+                ma12={currentValues.vix.ma12 ?? undefined}
+                ma12Date={currentValues.vix.ma12Date ?? undefined}
+                currentTrend={calculateTrend(currentValues.vix.value, currentValues.vix.ma12, 2.0)}
                 levelThresholds={{ low: 15, mid: 25 }}
                 valueFormat="number"
             />
+
+            {/* Compact Matrix Test */}
+            <div className="mt-16 pt-16 border-t border-border">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold mb-2">Compact View (Test)</h2>
+                    <p className="text-sm text-muted-foreground">
+                        A condensed view with historical date selection
+                    </p>
+                </div>
+                <CompactRegimeMatrix
+                    initialValues={{
+                        inflation: currentValues.inflation.value,
+                        bondYieldNominal: currentValues.bondYieldNominal.value,
+                        bondYieldReal: currentValues.bondYieldReal.value,
+                        yieldCurve: currentValues.yieldCurve.value,
+                        equityPE: currentValues.equityPE.value,
+                        vix: currentValues.vix.value,
+                    }}
+                />
+            </div>
         </div>
     );
 }

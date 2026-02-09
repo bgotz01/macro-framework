@@ -20,6 +20,9 @@ interface RegimeMatrixProps {
     };
     insight?: string;
     currentValue?: number;
+    currentDate?: string;
+    ma12?: number; // 1-year moving average
+    ma12Date?: string; // Date of the MA12 value
     currentTrend?: 'falling' | 'stable' | 'rising';
     levelThresholds?: { low: number; mid: number };
     valueFormat?: 'percentage' | 'number'; // Add format option
@@ -38,6 +41,9 @@ export default function RegimeMatrix({
     cells,
     insight,
     currentValue,
+    currentDate,
+    ma12,
+    ma12Date,
     currentTrend,
     levelThresholds,
     valueFormat = 'percentage' // Default to percentage
@@ -62,20 +68,97 @@ export default function RegimeMatrix({
         return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
     };
 
+    // Get level label
+    const getLevelLabel = () => {
+        if (currentLevelIndex === 0) return levels[0].label;
+        if (currentLevelIndex === 1) return levels[1].label;
+        if (currentLevelIndex === 2) return levels[2].label;
+        return 'UNKNOWN';
+    };
+
+    // Get direction label
+    const getDirectionLabel = () => {
+        if (currentTrend === 'falling') return 'FALLING ↓';
+        if (currentTrend === 'rising') return 'RISING ↑';
+        return 'STABLE →';
+    };
+
+    // Get level color
+    const getLevelColor = () => {
+        if (currentLevelIndex === -1) return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+        return colorClasses[levels[currentLevelIndex].color];
+    };
+
+    // Get direction color
+    const getDirectionColor = () => {
+        if (currentTrend === 'falling') return 'bg-red-100 dark:bg-red-950 text-red-900 dark:text-red-100';
+        if (currentTrend === 'rising') return 'bg-green-100 dark:bg-green-950 text-green-900 dark:text-green-100';
+        return 'bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-100';
+    };
+
     return (
         <div className="mb-12">
             <div className="mb-4">
                 <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                         <h2 className="text-2xl font-bold mb-2">{title}</h2>
-                        <p className="text-sm text-muted-foreground">{subtitle}</p>
+                        <p className="text-sm text-muted-foreground mb-3">{subtitle}</p>
+
+                        {/* Diagnosis */}
+                        {currentValue !== undefined && currentLevelIndex !== -1 && (
+                            <div className="flex gap-3 items-center">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-muted-foreground">Level:</span>
+                                    <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor()}`}>
+                                        {getLevelLabel()}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-muted-foreground">Direction:</span>
+                                    <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getDirectionColor()}`}>
+                                        {getDirectionLabel()}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     {currentValue !== undefined && (
-                        <div className="text-right">
-                            <div className="text-xs text-muted-foreground mb-1">Current</div>
-                            <div className="text-2xl font-bold text-primary">
-                                {formatValue(currentValue)}
+                        <div className="flex gap-3">
+                            {/* Latest */}
+                            <div className="text-center px-6 py-4 rounded-xl bg-primary/10 border-2 border-primary/30">
+                                <div className="text-xs font-semibold text-muted-foreground mb-1">Latest</div>
+                                <div className="text-3xl font-bold text-primary">
+                                    {formatValue(currentValue)}
+                                </div>
+                                {currentDate && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        {new Date(currentDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                    </div>
+                                )}
                             </div>
+
+                            {/* 1-Year Moving Average */}
+                            {ma12 !== undefined && ma12 !== null && (
+                                <div className="text-center px-6 py-4 rounded-xl bg-purple-50 dark:bg-purple-950/30 border-2 border-purple-300 dark:border-purple-700">
+                                    <div className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">MA 1yr</div>
+                                    <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+                                        {formatValue(ma12)}
+                                    </div>
+                                    {ma12Date && (
+                                        <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                                            {new Date(ma12Date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                        </div>
+                                    )}
+                                    <div className="text-sm font-semibold text-purple-600 dark:text-purple-400 mt-1">
+                                        {currentValue !== undefined && (
+                                            <span className={currentValue > ma12 ? 'text-green-600 dark:text-green-400' : currentValue < ma12 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}>
+                                                {currentValue > ma12 ? '↑' : currentValue < ma12 ? '↓' : '→'}
+                                                {' '}{Math.abs(currentValue - ma12).toFixed(1)}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

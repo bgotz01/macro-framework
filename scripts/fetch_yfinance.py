@@ -16,7 +16,7 @@ import os
 # ============================================================================
 
 # Ticker symbol (e.g., '^GSPC' for S&P 500, 'AAPL' for Apple, '^TNX' for 10-year Treasury)
-TICKER = "SI=F"
+TICKER = "^VIX"
 
 # Asset class and country for organizing the output
 # This determines the folder structure: data/{ASSET_CLASS}/{COUNTRY}/

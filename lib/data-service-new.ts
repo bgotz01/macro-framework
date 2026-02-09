@@ -23,13 +23,13 @@ export class DataServiceNew {
     }
 
     // Load a single dataset
-    static async loadCSV(filePath: string): Promise<ChartData> {
+    static async loadCSV(filePath: string, columns?: string[]): Promise<ChartData> {
         // Split path: bonds/US/US-10yr.csv -> assetClass=bonds, seriesName=US/US-10yr
         const parts = filePath.split('/');
         const assetClass = parts[0];
         const seriesName = parts.slice(1).join('/').replace('.csv', '');
 
-        const data = dbService.loadSeries(assetClass, seriesName);
+        const data = dbService.loadSeries(assetClass, seriesName, columns);
 
         // Convert timestamps to ISO date strings for charts
         return {
