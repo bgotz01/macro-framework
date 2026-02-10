@@ -48,7 +48,7 @@ async function calculateMonthlyAverages() {
         const monthlySeries = [
             { asset_class: 'economic', series_name: 'CPI' },
             { asset_class: 'economic', series_name: 'CPINominal' },
-            { asset_class: 'economic', series_name: 'Shiller-PE' },
+            { asset_class: 'valuations', series_name: 'Shiller-PE' },
         ];
 
         // Prepare insert statement

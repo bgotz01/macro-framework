@@ -1,4 +1,30 @@
 {
+  "valuations": {
+    "Shiller-PE": {
+      "displayName": "Shiller P/E Ratio",
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)",
+      "geography": "US",
+      "units": "ratio"
+    },
+    "SP500-PE": {
+      "displayName": "S&P 500 P/E Ratio",
+      "description": "S&P 500 Price-to-Earnings Ratio (Trailing 12 Months)",
+      "geography": "US",
+      "units": "ratio"
+    },
+    "SP500-Price": {
+      "displayName": "S&P 500 Price",
+      "description": "S&P 500 Index Price (for valuation calculations)",
+      "geography": "US",
+      "units": "index"
+    },
+    "SP500-EPS": {
+      "displayName": "S&P 500 EPS",
+      "description": "S&P 500 Earnings Per Share (Trailing 12 Months)",
+      "geography": "US",
+      "units": "usd"
+    }
+  },
   "equities": {
     "US/SPX": {
       "displayName": "S&P 500",
@@ -109,14 +135,14 @@
       "units": "index"
     },
     "ShillerPE": {
-      "displayName": "Shiller P/E Ratio",
-      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)",
+      "displayName": "Shiller P/E Ratio (Legacy)",
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE) - Use valuations/Shiller-PE instead",
       "geography": "US",
       "units": "ratio"
     },
     "Shiller-PE": {
-      "displayName": "Shiller P/E Ratio",
-      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE)",
+      "displayName": "Shiller P/E Ratio (Legacy)",
+      "description": "Cyclically Adjusted Price-to-Earnings Ratio (CAPE) - Use valuations/Shiller-PE instead",
       "geography": "US",
       "units": "ratio"
     },
@@ -196,6 +222,20 @@
       "geography": "US",
       "frequency": "monthly",
       "units": "billions"
+    },
+    "FYFSD": {
+      "displayName": "Federal Surplus/Deficit",
+      "description": "US Federal Surplus or Deficit (Annual)",
+      "geography": "US",
+      "frequency": "annual",
+      "units": "billions"
+    },
+    "FYFSGDA188S": {
+      "displayName": "Federal Deficit % GDP",
+      "description": "US Federal Surplus or Deficit as % of GDP (Annual)",
+      "geography": "US",
+      "frequency": "annual",
+      "units": "percent"
     }
   },
   "bonds": {

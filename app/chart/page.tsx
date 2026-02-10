@@ -1,15 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-import ChartNavigation, { ChartType } from '@/components/chart-navigation';
-import YieldChart from '@/components/yield-chart';
-import EconomicsChart from '@/components/economics-chart';
-import EquitiesChart from '@/components/equities-chart';
-import DBChart from '@/components/db-chart';
-import ReturnsChart from '@/components/returns-chart';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import ChartNavigation, { ChartType } from '@/components/charts/chart-navigation';
+import YieldChart from '@/components/charts/yield-chart';
+import EconomicsChart from '@/components/charts/economics-chart';
+import EquitiesChart from '@/components/charts/equities-chart';
+import ValuationsChart from '@/components/charts/valuations-chart';
+import FXChart from '@/components/charts/fx-chart';
+import DBChart from '@/components/charts/db-chart';
+import ReturnsChart from '@/components/charts/returns-chart';
 
 export default function ChartPage() {
-    const [currentChart, setCurrentChart] = useState<ChartType>('yields');
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const chartParam = searchParams.get('type') as ChartType | null;
+
+    const [currentChart, setCurrentChart] = useState<ChartType>(
+        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'all'].includes(chartParam)
+            ? chartParam
+            : 'yields'
+    );
+
+    // Update URL when chart changes
+    const handleChartChange = (chartType: ChartType) => {
+        setCurrentChart(chartType);
+        router.push(`/chart?type=${chartType}`, { scroll: false });
+    };
+
+    // Sync state with URL changes (e.g., browser back/forward)
+    useEffect(() => {
+        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'all'].includes(chartParam)) {
+            setCurrentChart(chartParam);
+        }
+    }, [chartParam]);
 
     const renderChart = () => {
         switch (currentChart) {
@@ -19,6 +43,10 @@ export default function ChartPage() {
                 return <EconomicsChart height={500} />;
             case 'equities':
                 return <EquitiesChart height={500} />;
+            case 'valuations':
+                return <ValuationsChart height={500} />;
+            case 'fx':
+                return <FXChart height={500} />;
             case 'returns':
                 return <ReturnsChart />;
             case 'all':
@@ -31,18 +59,26 @@ export default function ChartPage() {
     return (
         <div className="min-h-screen bg-background">
             <div className="container mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-foreground mb-2">
-                        Macro Charts
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Explore macroeconomic data across different asset classes and time periods
-                    </p>
+                <div className="mb-8 flex items-start justify-between">
+                    <div>
+                        <h1 className="text-4xl font-bold text-foreground mb-2">
+                            Macro Charts
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Explore macroeconomic data across different asset classes and time periods
+                        </p>
+                    </div>
+                    <a
+                        href="/chart/data"
+                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium text-sm"
+                    >
+                        View Data Table
+                    </a>
                 </div>
 
                 <ChartNavigation
                     currentChart={currentChart}
-                    onChartChange={setCurrentChart}
+                    onChartChange={handleChartChange}
                 />
 
                 {renderChart()}

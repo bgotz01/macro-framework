@@ -1,0 +1,18 @@
+[
+  { "year": 1880, "concentration": 27 },
+  { "year": 1890, "concentration": 22 },
+  { "year": 1900, "concentration": 28 },
+  { "year": 1910, "concentration": 26 },
+  { "year": 1920, "concentration": 19 },
+  { "year": 1930, "concentration": 20 },
+  { "year": 1940, "concentration": 28 },
+  { "year": 1950, "concentration": 26 },
+  { "year": 1960, "concentration": 28 },
+  { "year": 1970, "concentration": 28 },
+  { "year": 1980, "concentration": 22 },
+  { "year": 1990, "concentration": 20 },
+  { "year": 2000, "concentration": 23 },
+  { "year": 2010, "concentration": 19 },
+  { "year": 2020, "concentration": 29 },
+  { "year": 2025, "concentration": 40 }
+]

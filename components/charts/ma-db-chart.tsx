@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
+import { generateYearlyTicks } from '@/lib/chart-utils';
 
 export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto';
 
@@ -226,9 +227,9 @@ export default function MADBChart({
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
-                                return `${date.getMonth() + 1}/${date.getFullYear()}`;
+                                return date.getFullYear().toString();
                             }}
-                            interval={Math.floor(chartData.length / 10)}
+                            ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
                             stroke="#9ca3af"

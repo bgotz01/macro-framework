@@ -34,7 +34,7 @@ export default function MatrixDataFetcher({ children }: MatrixDataFetcherProps) 
                     fetchLatestValue('economic', 'CPI'),
                     fetchLatestValue('bonds', 'US/TNX'),
                     fetchLatestValue('bonds', 'US/US-2yr'),
-                    fetchLatestValue('economic', 'Shiller-PE'),
+                    fetchLatestValue('valuations', 'Shiller-PE'),
                     fetchLatestValue('volatility', 'VIX'),
                 ]);
 

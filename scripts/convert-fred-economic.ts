@@ -20,6 +20,8 @@ const FRED_SERIES = [
     'DPI',
     'PCE',
     'FYGFD',
+    'FYFSD',
+    'FYFSGDA188S',
     'M1SL',
     'M2SL'
 ];

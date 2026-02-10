@@ -1,4 +1,4 @@
-import MADBChart from '@/components/ma-db-chart';
+import MADBChart from '@/components/charts/ma-db-chart';
 
 export default function MatrixChartPage() {
     return (

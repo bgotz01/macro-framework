@@ -10,3 +10,9 @@ FYGFD - Gross Federal Debt - billions - https://fred.stlouisfed.org/series/FYGFD
 M1SL - M1 - Monthly - billions - https://fred.stlouisfed.org/series/M1SL
 M2SL - M2 - Monthly - billions - https://fred.stlouisfed.org/series/M2SL
 
+FYFSD - Federal Surplus or Deficit - Annual - Millions - https://fred.stlouisfed.org/series/FYFSD
+FYFSGDA188S - Federal Surplus % GDP - Annual - https://fred.stlouisfed.org/series/FYFSGDA188S
+BOGZ1FL153064486Q - Corporate Equities % of Assets - Quarterly - https://fred.stlouisfed.org/series/BOGZ1FL153064486Q
+BOGZ1FL594090005Q - Pension Funds: Total Financial Assets - Quarterly - Millions - https://fred.stlouisfed.org/series/BOGZ1FL594090005Q
+
+BOGZ1LM654090000Q - Mutual Fund: Total Financial Assets - Quarterly - Millions - https://fred.stlouisfed.org/series/BOGZ1LM654090000Q

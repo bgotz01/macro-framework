@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import CyclicalReturns from './cyclical-returns';
+import CyclicalReturns from '../cyclical-returns';
 
 export type ReturnAssetClass = 'equities' | 'commodities' | 'crypto' | 'volatility';
 

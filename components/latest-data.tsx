@@ -41,7 +41,7 @@ export default function LatestData() {
     async function fetchCountryData(country: string): Promise<LatestDataPoint> {
         // Fetch the latest values for each indicator
         const [bankRate, threeMonth, tenYear, cpi] = await Promise.all([
-            fetchLatestValue('bonds', `${country}/FEDFUNDS`),
+            fetchLatestValue('economic', `${country}/FEDFUNDS`),
             fetchLatestValue('bonds', `${country}/IRX`),
             fetchLatestValue('bonds', `${country}/TNX`),
             fetchLatestValue('economic', 'CPI')
@@ -183,7 +183,7 @@ export default function LatestData() {
                     <div className="text-center p-4 rounded-xl bg-card border border-border/20">
                         <div className="text-sm text-muted-foreground mb-1">CPI</div>
                         <div className="text-2xl font-bold text-primary">
-                            {data.cpi.value !== null ? data.cpi.value.toFixed(1) : 'N/A'}
+                            {data.cpi.value !== null ? `${data.cpi.value.toFixed(1)}%` : 'N/A'}
                         </div>
                         {data.cpi.date && (
                             <div className="text-xs text-muted-foreground mt-1">

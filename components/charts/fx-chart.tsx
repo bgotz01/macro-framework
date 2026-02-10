@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { formatTooltipValue } from '@/lib/format-utils';
+import { generateYearlyTicks } from '@/lib/chart-utils';
 
-interface YieldChartProps {
+interface FXChartProps {
     height?: number;
     className?: string;
 }
@@ -13,7 +15,7 @@ interface ChartDataPoint {
     [key: string]: any;
 }
 
-const CHART_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
+const CHART_COLORS = ['#2563eb', '#dc2626'];
 
 const DECADE_COLORS = [
     { start: '1960-01-01', end: '1969-12-31', color: '#3b82f6', opacity: 0.05 },
@@ -30,7 +32,6 @@ const DATE_PRESETS: Array<
     | { label: string; value: string; start: string; end: string }
 > = [
         { label: 'All Time', value: 'all' },
-        { label: '1960s', value: '1960s', start: '1960-01-01', end: '1969-12-31' },
         { label: '1970s', value: '1970s', start: '1970-01-01', end: '1979-12-31' },
         { label: '1980s', value: '1980s', start: '1980-01-01', end: '1989-12-31' },
         { label: '1990s', value: '1990s', start: '1990-01-01', end: '1999-12-31' },
@@ -42,13 +43,13 @@ const DATE_PRESETS: Array<
         { label: 'Custom', value: 'custom' },
     ];
 
-export default function YieldChart({
+export default function FXChart({
     height = 400,
     className = ''
-}: YieldChartProps) {
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; asset_class: string }>>([]);
+}: FXChartProps) {
+    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
-    const [selectedAssetClass, setSelectedAssetClass] = useState<string>('');
+    const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
     const [datePreset, setDatePreset] = useState<string>('all');
@@ -57,88 +58,62 @@ export default function YieldChart({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Spread calculation state
-    const [calculationMode, setCalculationMode] = useState<'single' | 'spread'>('single');
+    // Ratio calculation state
+    const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
     const [series1, setSeries1] = useState<string>('');
-    const [assetClass1, setAssetClass1] = useState<string>('');
     const [series2, setSeries2] = useState<string>('');
-    const [assetClass2, setAssetClass2] = useState<string>('');
-    const [spreadData, setSpreadData] = useState<ChartDataPoint[]>([]);
+    const [availableSeries1, setAvailableSeries1] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [availableSeries2, setAvailableSeries2] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [ratioData, setRatioData] = useState<ChartDataPoint[]>([]);
 
-    // Load available yield series on mount
+    // Load available series
     useEffect(() => {
-        const loadYieldSeries = async () => {
+        const loadSeries = async () => {
             try {
-                setLoading(true);
-
-                // Load bonds and economic series (both have percent-based data)
-                const [bondsResponse, economicResponse] = await Promise.all([
-                    fetch('/api/data/bonds'),
-                    fetch('/api/data/economic')
-                ]);
-
-                if (!bondsResponse.ok || !economicResponse.ok) {
+                const response = await fetch(`/api/data/fx`);
+                if (!response.ok) {
                     throw new Error('Failed to load series list');
                 }
+                const result = await response.json();
+                const seriesWithNames = result.seriesInfo.map((s: any) => ({
+                    series_name: s.series_name,
+                    display_name: s.display_name,
+                    units: s.units
+                }));
+                setAvailableSeries(seriesWithNames);
+                setAvailableSeries1(seriesWithNames);
+                setAvailableSeries2(seriesWithNames);
 
-                const [bondsResult, economicResult] = await Promise.all([
-                    bondsResponse.json(),
-                    economicResponse.json()
-                ]);
-
-                // Filter for percent-based series only
-                const bondsSeries = bondsResult.seriesInfo
-                    .filter((s: any) => s.units === 'percent')
-                    .map((s: any) => ({
-                        series_name: s.series_name,
-                        display_name: s.display_name,
-                        asset_class: 'bonds'
-                    }));
-
-                const economicSeries = economicResult.seriesInfo
-                    .filter((s: any) => s.units === 'percent')
-                    .map((s: any) => ({
-                        series_name: s.series_name,
-                        display_name: s.display_name,
-                        asset_class: 'economic'
-                    }));
-
-                const allSeries = [...bondsSeries, ...economicSeries];
-                setAvailableSeries(allSeries);
-
-                // Auto-select first series
-                if (allSeries.length > 0) {
-                    setSelectedSeries(allSeries[0].series_name);
-                    setSelectedAssetClass(allSeries[0].asset_class);
-                    setSeries1(allSeries[0].series_name);
-                    setAssetClass1(allSeries[0].asset_class);
-
-                    if (allSeries.length > 1) {
-                        setSeries2(allSeries[1].series_name);
-                        setAssetClass2(allSeries[1].asset_class);
+                // Auto-select DXY (US Dollar Index) if available, otherwise first series
+                if (seriesWithNames.length > 0) {
+                    const dxy = seriesWithNames.find((s: { series_name: string; display_name: string; units?: string }) => s.series_name === 'DXY');
+                    const defaultSeries = dxy ? dxy.series_name : seriesWithNames[0].series_name;
+                    setSelectedSeries(defaultSeries);
+                    setSelectedUnits(dxy ? dxy.units : seriesWithNames[0].units);
+                    setSeries1(defaultSeries);
+                    if (seriesWithNames.length > 1) {
+                        setSeries2(seriesWithNames[1].series_name);
                     }
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
-                setError('Failed to load yield series');
-            } finally {
-                setLoading(false);
+                setAvailableSeries([]);
             }
         };
 
-        loadYieldSeries();
+        loadSeries();
     }, []);
 
-    // Load data when series changes (single mode)
+    // Load data when series changes
     useEffect(() => {
-        if (calculationMode !== 'single' || !selectedSeries || !selectedAssetClass) return;
+        if (calculationMode !== 'single' || !selectedSeries) return;
 
         const loadData = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`/api/data/${selectedAssetClass}?series=${selectedSeries}`);
+                const response = await fetch(`/api/data/fx?series=${selectedSeries}`);
 
                 if (!response.ok) {
                     throw new Error(`Failed to load data: ${response.statusText}`);
@@ -154,22 +129,22 @@ export default function YieldChart({
         };
 
         loadData();
-    }, [selectedAssetClass, selectedSeries, calculationMode]);
+    }, [selectedSeries, calculationMode]);
 
-    // Calculate spread when in spread mode
+    // Calculate ratio when in ratio mode
     useEffect(() => {
-        if (calculationMode !== 'spread' || !series1 || !series2 || !assetClass1 || !assetClass2) {
-            setSpreadData([]);
+        if (calculationMode !== 'ratio' || !series1 || !series2) {
+            setRatioData([]);
             return;
         }
 
-        const loadSpreadData = async () => {
+        const loadRatioData = async () => {
             try {
                 setLoading(true);
 
                 const [response1, response2] = await Promise.all([
-                    fetch(`/api/data/${assetClass1}?series=${encodeURIComponent(series1)}`),
-                    fetch(`/api/data/${assetClass2}?series=${encodeURIComponent(series2)}`)
+                    fetch(`/api/data/fx?series=${encodeURIComponent(series1)}`),
+                    fetch(`/api/data/fx?series=${encodeURIComponent(series2)}`)
                 ]);
 
                 if (!response1.ok || !response2.ok) {
@@ -187,33 +162,34 @@ export default function YieldChart({
                     series2Map.set(point.date, point.Value);
                 });
 
-                // Calculate spread (series1 - series2)
+                // Calculate ratio (series1 / series2)
                 const calculated = result1.data
                     .map((point: ChartDataPoint) => {
                         const value2 = series2Map.get(point.date);
-                        if (value2 === undefined) return null;
+                        if (value2 === undefined || value2 === 0) return null;
 
                         return {
                             date: point.date,
-                            Value: point.Value - value2
+                            Value: point.Value / value2
                         };
                     })
                     .filter((point: ChartDataPoint | null) => point !== null) as ChartDataPoint[];
 
-                setSpreadData(calculated);
+                setRatioData(calculated);
+                setSelectedUnits('ratio');
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to calculate spread');
+                setError(err instanceof Error ? err.message : 'Failed to calculate ratio');
             } finally {
                 setLoading(false);
             }
         };
 
-        loadSpreadData();
-    }, [calculationMode, series1, series2, assetClass1, assetClass2]);
+        loadRatioData();
+    }, [calculationMode, series1, series2]);
 
     // Filter data based on date range
     useEffect(() => {
-        const sourceData = calculationMode === 'spread' ? spreadData : data;
+        const sourceData = calculationMode === 'ratio' ? ratioData : data;
 
         if (sourceData.length === 0) {
             setFilteredData([]);
@@ -259,7 +235,7 @@ export default function YieldChart({
         }
 
         setFilteredData(filtered);
-    }, [data, spreadData, datePreset, customStartDate, customEndDate, calculationMode]);
+    }, [data, ratioData, datePreset, customStartDate, customEndDate, calculationMode]);
 
     const renderContent = () => {
         if (loading) {
@@ -281,10 +257,7 @@ export default function YieldChart({
             );
         }
 
-        const sourceData = calculationMode === 'spread' ? spreadData : data;
-        const chartData = filteredData.length > 0 ? filteredData : sourceData;
-
-        if (chartData.length === 0) {
+        if (data.length === 0 && ratioData.length === 0) {
             return (
                 <div className="flex items-center justify-center" style={{ height }}>
                     <p className="text-muted-foreground">No data available</p>
@@ -292,7 +265,10 @@ export default function YieldChart({
             );
         }
 
+        const sourceData = calculationMode === 'ratio' ? ratioData : data;
+        const chartData = filteredData.length > 0 ? filteredData : sourceData;
         const noDataInRange = datePreset !== 'all' && filteredData.length === 0;
+
         const dataStartDate = chartData.length > 0 ? chartData[0].date : null;
         const dataEndDate = chartData.length > 0 ? chartData[chartData.length - 1].date : null;
 
@@ -305,9 +281,6 @@ export default function YieldChart({
                 end: decade.end > dataEndDate ? dataEndDate : decade.end
             }))
             : [];
-
-        const series1Info = availableSeries.find(s => s.series_name === series1);
-        const series2Info = availableSeries.find(s => s.series_name === series2);
 
         return (
             <>
@@ -341,12 +314,13 @@ export default function YieldChart({
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
                             }}
+                            ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
                             stroke="#9ca3af"
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             domain={['auto', 'auto']}
-                            tickFormatter={(value) => `${value.toFixed(1)}%`}
+                            tickFormatter={(value) => value.toFixed(2)}
                         />
                         <Tooltip
                             contentStyle={{
@@ -356,7 +330,7 @@ export default function YieldChart({
                                 color: '#f9fafb'
                             }}
                             labelStyle={{ color: '#9ca3af' }}
-                            formatter={(value: any) => `${Number(value).toFixed(2)}%`}
+                            formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
                         <Legend wrapperStyle={{ color: '#9ca3af' }} />
                         <Line
@@ -365,8 +339,8 @@ export default function YieldChart({
                             stroke={CHART_COLORS[0]}
                             strokeWidth={2}
                             dot={false}
-                            name={calculationMode === 'spread'
-                                ? `${series1Info?.display_name || series1} - ${series2Info?.display_name || series2}`
+                            name={calculationMode === 'ratio'
+                                ? `${availableSeries1.find(s => s.series_name === series1)?.display_name || series1} / ${availableSeries2.find(s => s.series_name === series2)?.display_name || series2}`
                                 : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
                             }
                         />
@@ -396,82 +370,81 @@ export default function YieldChart({
                             Single Series
                         </button>
                         <button
-                            onClick={() => setCalculationMode('spread')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'spread'
+                            onClick={() => setCalculationMode('ratio')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'ratio'
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
                         >
-                            Yield Spread
+                            Ratio (S1 / S2)
                         </button>
                     </div>
                 </div>
 
-                {calculationMode === 'spread' ? (
-                    /* Spread Mode: Two Series Selectors */
-                    <div className="space-y-3">
-                        <div>
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Series 1
-                            </label>
-                            <select
-                                value={`${assetClass1}/${series1}`}
-                                onChange={(e) => {
-                                    const [ac, ...rest] = e.target.value.split('/');
-                                    setSeries1(rest.join('/'));
-                                    setAssetClass1(ac);
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                            >
-                                {availableSeries.map(series => (
-                                    <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Series 2
-                            </label>
-                            <select
-                                value={`${assetClass2}/${series2}`}
-                                onChange={(e) => {
-                                    const [ac, ...rest] = e.target.value.split('/');
-                                    setSeries2(rest.join('/'));
-                                    setAssetClass2(ac);
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                            >
-                                {availableSeries.map(series => (
-                                    <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
-                            </select>
+                {calculationMode === 'ratio' ? (
+                    /* Ratio Mode: Two Series Selectors */
+                    <div className="space-y-4">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Series 1
+                                </label>
+                                <select
+                                    value={series1}
+                                    onChange={(e) => setSeries1(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    disabled={availableSeries1.length === 0}
+                                >
+                                    {availableSeries1.map(series => (
+                                        <option key={series.series_name} value={series.series_name}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Series 2
+                                </label>
+                                <select
+                                    value={series2}
+                                    onChange={(e) => setSeries2(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    disabled={availableSeries2.length === 0}
+                                >
+                                    {availableSeries2.map(series => (
+                                        <option key={series.series_name} value={series.series_name}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
                 ) : (
                     /* Single Series Mode */
-                    <div>
-                        <label className="block text-sm font-medium text-card-foreground mb-2">
-                            Yield Series
-                        </label>
-                        <select
-                            value={`${selectedAssetClass}/${selectedSeries}`}
-                            onChange={(e) => {
-                                const [ac, ...rest] = e.target.value.split('/');
-                                setSelectedSeries(rest.join('/'));
-                                setSelectedAssetClass(ac);
-                            }}
-                            className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            {availableSeries.map(series => (
-                                <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                    {series.display_name}
-                                </option>
-                            ))}
-                        </select>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-card-foreground mb-2">
+                                Currency Pair / FX Series
+                            </label>
+                            <select
+                                value={selectedSeries}
+                                onChange={(e) => {
+                                    setSelectedSeries(e.target.value);
+                                    const series = availableSeries.find(s => s.series_name === e.target.value);
+                                    setSelectedUnits(series?.units);
+                                }}
+                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                disabled={availableSeries.length === 0}
+                            >
+                                {availableSeries.map(series => (
+                                    <option key={series.series_name} value={series.series_name}>
+                                        {series.display_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 )}
 
@@ -518,29 +491,75 @@ export default function YieldChart({
                         </div>
                     )}
                 </div>
-
-                {/* Info */}
-                {(data.length > 0 || spreadData.length > 0) && (
-                    <div className="flex items-center justify-between text-sm">
-                        <p className="text-muted-foreground">
-                            {filteredData.length > 0 ? filteredData.length : (calculationMode === 'spread' ? spreadData.length : data.length)} data points
-                        </p>
-                        <p className="text-muted-foreground">
-                            {filteredData.length > 0
-                                ? `${filteredData[0]?.date} to ${filteredData[filteredData.length - 1]?.date}`
-                                : calculationMode === 'spread' && spreadData.length > 0
-                                    ? `${spreadData[0]?.date} to ${spreadData[spreadData.length - 1]?.date}`
-                                    : data.length > 0
-                                        ? `${data[0]?.date} to ${data[data.length - 1]?.date}`
-                                        : ''
-                            }
-                        </p>
-                    </div>
-                )}
             </div>
 
             {/* Chart */}
             {renderContent()}
+
+            {/* Latest Data Display */}
+            {!loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
+                <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-3">
+                        📊 Latest Data
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {calculationMode === 'single' && data.length > 0 && (
+                            <>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Current Value</div>
+                                    <div className="text-2xl font-bold text-card-foreground">
+                                        {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
+                                    <div className="text-lg font-semibold text-card-foreground">
+                                        {new Date(data[data.length - 1].date).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Series</div>
+                                    <div className="text-sm font-medium text-card-foreground">
+                                        {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        {calculationMode === 'ratio' && ratioData.length > 0 && (
+                            <>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
+                                    <div className="text-2xl font-bold text-card-foreground">
+                                        {ratioData[ratioData.length - 1].Value.toFixed(4)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
+                                    <div className="text-lg font-semibold text-card-foreground">
+                                        {new Date(ratioData[ratioData.length - 1].date).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Calculation</div>
+                                    <div className="text-sm font-medium text-card-foreground">
+                                        {availableSeries1.find(s => s.series_name === series1)?.display_name || series1}
+                                        {' / '}
+                                        {availableSeries2.find(s => s.series_name === series2)?.display_name || series2}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

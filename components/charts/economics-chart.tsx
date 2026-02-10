@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
+import { generateYearlyTicks } from '@/lib/chart-utils';
 
 interface EconomicsChartProps {
     height?: number;
@@ -367,6 +368,7 @@ export default function EconomicsChart({
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
                             }}
+                            ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
                             stroke="#9ca3af"
@@ -571,29 +573,75 @@ export default function EconomicsChart({
                         </div>
                     )}
                 </div>
-
-                {/* Info */}
-                {(data.length > 0 || ratioData.length > 0) && (
-                    <div className="flex items-center justify-between text-sm">
-                        <p className="text-muted-foreground">
-                            {filteredData.length > 0 ? filteredData.length : (calculationMode === 'ratio' ? ratioData.length : data.length)} data points
-                        </p>
-                        <p className="text-muted-foreground">
-                            {filteredData.length > 0
-                                ? `${filteredData[0]?.date} to ${filteredData[filteredData.length - 1]?.date}`
-                                : calculationMode === 'ratio' && ratioData.length > 0
-                                    ? `${ratioData[0]?.date} to ${ratioData[ratioData.length - 1]?.date}`
-                                    : data.length > 0
-                                        ? `${data[0]?.date} to ${data[data.length - 1]?.date}`
-                                        : ''
-                            }
-                        </p>
-                    </div>
-                )}
             </div>
 
             {/* Chart */}
             {renderContent()}
+
+            {/* Latest Data Display */}
+            {!loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
+                <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-3">
+                        📊 Latest Data
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {calculationMode === 'single' && data.length > 0 && (
+                            <>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Current Value</div>
+                                    <div className="text-2xl font-bold text-card-foreground">
+                                        {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
+                                    <div className="text-lg font-semibold text-card-foreground">
+                                        {new Date(data[data.length - 1].date).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Series</div>
+                                    <div className="text-sm font-medium text-card-foreground">
+                                        {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        {calculationMode === 'ratio' && ratioData.length > 0 && (
+                            <>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
+                                    <div className="text-2xl font-bold text-card-foreground">
+                                        {ratioData[ratioData.length - 1].Value.toFixed(4)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
+                                    <div className="text-lg font-semibold text-card-foreground">
+                                        {new Date(ratioData[ratioData.length - 1].date).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-1">Calculation</div>
+                                    <div className="text-sm font-medium text-card-foreground">
+                                        {availableSeries.find(s => s.series_name === series1)?.display_name || series1}
+                                        {' / '}
+                                        {availableSeries.find(s => s.series_name === series2)?.display_name || series2}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

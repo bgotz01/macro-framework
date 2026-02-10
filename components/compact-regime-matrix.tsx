@@ -7,7 +7,10 @@ interface MatrixValues {
     bondYieldNominal: number | null;
     bondYieldReal: number | null;
     yieldCurve: number | null;
+    fedFunds: number | null;
     equityPE: number | null;
+    earningsYieldPremium: number | null;
+    realEarningsYield: number | null;
     vix: number | null;
 }
 
@@ -21,10 +24,10 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
     const [values, setValues] = useState<MatrixValues>(initialValues);
     const [loading, setLoading] = useState(false);
 
-    // Generate year options (1990 to current year)
+    // Generate year options (1960 to current year)
     const currentYear = new Date().getFullYear();
     const yearOptions: string[] = [];
-    for (let year = currentYear; year >= 1990; year--) {
+    for (let year = currentYear; year >= 1960; year--) {
         yearOptions.push(year.toString());
     }
 
@@ -60,12 +63,14 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
             try {
                 const targetDate = `${selectedYear}-${selectedMonth}`;
 
-                const [cpi, tenYear, twoYear, shillerPE, vix] = await Promise.all([
+                const [cpi, tenYear, twoYear, threeMonth, shillerPE, vix, fedFunds] = await Promise.all([
                     fetchValueAtDate('economic', 'CPI', targetDate),
                     fetchValueAtDate('bonds', 'US/TNX', targetDate),
                     fetchValueAtDate('bonds', 'US/US-2yr', targetDate),
-                    fetchValueAtDate('economic', 'Shiller-PE', targetDate),
+                    fetchValueAtDate('bonds', 'US/IRX', targetDate),
+                    fetchValueAtDate('valuations', 'Shiller-PE', targetDate),
                     fetchValueAtDate('volatility', 'VIX', targetDate),
+                    fetchValueAtDate('economic', 'US/FEDFUNDS', targetDate),
                 ]);
 
                 setValues({
@@ -73,7 +78,14 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                     bondYieldNominal: tenYear,
                     bondYieldReal: tenYear !== null && cpi !== null ? tenYear - cpi : null,
                     yieldCurve: tenYear !== null && twoYear !== null ? tenYear - twoYear : null,
+                    fedFunds,
                     equityPE: shillerPE,
+                    earningsYieldPremium: shillerPE !== null && shillerPE > 0 && threeMonth !== null
+                        ? (100 / shillerPE) - threeMonth
+                        : null,
+                    realEarningsYield: shillerPE !== null && shillerPE > 0 && cpi !== null
+                        ? (100 / shillerPE) - cpi
+                        : null,
                     vix,
                 });
             } catch (error) {
@@ -116,6 +128,13 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
         if (value < thresholds.low) return 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100';
         if (value < thresholds.mid) return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100';
         return 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100';
+    };
+
+    const getRegimeColorReversed = (value: number | null, thresholds: { low: number; mid: number }): string => {
+        if (value === null) return 'bg-gray-100 dark:bg-gray-800';
+        if (value < thresholds.low) return 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100';
+        if (value < thresholds.mid) return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100';
     };
 
     const getYieldCurveColor = (value: number | null): string => {
@@ -171,64 +190,112 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
             )}
 
             {!loading && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className={`p-4 rounded-xl ${getRegimeColor(values.inflation, { low: 3, mid: 6 })}`}>
-                        <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Inflation</div>
-                        <div className="text-2xl font-bold">{formatValue(values.inflation)}</div>
-                        <div className="text-xs mt-1 opacity-75">
-                            {values.inflation !== null && values.inflation < 3 && 'Low'}
-                            {values.inflation !== null && values.inflation >= 3 && values.inflation < 6 && 'Mid'}
-                            {values.inflation !== null && values.inflation >= 6 && 'High'}
+                <div className="space-y-6">
+                    {/* Rates/Bonds Section */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Rates / Bonds</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className={`p-4 rounded-xl ${getRegimeColor(values.bondYieldNominal, { low: 2, mid: 5 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">10Y Yield</div>
+                                <div className="text-2xl font-bold">{formatValue(values.bondYieldNominal)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.bondYieldNominal !== null && values.bondYieldNominal < 2 && 'Low'}
+                                    {values.bondYieldNominal !== null && values.bondYieldNominal >= 2 && values.bondYieldNominal < 5 && 'Mid'}
+                                    {values.bondYieldNominal !== null && values.bondYieldNominal >= 5 && 'High'}
+                                </div>
+                            </div>
+
+                            <div className={`p-4 rounded-xl ${getRegimeColor(values.bondYieldReal, { low: 0, mid: 2 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Real Yield</div>
+                                <div className="text-2xl font-bold">{formatValue(values.bondYieldReal)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.bondYieldReal !== null && values.bondYieldReal < 0 && 'Negative'}
+                                    {values.bondYieldReal !== null && values.bondYieldReal >= 0 && values.bondYieldReal < 2 && 'Neutral'}
+                                    {values.bondYieldReal !== null && values.bondYieldReal >= 2 && 'High'}
+                                </div>
+                            </div>
+
+                            <div className={`p-4 rounded-xl ${getRegimeColor(values.fedFunds, { low: 2, mid: 4 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Fed Funds</div>
+                                <div className="text-2xl font-bold">{formatValue(values.fedFunds)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.fedFunds !== null && values.fedFunds < 2 && 'Low'}
+                                    {values.fedFunds !== null && values.fedFunds >= 2 && values.fedFunds < 4 && 'Mid'}
+                                    {values.fedFunds !== null && values.fedFunds >= 4 && 'High'}
+                                </div>
+                            </div>
+
+                            <div className={`p-4 rounded-xl ${getYieldCurveColor(values.yieldCurve)}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Yield Curve</div>
+                                <div className="text-2xl font-bold">{formatValue(values.yieldCurve)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.yieldCurve !== null && values.yieldCurve < -0.5 && 'Inverted'}
+                                    {values.yieldCurve !== null && values.yieldCurve >= -0.5 && values.yieldCurve < 0.5 && 'Flat'}
+                                    {values.yieldCurve !== null && values.yieldCurve >= 0.5 && 'Steep'}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className={`p-4 rounded-xl ${getRegimeColor(values.bondYieldNominal, { low: 2, mid: 5 })}`}>
-                        <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">10Y Yield</div>
-                        <div className="text-2xl font-bold">{formatValue(values.bondYieldNominal)}</div>
-                        <div className="text-xs mt-1 opacity-75">
-                            {values.bondYieldNominal !== null && values.bondYieldNominal < 2 && 'Low'}
-                            {values.bondYieldNominal !== null && values.bondYieldNominal >= 2 && values.bondYieldNominal < 5 && 'Mid'}
-                            {values.bondYieldNominal !== null && values.bondYieldNominal >= 5 && 'High'}
+                    {/* Equity Section */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className={`p-4 rounded-xl ${getRegimeColor(values.equityPE, { low: 15, mid: 20 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Shiller P/E</div>
+                                <div className="text-2xl font-bold">{formatValue(values.equityPE, 'number')}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.equityPE !== null && values.equityPE < 15 && 'Cheap'}
+                                    {values.equityPE !== null && values.equityPE >= 15 && values.equityPE < 20 && 'Fair'}
+                                    {values.equityPE !== null && values.equityPE >= 20 && 'Expensive'}
+                                </div>
+                            </div>
+
+                            <div className={`p-4 rounded-xl ${getRegimeColorReversed(values.earningsYieldPremium, { low: 0, mid: 2 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">EY Premium</div>
+                                <div className="text-2xl font-bold">{formatValue(values.earningsYieldPremium)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.earningsYieldPremium !== null && values.earningsYieldPremium < 0 && 'Negative'}
+                                    {values.earningsYieldPremium !== null && values.earningsYieldPremium >= 0 && values.earningsYieldPremium < 2 && 'Neutral'}
+                                    {values.earningsYieldPremium !== null && values.earningsYieldPremium >= 2 && 'Positive'}
+                                </div>
+                            </div>
+
+                            <div className={`p-4 rounded-xl ${getRegimeColorReversed(values.realEarningsYield, { low: 0, mid: 3 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Real EY</div>
+                                <div className="text-2xl font-bold">{formatValue(values.realEarningsYield)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.realEarningsYield !== null && values.realEarningsYield < 0 && 'Negative'}
+                                    {values.realEarningsYield !== null && values.realEarningsYield >= 0 && values.realEarningsYield < 3 && 'Low'}
+                                    {values.realEarningsYield !== null && values.realEarningsYield >= 3 && 'Positive'}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className={`p-4 rounded-xl ${getRegimeColor(values.bondYieldReal, { low: 0, mid: 2 })}`}>
-                        <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Real Yield</div>
-                        <div className="text-2xl font-bold">{formatValue(values.bondYieldReal)}</div>
-                        <div className="text-xs mt-1 opacity-75">
-                            {values.bondYieldReal !== null && values.bondYieldReal < 0 && 'Negative'}
-                            {values.bondYieldReal !== null && values.bondYieldReal >= 0 && values.bondYieldReal < 2 && 'Neutral'}
-                            {values.bondYieldReal !== null && values.bondYieldReal >= 2 && 'High'}
-                        </div>
-                    </div>
+                    {/* Other Section */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Other</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className={`p-4 rounded-xl ${getRegimeColor(values.inflation, { low: 3, mid: 6 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Inflation</div>
+                                <div className="text-2xl font-bold">{formatValue(values.inflation)}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.inflation !== null && values.inflation < 3 && 'Low'}
+                                    {values.inflation !== null && values.inflation >= 3 && values.inflation < 6 && 'Mid'}
+                                    {values.inflation !== null && values.inflation >= 6 && 'High'}
+                                </div>
+                            </div>
 
-                    <div className={`p-4 rounded-xl ${getYieldCurveColor(values.yieldCurve)}`}>
-                        <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Yield Curve</div>
-                        <div className="text-2xl font-bold">{formatValue(values.yieldCurve)}</div>
-                        <div className="text-xs mt-1 opacity-75">
-                            {values.yieldCurve !== null && values.yieldCurve < -0.5 && 'Inverted'}
-                            {values.yieldCurve !== null && values.yieldCurve >= -0.5 && values.yieldCurve < 0.5 && 'Flat'}
-                            {values.yieldCurve !== null && values.yieldCurve >= 0.5 && 'Steep'}
-                        </div>
-                    </div>
-
-                    <div className={`p-4 rounded-xl ${getRegimeColor(values.equityPE, { low: 15, mid: 20 })}`}>
-                        <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">Shiller P/E</div>
-                        <div className="text-2xl font-bold">{formatValue(values.equityPE, 'number')}</div>
-                        <div className="text-xs mt-1 opacity-75">
-                            {values.equityPE !== null && values.equityPE < 15 && 'Cheap'}
-                            {values.equityPE !== null && values.equityPE >= 15 && values.equityPE < 20 && 'Fair'}
-                            {values.equityPE !== null && values.equityPE >= 20 && 'Expensive'}
-                        </div>
-                    </div>
-
-                    <div className={`p-4 rounded-xl ${getRegimeColor(values.vix, { low: 15, mid: 25 })}`}>
-                        <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">VIX</div>
-                        <div className="text-2xl font-bold">{formatValue(values.vix, 'number')}</div>
-                        <div className="text-xs mt-1 opacity-75">
-                            {values.vix !== null && values.vix < 15 && 'Low'}
-                            {values.vix !== null && values.vix >= 15 && values.vix < 25 && 'Mid'}
-                            {values.vix !== null && values.vix >= 25 && 'High'}
+                            <div className={`p-4 rounded-xl ${getRegimeColor(values.vix, { low: 15, mid: 25 })}`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 opacity-75">VIX</div>
+                                <div className="text-2xl font-bold">{formatValue(values.vix, 'number')}</div>
+                                <div className="text-xs mt-1 opacity-75">
+                                    {values.vix !== null && values.vix < 15 && 'Low'}
+                                    {values.vix !== null && values.vix >= 15 && values.vix < 25 && 'Mid'}
+                                    {values.vix !== null && values.vix >= 25 && 'High'}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

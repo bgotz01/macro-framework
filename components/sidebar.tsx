@@ -12,6 +12,14 @@ interface SidebarItem {
 
 const sidebarData: SidebarItem[] = [
     {
+        title: 'Guide',
+        href: '/guide',
+    },
+    {
+        title: 'Highlights',
+        href: '/highlights',
+    },
+    {
         title: 'Paradigm',
         href: '/paradigm',
     },

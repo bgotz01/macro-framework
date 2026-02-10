@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { formatTooltipValue, formatValue } from '@/lib/format-utils';
+import { generateYearlyTicks } from '@/lib/chart-utils';
 
-export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto';
+export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto' | 'valuations';
 
 interface DBChartProps {
     height?: number;
@@ -53,6 +54,7 @@ const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
     { value: 'equities', label: 'Equities' },
     { value: 'fx', label: 'Foreign Exchange' },
     { value: 'moneysupply', label: 'Money Supply' },
+    { value: 'valuations', label: 'Valuations' },
     { value: 'volatility', label: 'Volatility' }
 ];
 
@@ -412,6 +414,7 @@ export default function DBChart({
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
                             }}
+                            ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
                             stroke="#9ca3af"

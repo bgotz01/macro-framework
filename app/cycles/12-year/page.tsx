@@ -1,3 +1,8 @@
+import TwelveYearCycleTable from '@/components/twelve-year-cycle-table';
+import TwelveYearOTable from '@/components/twelve-year-o-table';
+import TwelveYearSystemTable from '@/components/twelve-year-system-table';
+import TwelveYearSummary from '@/components/twelve-year-summary';
+
 export default function TwelveYearCyclePage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -5,6 +10,28 @@ export default function TwelveYearCyclePage() {
 
             <div className="mb-12">
                 <p className="text-xl mb-6">Each 12-year cycle does one primary job:</p>
+
+                {/* One-Line Summaries */}
+                <div className="mb-8">
+                    <TwelveYearSummary />
+                </div>
+
+                {/* Expanded Table */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">Expanded Overview</h2>
+                    <TwelveYearCycleTable />
+                </div>
+
+                {/* System Reconfiguration Table */}
+                <div className="mb-8">
+                    <TwelveYearSystemTable />
+                </div>
+
+                {/* O-Framework Table */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">OS-Framework Analysis</h2>
+                    <TwelveYearOTable />
+                </div>
 
                 {/* Visual Overview Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -54,7 +81,7 @@ export default function TwelveYearCyclePage() {
 
             <div className="space-y-12">
                 {/* 1948 */}
-                <div id="cycle-1948" className="border-l-4 border-slate-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-1948" className="border-l-4 border-slate-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">1948 — Institutional Reconstruction</h2>
                     <p className="text-lg font-semibold mb-4 text-slate-600 dark:text-slate-400">Theme: Order rebuilt after collapse</p>
 
@@ -85,7 +112,7 @@ export default function TwelveYearCyclePage() {
                 </div>
 
                 {/* 1960 */}
-                <div id="cycle-1960" className="border-l-4 border-amber-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-1960" className="border-l-4 border-amber-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">1960 — Institutional Capital & Brand Consolidation</h2>
                     <p className="text-lg font-semibold mb-4 text-amber-600 dark:text-amber-400">Theme: Permanence as an investment thesis</p>
 
@@ -124,7 +151,7 @@ export default function TwelveYearCyclePage() {
                 </div>
 
                 {/* 1972 */}
-                <div id="cycle-1972" className="border-l-4 border-blue-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-1972" className="border-l-4 border-blue-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">1972 — Fiat Regime Price Discovery</h2>
                     <p className="text-lg font-semibold mb-4 text-blue-600 dark:text-blue-400">Theme: Monetary freedom meets reality</p>
 
@@ -153,7 +180,7 @@ export default function TwelveYearCyclePage() {
                 </div>
 
                 {/* 1984 */}
-                <div id="cycle-1984" className="border-l-4 border-purple-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-1984" className="border-l-4 border-purple-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">1984 — Credit Expansion</h2>
                     <p className="text-lg font-semibold mb-4 text-purple-600 dark:text-purple-400">Theme: Leverage becomes the growth engine</p>
 
@@ -182,7 +209,7 @@ export default function TwelveYearCyclePage() {
                 </div>
 
                 {/* 1996 */}
-                <div id="cycle-1996" className="border-l-4 border-green-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-1996" className="border-l-4 border-green-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">1996 — Digital Infrastructure</h2>
                     <p className="text-lg font-semibold mb-4 text-green-600 dark:text-green-400">Theme: Information → networked → scalable</p>
 
@@ -212,7 +239,7 @@ export default function TwelveYearCyclePage() {
                 </div>
 
                 {/* 2008 */}
-                <div id="cycle-2008" className="border-l-4 border-red-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-2008" className="border-l-4 border-red-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">2008 — Monetary Intervention Era</h2>
                     <p className="text-lg font-semibold mb-4 text-red-600 dark:text-red-400">Theme: Liquidity replaces price signals</p>
 
@@ -242,7 +269,7 @@ export default function TwelveYearCyclePage() {
                 </div>
 
                 {/* 2020 */}
-                <div id="cycle-2020" className="border-l-4 border-orange-500 pl-6 py-2 scroll-mt-8">
+                <div id="cycle-2020" className="border-l-4 border-orange-500 pl-6 py-2 scroll-mt-24">
                     <h2 className="text-2xl font-bold mb-2">2020 — Digital Economy</h2>
                     <p className="text-lg font-semibold mb-4 text-orange-600 dark:text-orange-400">Theme: Reality goes virtual</p>
 

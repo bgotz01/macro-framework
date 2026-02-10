@@ -88,7 +88,7 @@ async function getDecadeData(): Promise<DecadeData[]> {
             getValueAtDate('economic', 'CPI', date),
             getValueAtDate('bonds', 'US/TNX', date),
             getValueAtDate('bonds', 'US/US-2yr', date),
-            getValueAtDate('economic', 'Shiller-PE', date),
+            getValueAtDate('valuations', 'Shiller-PE', date),
             getValueAtDate('economic', 'US/FEDFUNDS', date),
         ]);
 

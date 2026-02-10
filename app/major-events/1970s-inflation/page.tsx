@@ -1,6 +1,6 @@
 //major-events/1970s-inflation/page.tsx
 import Timeline, { TimelineEvent } from '../../../components/timeline';
-import ChartFixed from '../../../components/chart-fixed';
+import ChartFixed from '../../../components/charts/chart-fixed';
 import ScrollNav from '../../../components/scroll-nav';
 
 const pivotEvents: TimelineEvent[] = [

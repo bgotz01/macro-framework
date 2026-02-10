@@ -149,7 +149,7 @@ export default async function MatrixPage() {
         getLatestValue('bonds', 'US/TNX'),
         getLatestValue('bonds', 'US/US-2yr'),
         getLatestValue('bonds', 'US/IRX'),
-        getLatestValue('economic', 'Shiller-PE'),
+        getLatestValue('valuations', 'Shiller-PE'),
         getLatestValue('volatility', 'VIX'),
         getLatestValue('economic', 'US/FEDFUNDS'),
     ]);
@@ -160,7 +160,7 @@ export default async function MatrixPage() {
         getLatestMA12('bonds', 'US/TNX'),
         getLatestMA12('bonds', 'US/US-2yr'),
         getLatestMA12('bonds', 'US/IRX'),
-        getLatestMA12('economic', 'Shiller-PE'),
+        getLatestMA12('valuations', 'Shiller-PE'),
         getLatestMA12('volatility', 'VIX'),
         getLatestMA12('economic', 'US/FEDFUNDS'),
     ]);
@@ -245,12 +245,18 @@ export default async function MatrixPage() {
                 </p>
 
                 {/* Quick Links */}
-                <div className="mt-8 flex justify-center gap-4">
+                <div className="mt-8 flex justify-center gap-4 flex-wrap">
                     <a
-                        href="/matrix/chart"
+                        href="/chart"
                         className="px-6 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-all duration-200 border border-primary/20"
                     >
                         📊 Interactive Charts
+                    </a>
+                    <a
+                        href="/matrix/percentile"
+                        className="px-6 py-3 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 font-medium transition-all duration-200 border border-green-500/20"
+                    >
+                        📈 Percentile Analysis
                     </a>
                     <a
                         href="/matrix/decades"
@@ -687,7 +693,10 @@ export default async function MatrixPage() {
                         bondYieldNominal: currentValues.bondYieldNominal.value,
                         bondYieldReal: currentValues.bondYieldReal.value,
                         yieldCurve: currentValues.yieldCurve.value,
+                        fedFunds: currentValues.fedFunds.value,
                         equityPE: currentValues.equityPE.value,
+                        earningsYieldPremium: currentValues.earningsYieldPremium.value,
+                        realEarningsYield: currentValues.realEarningsYield.value,
                         vix: currentValues.vix.value,
                     }}
                 />

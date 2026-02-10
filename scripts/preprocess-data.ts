@@ -17,7 +17,7 @@ const SPECIAL_PROCESSING = {
                 name: 'CPINominal.csv',
                 transform: (data: DataRow[]) => {
                     return data.map(row => ({
-                        Date: row.observation_date,
+                        Date: convertToEndOfMonth(row.observation_date),
                         Value: row.CPIAUCSL
                     }));
                 }
@@ -41,7 +41,7 @@ const SPECIAL_PROCESSING = {
                             const yoyChange = ((currentValue - yearAgoValue) / yearAgoValue) * 100;
 
                             yoyData.push({
-                                Date: currentRow.observation_date,
+                                Date: convertToEndOfMonth(currentRow.observation_date),
                                 Value: parseFloat(yoyChange.toFixed(2))
                             });
                         }
@@ -53,6 +53,21 @@ const SPECIAL_PROCESSING = {
         ]
     }
 };
+
+// Helper function to convert first-of-month dates to end-of-month
+function convertToEndOfMonth(dateStr: string): string {
+    // FRED uses first-of-month dates (e.g., 2025-12-01 for December 2025)
+    // We need to convert to last day of that same month (e.g., 2025-12-31)
+    const [year, month, day] = dateStr.split('-').map(Number);
+
+    // Get last day of the same month by going to next month day 0
+    const endOfMonth = new Date(year, month, 0); // month is 1-indexed in the string, so this gives us last day of that month
+    const endYear = endOfMonth.getFullYear();
+    const endMonth = String(endOfMonth.getMonth() + 1).padStart(2, '0');
+    const endDay = String(endOfMonth.getDate()).padStart(2, '0');
+
+    return `${endYear}-${endMonth}-${endDay}`;
+}
 
 async function preprocessData() {
     console.log('🔄 Preprocessing data files...\n');

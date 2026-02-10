@@ -5,7 +5,7 @@ export default function CyclesPage() {
         {
             title: '12-Year Cycle',
             href: '/cycles/12-year',
-            description: 'The Chinese zodiac cycle and its correlation with market patterns',
+            description: 'System Reconfiguration',
         },
         {
             title: '80-Year Cycle',
