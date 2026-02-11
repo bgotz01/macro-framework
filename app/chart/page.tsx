@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ChartNavigation, { ChartType } from '@/components/charts/chart-navigation';
 import YieldChart from '@/components/charts/yield-chart';
@@ -10,14 +10,15 @@ import ValuationsChart from '@/components/charts/valuations-chart';
 import FXChart from '@/components/charts/fx-chart';
 import DBChart from '@/components/charts/db-chart';
 import ReturnsChart from '@/components/charts/returns-chart';
+import StockValuationChart from '@/components/charts/stock-valuation-chart';
 
-export default function ChartPage() {
+function ChartPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const chartParam = searchParams.get('type') as ChartType | null;
 
     const [currentChart, setCurrentChart] = useState<ChartType>(
-        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'all'].includes(chartParam)
+        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'stocks', 'all'].includes(chartParam)
             ? chartParam
             : 'yields'
     );
@@ -30,7 +31,7 @@ export default function ChartPage() {
 
     // Sync state with URL changes (e.g., browser back/forward)
     useEffect(() => {
-        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'all'].includes(chartParam)) {
+        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'stocks', 'all'].includes(chartParam)) {
             setCurrentChart(chartParam);
         }
     }, [chartParam]);
@@ -49,6 +50,8 @@ export default function ChartPage() {
                 return <FXChart height={500} />;
             case 'returns':
                 return <ReturnsChart />;
+            case 'stocks':
+                return <StockValuationChart height={500} />;
             case 'all':
                 return <DBChart height={500} />;
             default:
@@ -84,5 +87,13 @@ export default function ChartPage() {
                 {renderChart()}
             </div>
         </div>
+    );
+}
+
+export default function ChartPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+            <ChartPageContent />
+        </Suspense>
     );
 }

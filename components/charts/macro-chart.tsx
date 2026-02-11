@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Chart, { TimePeriod } from './chart';
-import { DataService, ChartData } from '../lib/data-service';
+import { DataService, ChartData } from '@/lib/data-service';
 
 export type AssetClass = 'bonds' | 'fx' | 'equities' | 'macro' | 'moneysupply';
 

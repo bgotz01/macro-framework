@@ -15,7 +15,7 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
-import { DataService, ChartData, DataPoint } from '../lib/data-service';
+import { DataService, ChartData, DataPoint } from '@/lib/data-service';
 import { format, parseISO, isValid, subYears } from 'date-fns';
 
 export type TimePeriod = '2yr' | '5yr' | '10yr' | '20yr' | 'all';

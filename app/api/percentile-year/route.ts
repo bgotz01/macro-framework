@@ -4,9 +4,13 @@ import path from 'path';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
-    const year = parseInt(searchParams.get('year') || '');
+    const yearParam = searchParams.get('year') || '';
 
-    if (!year || isNaN(year)) {
+    // Handle "latest" parameter
+    const isLatest = yearParam === 'latest';
+    const year = isLatest ? null : parseInt(yearParam);
+
+    if (!isLatest && (!year || isNaN(year))) {
         return NextResponse.json({ error: 'Invalid year parameter' }, { status: 400 });
     }
 
@@ -29,31 +33,53 @@ export async function GET(request: NextRequest) {
             { asset_class: 'derived', series_name: 'Real-Earnings-Yield', key: 'rey' },
         ];
 
-        const result: any = { year };
-
-        // Get year-end data for each series
-        const yearStart = new Date(year, 0, 1).getTime();
-        const yearEnd = new Date(year, 11, 31, 23, 59, 59).getTime();
-        const q4Start = new Date(year, 9, 1).getTime();
+        const result: any = { year: isLatest ? 'latest' : year };
 
         for (const s of series) {
-            const query = `
-                SELECT 
-                    asset_class,
-                    series_name,
-                    date,
-                    value,
-                    percentile_rank
-                FROM percentile_analysis
-                WHERE asset_class = ? 
-                  AND series_name = ?
-                  AND date >= ?
-                  AND date <= ?
-                ORDER BY date DESC
-                LIMIT 1
-            `;
+            let query: string;
+            let params: any[];
 
-            const row = db.prepare(query).get(s.asset_class, s.series_name, q4Start, yearEnd) as any;
+            if (isLatest) {
+                // Get the most recent data point
+                query = `
+                    SELECT 
+                        asset_class,
+                        series_name,
+                        date,
+                        value,
+                        percentile_rank
+                    FROM percentile_analysis
+                    WHERE asset_class = ? 
+                      AND series_name = ?
+                    ORDER BY date DESC
+                    LIMIT 1
+                `;
+                params = [s.asset_class, s.series_name];
+            } else {
+                // Get year-end data for specific year
+                const yearStart = new Date(year!, 0, 1).getTime();
+                const yearEnd = new Date(year!, 11, 31, 23, 59, 59).getTime();
+                const q4Start = new Date(year!, 9, 1).getTime();
+
+                query = `
+                    SELECT 
+                        asset_class,
+                        series_name,
+                        date,
+                        value,
+                        percentile_rank
+                    FROM percentile_analysis
+                    WHERE asset_class = ? 
+                      AND series_name = ?
+                      AND date >= ?
+                      AND date <= ?
+                    ORDER BY date DESC
+                    LIMIT 1
+                `;
+                params = [s.asset_class, s.series_name, q4Start, yearEnd];
+            }
+
+            const row = db.prepare(query).get(...params) as any;
 
             if (row) {
                 result[s.key] = {

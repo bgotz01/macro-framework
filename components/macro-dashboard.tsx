@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import MacroChart, { AssetClass } from './macro-chart';
-import { TimePeriod } from './chart';
+import MacroChart, { AssetClass } from './charts/macro-chart';
+import { TimePeriod } from './charts/chart';
 
 interface MacroDashboardProps {
     className?: string;
@@ -68,8 +68,8 @@ export default function MacroDashboard({ className = '' }: MacroDashboardProps) 
                                     key={assetClass.key}
                                     onClick={() => setSelectedAssetClass(assetClass.key)}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${selectedAssetClass === assetClass.key
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
-                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                         }`}
                                 >
                                     <span>{assetClass.icon}</span>
@@ -104,8 +104,8 @@ export default function MacroDashboard({ className = '' }: MacroDashboardProps) 
                                 <button
                                     onClick={() => setViewMode('single')}
                                     className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'single'
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-background text-foreground hover:bg-muted'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-background text-foreground hover:bg-muted'
                                         }`}
                                 >
                                     Single
@@ -113,8 +113,8 @@ export default function MacroDashboard({ className = '' }: MacroDashboardProps) 
                                 <button
                                     onClick={() => setViewMode('grid')}
                                     className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid'
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-background text-foreground hover:bg-muted'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-background text-foreground hover:bg-muted'
                                         }`}
                                 >
                                     Grid

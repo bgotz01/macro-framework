@@ -16,3 +16,8 @@ BOGZ1FL153064486Q - Corporate Equities % of Assets - Quarterly - https://fred.st
 BOGZ1FL594090005Q - Pension Funds: Total Financial Assets - Quarterly - Millions - https://fred.stlouisfed.org/series/BOGZ1FL594090005Q
 
 BOGZ1LM654090000Q - Mutual Fund: Total Financial Assets - Quarterly - Millions - https://fred.stlouisfed.org/series/BOGZ1LM654090000Q
+
+WRMFNS - Retail Money Market Funds - Weekly - Billions - https://fred.stlouisfed.org/series/WRMFNS
+MMMFFAQ027S - Money Market Funds; Total Financial Assets - Quarterly - Millions - https://fred.stlouisfed.org/series/MMMFFAQ027S
+
+W006RC1Q027SBEA - Federal government current tax receipts - Quarterly - Billions - https://fred.stlouisfed.org/series/W006RC1Q027SBEA

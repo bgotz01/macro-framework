@@ -11,7 +11,7 @@ import {
     Legend,
     ResponsiveContainer,
 } from 'recharts';
-import { DataService, ChartData } from '../lib/data-service';
+import { DataService, ChartData } from '@/lib/data-service';
 import { format, parseISO, isValid } from 'date-fns';
 
 interface DataSource {

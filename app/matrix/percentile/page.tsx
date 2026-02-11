@@ -4,7 +4,7 @@ import PercentileChart from '@/components/charts/percentile-chart';
 import Database from 'better-sqlite3';
 import path from 'path';
 
-async function getInitialData(year: number) {
+async function getInitialData(year: number | 'latest') {
     const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
     const db = new Database(dbPath, { readonly: true, timeout: 10000 });
 
@@ -24,21 +24,37 @@ async function getInitialData(year: number) {
 
     const result: any = { year };
 
-    const yearStart = new Date(year, 0, 1).getTime();
-    const yearEnd = new Date(year, 11, 31, 23, 59, 59).getTime();
-    const q4Start = new Date(year, 9, 1).getTime();
-
     for (const s of series) {
-        const query = `
-            SELECT asset_class, series_name, date, value, percentile_rank
-            FROM percentile_analysis
-            WHERE asset_class = ? AND series_name = ?
-              AND date >= ? AND date <= ?
-            ORDER BY date DESC
-            LIMIT 1
-        `;
+        let query: string;
+        let params: any[];
 
-        const row = db.prepare(query).get(s.asset_class, s.series_name, q4Start, yearEnd) as any;
+        if (year === 'latest') {
+            // Get the most recent data point
+            query = `
+                SELECT asset_class, series_name, date, value, percentile_rank
+                FROM percentile_analysis
+                WHERE asset_class = ? AND series_name = ?
+                ORDER BY date DESC
+                LIMIT 1
+            `;
+            params = [s.asset_class, s.series_name];
+        } else {
+            // Get year-end data for specific year
+            const yearEnd = new Date(year, 11, 31, 23, 59, 59).getTime();
+            const q4Start = new Date(year, 9, 1).getTime();
+
+            query = `
+                SELECT asset_class, series_name, date, value, percentile_rank
+                FROM percentile_analysis
+                WHERE asset_class = ? AND series_name = ?
+                  AND date >= ? AND date <= ?
+                ORDER BY date DESC
+                LIMIT 1
+            `;
+            params = [s.asset_class, s.series_name, q4Start, yearEnd];
+        }
+
+        const row = db.prepare(query).get(...params) as any;
 
         if (row) {
             result[s.key] = {
@@ -61,10 +77,9 @@ async function getInitialData(year: number) {
 export default async function PercentileAnalysisPage() {
     // Get available years
     const availableYears = PercentileService.getAvailableYears();
-    const currentYear = availableYears[0]; // Most recent year
 
-    // Get initial data for current year
-    const initialData = await getInitialData(currentYear);
+    // Get initial data for latest
+    const initialData = await getInitialData('latest');
 
     return (
         <div className="container mx-auto p-6 max-w-6xl">
@@ -96,13 +111,13 @@ export default async function PercentileAnalysisPage() {
 
             {/* Interactive Viewer */}
             <PercentileViewer
-                initialYear={currentYear}
+                initialYear={9999}
                 availableYears={availableYears}
                 initialData={initialData}
             />
 
             {/* Historical Chart */}
-            <div className="mb-8">
+            <div className="mb-8 mt-8">
                 <PercentileChart height={500} />
             </div>
 

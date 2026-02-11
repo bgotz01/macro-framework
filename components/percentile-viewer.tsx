@@ -30,12 +30,12 @@ const METRICS: MetricConfig[] = [
     { key: 'tnx', label: '10Y Treasury', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'us2yr', label: '2Y Treasury', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'irx', label: '3M Treasury', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'realYield', label: 'Real Yield (10Y-CPI)', category: 'Derived Metrics', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', category: 'Derived Metrics', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'realYield', label: 'Real Yield (10Y-CPI)', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'shillerPE', label: 'Shiller P/E (CAPE)', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
     { key: 'pe5yr', label: 'P/E-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
-    { key: 'eyp', label: 'Earnings Yield Premium', category: 'Derived Metrics', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'rey', label: 'Real Earnings Yield', category: 'Derived Metrics', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'eyp', label: 'Earnings Yield Premium', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'rey', label: 'Real Earnings Yield', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
 ];
 
 export default function PercentileViewer({
@@ -47,12 +47,13 @@ export default function PercentileViewer({
     const [data, setData] = useState(initialData);
     const [loading, setLoading] = useState(false);
 
-    const handleYearChange = async (year: number) => {
+    const handleYearChange = async (yearValue: string) => {
+        const year = yearValue === 'latest' ? 9999 : parseInt(yearValue);
         setSelectedYear(year);
         setLoading(true);
 
         try {
-            const response = await fetch(`/api/percentile-year?year=${year}`);
+            const response = await fetch(`/api/percentile-year?year=${yearValue}`);
             const result = await response.json();
             setData(result);
         } catch (error) {
@@ -83,28 +84,32 @@ export default function PercentileViewer({
         return acc;
     }, {} as Record<string, MetricConfig[]>);
 
+    const isLatest = selectedYear === 9999;
+    const displayYear = isLatest ? 'Latest' : selectedYear.toString();
+
     return (
         <>
             {/* Year Selector */}
             <div className="mb-6 p-4 rounded-xl border-2 bg-card">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <h2 className="text-lg font-bold mb-1">Select Year-End</h2>
+                        <h2 className="text-lg font-bold mb-1">Select Time Period</h2>
                         <p className="text-xs text-muted-foreground">
-                            View percentile rankings as of December 31st
+                            {isLatest ? 'View most recent percentile rankings' : 'View percentile rankings as of December 31st'}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
                         <label htmlFor="year-select" className="text-sm font-medium">
-                            Year:
+                            Period:
                         </label>
                         <select
                             id="year-select"
-                            value={selectedYear}
-                            onChange={(e) => handleYearChange(parseInt(e.target.value))}
+                            value={isLatest ? 'latest' : selectedYear}
+                            onChange={(e) => handleYearChange(e.target.value)}
                             className="px-4 py-2 rounded-lg border-2 bg-background text-foreground font-medium text-lg min-w-[120px] cursor-pointer hover:border-primary transition-colors"
                             disabled={loading}
                         >
+                            <option value="latest">Latest</option>
                             {availableYears.map(year => (
                                 <option key={year} value={year}>
                                     {year}
@@ -118,7 +123,7 @@ export default function PercentileViewer({
             {/* Loading State */}
             {loading && (
                 <div className="mb-6 p-4 rounded-xl bg-muted text-center">
-                    <p className="text-muted-foreground">Loading data for {selectedYear}...</p>
+                    <p className="text-muted-foreground">Loading data for {displayYear}...</p>
                 </div>
             )}
 
@@ -193,7 +198,7 @@ export default function PercentileViewer({
             {!loading && data && (
                 <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
                     <h3 className="font-bold mb-2 text-blue-900 dark:text-blue-100">
-                        💡 Key Insights for {selectedYear}
+                        💡 Key Insights for {displayYear}
                     </h3>
                     <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
                         {data.shillerPE && data.shillerPE.percentileRank > 90 && (

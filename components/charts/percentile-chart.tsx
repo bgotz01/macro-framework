@@ -21,20 +21,24 @@ interface SeriesOption {
     value: string;
     label: string;
     color: string;
+    category: string;
 }
 
 const AVAILABLE_SERIES: SeriesOption[] = [
-    { value: 'cpi', label: 'CPI Inflation', color: '#2563eb' },
-    { value: 'fedfunds', label: 'Fed Funds Rate', color: '#dc2626' },
-    { value: 'tnx', label: '10Y Treasury', color: '#16a34a' },
-    { value: 'us2yr', label: '2Y Treasury', color: '#ca8a04' },
-    { value: 'irx', label: '3M Treasury', color: '#9333ea' },
-    { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899' },
-    { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e' },
-    { value: 'realyield', label: 'Real Yield (10Y-CPI)', color: '#06b6d4' },
-    { value: 'yieldcurve', label: 'Yield Curve (10Y-2Y)', color: '#f97316' },
-    { value: 'eyp', label: 'Earnings Yield Premium', color: '#8b5cf6' },
-    { value: 'rey', label: 'Real Earnings Yield', color: '#14b8a6' },
+    // Inflation & Policy
+    { value: 'cpi', label: 'CPI Inflation', color: '#2563eb', category: 'Inflation & Policy' },
+    { value: 'fedfunds', label: 'Fed Funds Rate', color: '#dc2626', category: 'Inflation & Policy' },
+    // Bond Yields
+    { value: 'tnx', label: '10Y Treasury', color: '#16a34a', category: 'Bond Yields' },
+    { value: 'us2yr', label: '2Y Treasury', color: '#ca8a04', category: 'Bond Yields' },
+    { value: 'irx', label: '3M Treasury', color: '#9333ea', category: 'Bond Yields' },
+    { value: 'realyield', label: 'Real Yield (10Y-CPI)', color: '#06b6d4', category: 'Bond Yields' },
+    { value: 'yieldcurve', label: 'Yield Curve (10Y-2Y)', color: '#f97316', category: 'Bond Yields' },
+    // Equity Valuation
+    { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899', category: 'Equity Valuation' },
+    { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e', category: 'Equity Valuation' },
+    { value: 'eyp', label: 'Earnings Yield Premium', color: '#8b5cf6', category: 'Equity Valuation' },
+    { value: 'rey', label: 'Real Earnings Yield', color: '#14b8a6', category: 'Equity Valuation' },
 ];
 
 const DECADE_COLORS = [
@@ -160,139 +164,150 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
     return (
         <div className="p-6 rounded-xl border bg-card">
             <div className="mb-6">
-                <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-                    <h2 className="text-2xl font-bold">Historical Percentile Chart</h2>
-                    <div className="flex gap-3 flex-wrap items-center">
-                        {/* Metric Dropdown */}
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="metric-select" className="text-sm font-medium">
-                                View:
-                            </label>
-                            <select
-                                id="metric-select"
-                                value={metric}
-                                onChange={(e) => setMetric(e.target.value as 'percentile' | 'value')}
-                                className="px-3 py-2 rounded-lg border-2 bg-background text-foreground font-medium text-sm cursor-pointer hover:border-primary transition-colors"
-                            >
-                                <option value="percentile">Percentile Rank</option>
-                                <option value="value">Actual Value</option>
-                            </select>
-                        </div>
+                <h2 className="text-2xl font-bold mb-3">Historical Percentile Chart</h2>
 
-                        {/* Series Selection with Checkboxes */}
-                        <div className="flex items-start gap-2">
-                            <label className="text-sm font-medium pt-2">Series:</label>
-                            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                                {AVAILABLE_SERIES.map(series => (
-                                    <label
-                                        key={series.value}
-                                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedSeries.includes(series.value)}
-                                            onChange={() => handleSeriesToggle(series.value)}
-                                            className="cursor-pointer"
-                                        />
-                                        <span className="font-medium">{series.label}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                {/* Metric Dropdown */}
+                <div className="flex items-center gap-2 mb-4">
+                    <label htmlFor="metric-select" className="text-sm font-medium">
+                        View:
+                    </label>
+                    <select
+                        id="metric-select"
+                        value={metric}
+                        onChange={(e) => setMetric(e.target.value as 'percentile' | 'value')}
+                        className="px-3 py-2 rounded-lg border-2 bg-background text-foreground font-medium text-sm cursor-pointer hover:border-primary transition-colors"
+                    >
+                        <option value="percentile">Percentile Rank</option>
+                        <option value="value">Actual Value</option>
+                    </select>
                 </div>
 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-4">
                     {metric === 'percentile'
                         ? 'Shows where values rank compared to all historical data up to that point'
                         : 'Shows the actual values over time'}
                 </p>
-            </div>
 
-            <ResponsiveContainer width="100%" height={height}>
-                <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-
-                    {/* Decade shading */}
-                    {DECADE_COLORS.map((decade, idx) => (
-                        <ReferenceArea
-                            key={idx}
-                            x1={decade.start}
-                            x2={decade.end}
-                            fill={decade.color}
-                            fillOpacity={decade.opacity}
-                        />
-                    ))}
-
-                    <XAxis
-                        dataKey="date"
-                        stroke={textColor}
-                        ticks={yearlyTicks}
-                        tick={{ fontSize: 12 }}
-                    />
-
-                    <YAxis
-                        stroke={textColor}
-                        tick={{ fontSize: 12 }}
-                        label={{
-                            value: metric === 'percentile' ? 'Percentile Rank' : 'Value (%)',
-                            angle: -90,
-                            position: 'insideLeft',
-                            style: { fill: textColor }
-                        }}
-                        domain={metric === 'percentile' ? [0, 100] : ['auto', 'auto']}
-                    />
-
-                    <Tooltip content={<CustomTooltip />} />
-
-                    <Legend />
-
-                    {/* Percentile reference lines */}
-                    {metric === 'percentile' && (
-                        <>
-                            <ReferenceLine y={25} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
-                            <ReferenceLine y={50} stroke="#6b7280" strokeDasharray="3 3" strokeOpacity={0.5} />
-                            <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} />
-                        </>
-                    )}
-
-                    {/* Lines - dynamically render based on selected series */}
-                    {selectedSeries.map(seriesValue => {
-                        const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
-                        if (!series) return null;
-
-                        return (
-                            <Line
-                                key={seriesValue}
-                                type="monotone"
-                                dataKey={metric === 'percentile' ? `${seriesValue}_percentile` : `${seriesValue}_value`}
-                                stroke={series.color}
-                                strokeWidth={2}
-                                dot={false}
-                                name={series.label}
-                                connectNulls={true}
-                            />
-                        );
-                    })}
-                </LineChart>
-            </ResponsiveContainer>
-
-            {metric === 'percentile' && (
-                <div className="mt-4 flex justify-center gap-6 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-0.5 bg-green-500"></div>
-                        <span>25th percentile</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-0.5 bg-gray-500"></div>
-                        <span>50th percentile (median)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-0.5 bg-red-500"></div>
-                        <span>75th percentile</span>
+                {/* Series Selection - 3 Column Layout */}
+                <div className="border-t pt-4">
+                    <label className="text-sm font-medium mb-3 block">Select Series:</label>
+                    <div className="grid grid-cols-3 gap-6">
+                        {['Inflation & Policy', 'Bond Yields', 'Equity Valuation'].map(category => {
+                            const categorySeries = AVAILABLE_SERIES.filter(s => s.category === category);
+                            return (
+                                <div key={category} className="space-y-2">
+                                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pb-1">
+                                        {category}
+                                    </div>
+                                    <div className="space-y-2">
+                                        {categorySeries.map(series => (
+                                            <label
+                                                key={series.value}
+                                                className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedSeries.includes(series.value)}
+                                                    onChange={() => handleSeriesToggle(series.value)}
+                                                    className="cursor-pointer"
+                                                />
+                                                <span className="font-medium">{series.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
-        </div>
+            </div>
+
+            <div className="pt-6">
+                <ResponsiveContainer width="100%" height={height}>
+                    <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+
+                        {/* Decade shading */}
+                        {DECADE_COLORS.map((decade, idx) => (
+                            <ReferenceArea
+                                key={idx}
+                                x1={decade.start}
+                                x2={decade.end}
+                                fill={decade.color}
+                                fillOpacity={decade.opacity}
+                            />
+                        ))}
+
+                        <XAxis
+                            dataKey="date"
+                            stroke={textColor}
+                            ticks={yearlyTicks}
+                            tick={{ fontSize: 12 }}
+                        />
+
+                        <YAxis
+                            stroke={textColor}
+                            tick={{ fontSize: 12 }}
+                            label={{
+                                value: metric === 'percentile' ? 'Percentile Rank' : 'Value (%)',
+                                angle: -90,
+                                position: 'insideLeft',
+                                style: { fill: textColor }
+                            }}
+                            domain={metric === 'percentile' ? [0, 100] : ['auto', 'auto']}
+                        />
+
+                        <Tooltip content={<CustomTooltip />} />
+
+                        <Legend />
+
+                        {/* Percentile reference lines */}
+                        {metric === 'percentile' && (
+                            <>
+                                <ReferenceLine y={25} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
+                                <ReferenceLine y={50} stroke="#6b7280" strokeDasharray="3 3" strokeOpacity={0.5} />
+                                <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} />
+                            </>
+                        )}
+
+                        {/* Lines - dynamically render based on selected series */}
+                        {selectedSeries.map(seriesValue => {
+                            const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
+                            if (!series) return null;
+
+                            return (
+                                <Line
+                                    key={seriesValue}
+                                    type="monotone"
+                                    dataKey={metric === 'percentile' ? `${seriesValue}_percentile` : `${seriesValue}_value`}
+                                    stroke={series.color}
+                                    strokeWidth={2}
+                                    dot={false}
+                                    name={series.label}
+                                    connectNulls={true}
+                                />
+                            );
+                        })}
+                    </LineChart>
+                </ResponsiveContainer>
+
+                {metric === 'percentile' && (
+                    <div className="mt-4 flex justify-center gap-6 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-0.5 bg-green-500"></div>
+                            <span>25th percentile</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-0.5 bg-gray-500"></div>
+                            <span>50th percentile (median)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-0.5 bg-red-500"></div>
+                            <span>75th percentile</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div >
     );
 }

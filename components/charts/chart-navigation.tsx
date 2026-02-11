@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'all';
+export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'stocks' | 'all';
 
 interface ChartNavigationProps {
     onChartChange: (chartType: ChartType) => void;
@@ -41,6 +41,11 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; description: string 
         description: '2Y, 5Y, and 10Y rolling returns for markets'
     },
     {
+        value: 'stocks',
+        label: 'Stock Valuations',
+        description: 'Individual stock metrics for major tech companies'
+    },
+    {
         value: 'all',
         label: 'All Data',
         description: 'Access all available time series'
@@ -50,7 +55,7 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; description: string 
 export default function ChartNavigation({ onChartChange, currentChart }: ChartNavigationProps) {
     return (
         <div className="mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {CHART_TYPES.map((chart) => (
                     <button
                         key={chart.value}

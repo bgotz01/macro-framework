@@ -23,8 +23,13 @@ const FRED_SERIES = [
     'FYFSD',
     'FYFSGDA188S',
     'M1SL',
-    'M2SL'
+    'M2SL',
+    'WRMFNS',
+    'MMMFFAQ027S'
 ];
+
+// Series that need to be converted from millions to billions
+const MILLIONS_TO_BILLIONS = ['MMMFFAQ027S'];
 
 async function convertFREDData() {
     console.log('🔄 Converting FRED economic data files...\n');
@@ -74,7 +79,13 @@ async function convertFREDData() {
                 })
                 .map(row => {
                     const dateField = row.observation_date || row.DATE || row.date;
-                    const valueField = row[seriesCode] || row.value || row.Value;
+                    let valueField = row[seriesCode] || row.value || row.Value;
+
+                    // Convert from millions to billions if needed
+                    if (MILLIONS_TO_BILLIONS.includes(seriesCode)) {
+                        valueField = valueField / 1000;
+                    }
+
                     return {
                         Date: dateField,
                         Value: valueField

@@ -33,6 +33,7 @@ export default function Navbar() {
                     <div className="hidden md:flex items-center space-x-1">
                         {[
                             { href: '/macro-data', label: 'Macro Data' },
+                            { href: '/stocks', label: 'Stocks' },
                             { href: '/framework', label: 'Framework' },
                             { href: '/major-events', label: 'Major Events' },
                             { href: '/other-events', label: 'Other Events' }
@@ -91,6 +92,7 @@ export default function Navbar() {
                         <div className="flex flex-col space-y-2">
                             {[
                                 { href: '/macro-data', label: 'Macro Data' },
+                                { href: '/stocks', label: 'Stocks' },
                                 { href: '/framework', label: 'Framework' },
                                 { href: '/major-events', label: 'Major Events' },
                                 { href: '/other-events', label: 'Other Events' }

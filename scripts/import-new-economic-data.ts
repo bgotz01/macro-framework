@@ -31,6 +31,20 @@ const SERIES_TO_IMPORT: SeriesConfig[] = [
         displayName: 'Mutual Fund: Total Financial Assets',
         units: 'Billions',
         convertToBillions: true
+    },
+    {
+        filename: 'WRMFNS.csv',
+        seriesName: 'Retail-Money-Market-Funds',
+        displayName: 'Retail Money Market Funds',
+        units: 'Billions',
+        convertToBillions: false
+    },
+    {
+        filename: 'MMMFFAQ027S.csv',
+        seriesName: 'Money-Market-Funds-Total',
+        displayName: 'Money Market Funds: Total Financial Assets',
+        units: 'Billions',
+        convertToBillions: false
     }
 ];
 
@@ -101,6 +115,12 @@ async function importEconomicData() {
 
             insertMany(series.seriesName, data);
             console.log(`  ✅ Inserted ${data.length} points for ${series.seriesName}`);
+
+            // Insert or update metadata
+            db.prepare(`
+                INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, units, last_updated)
+                VALUES ('economic', ?, ?, ?, ?)
+            `).run(series.seriesName, series.displayName, series.units, Date.now());
 
             if (series.convertToBillions) {
                 console.log(`  💰 Converted from millions to billions`);
