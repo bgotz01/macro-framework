@@ -236,6 +236,20 @@
       "geography": "US",
       "frequency": "annual",
       "units": "percent"
+    },
+    "W006RC1Q027SBEA": {
+      "displayName": "Federal Tax Receipts",
+      "description": "US Federal Government Current Tax Receipts (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
+    },
+    "FDHBFIN": {
+      "displayName": "Federal Debt Held by Foreign Investors",
+      "description": "US Federal Debt Held by Foreign and International Investors (Quarterly)",
+      "geography": "US",
+      "frequency": "quarterly",
+      "units": "billions"
     }
   },
   "bonds": {

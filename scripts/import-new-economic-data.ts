@@ -45,6 +45,20 @@ const SERIES_TO_IMPORT: SeriesConfig[] = [
         displayName: 'Money Market Funds: Total Financial Assets',
         units: 'Billions',
         convertToBillions: false
+    },
+    {
+        filename: 'W006RC1Q027SBEA.csv',
+        seriesName: 'W006RC1Q027SBEA',
+        displayName: 'Federal Tax Receipts',
+        units: 'billions',
+        convertToBillions: false
+    },
+    {
+        filename: 'FDHBFIN.csv',
+        seriesName: 'FDHBFIN',
+        displayName: 'Federal Debt Held by Foreign Investors',
+        units: 'billions',
+        convertToBillions: false
     }
 ];
 

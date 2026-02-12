@@ -21,3 +21,6 @@ WRMFNS - Retail Money Market Funds - Weekly - Billions - https://fred.stlouisfed
 MMMFFAQ027S - Money Market Funds; Total Financial Assets - Quarterly - Millions - https://fred.stlouisfed.org/series/MMMFFAQ027S
 
 W006RC1Q027SBEA - Federal government current tax receipts - Quarterly - Billions - https://fred.stlouisfed.org/series/W006RC1Q027SBEA
+
+FDHBFIN - Federal Debt Held by Foreign and International Investors - Quarterly - Billions - https://fred.stlouisfed.org/series/FDHBFIN
+

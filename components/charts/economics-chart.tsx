@@ -291,6 +291,59 @@ export default function EconomicsChart({
         setFilteredData(filtered);
     }, [data, ratioData, datePreset, customStartDate, customEndDate, calculationMode]);
 
+    // Categorize series for organized dropdown
+    const renderCategorizedOptions = () => {
+        const categories: Record<string, typeof availableSeries> = {
+            'Money Supply': [],
+            'Money Market Funds': [],
+            'Debt': [],
+            'GDP & Income': [],
+            'Federal Budget': [],
+            'Inflation & Prices': [],
+            'Interest Rates': [],
+            'Other': []
+        };
+
+        // Categorize each series based on display name or series name
+        availableSeries.forEach(series => {
+            const name = series.display_name.toLowerCase();
+            const seriesName = series.series_name.toLowerCase();
+
+            if (name.includes('m1') || name.includes('m2') || name.includes('money supply')) {
+                categories['Money Supply'].push(series);
+            } else if (name.includes('money market') || seriesName.includes('money-market')) {
+                categories['Money Market Funds'].push(series);
+            } else if (name.includes('debt') || name.includes('deficit') || name.includes('surplus')) {
+                categories['Debt'].push(series);
+            } else if (name.includes('gdp') || name.includes('income') || name.includes('consumption') || name.includes('pce')) {
+                categories['GDP & Income'].push(series);
+            } else if (name.includes('federal') && (name.includes('deficit') || name.includes('surplus') || name.includes('interest payment') || name.includes('tax receipt'))) {
+                categories['Federal Budget'].push(series);
+            } else if (name.includes('cpi') || name.includes('inflation') || name.includes('price')) {
+                categories['Inflation & Prices'].push(series);
+            } else if (name.includes('fed funds') || name.includes('interest rate') || name.includes('yield')) {
+                categories['Interest Rates'].push(series);
+            } else {
+                categories['Other'].push(series);
+            }
+        });
+
+        // Render optgroups for non-empty categories
+        return Object.entries(categories).map(([categoryName, seriesList]) => {
+            if (seriesList.length === 0) return null;
+
+            return (
+                <optgroup key={categoryName} label={categoryName}>
+                    {seriesList.map(series => (
+                        <option key={series.series_name} value={series.series_name}>
+                            {series.display_name}
+                        </option>
+                    ))}
+                </optgroup>
+            );
+        });
+    };
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -457,11 +510,7 @@ export default function EconomicsChart({
                                 onChange={(e) => setSeries1(e.target.value)}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                {availableSeries.map(series => (
-                                    <option key={series.series_name} value={series.series_name}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
+                                {renderCategorizedOptions()}
                             </select>
                         </div>
                         <button
@@ -497,11 +546,7 @@ export default function EconomicsChart({
                                 onChange={(e) => setSeries2(e.target.value)}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                {availableSeries.map(series => (
-                                    <option key={series.series_name} value={series.series_name}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
+                                {renderCategorizedOptions()}
                             </select>
                         </div>
                     </div>
@@ -521,11 +566,7 @@ export default function EconomicsChart({
                             className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             disabled={availableSeries.length === 0}
                         >
-                            {availableSeries.map(series => (
-                                <option key={series.series_name} value={series.series_name}>
-                                    {series.display_name}
-                                </option>
-                            ))}
+                            {renderCategorizedOptions()}
                         </select>
                     </div>
                 )}
@@ -608,6 +649,9 @@ export default function EconomicsChart({
                                     <div className="text-sm font-medium text-card-foreground">
                                         {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
                                     </div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        FRED: {selectedSeries}
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -635,6 +679,9 @@ export default function EconomicsChart({
                                         {availableSeries.find(s => s.series_name === series1)?.display_name || series1}
                                         {' / '}
                                         {availableSeries.find(s => s.series_name === series2)?.display_name || series2}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        FRED: {series1} / {series2}
                                     </div>
                                 </div>
                             </>

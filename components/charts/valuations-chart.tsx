@@ -48,13 +48,22 @@ export default function ValuationsChart({
                 }));
                 setAvailableSeries(seriesWithNames);
 
-                // Auto-select Shiller-PE if available, otherwise first series
+                // Auto-select Shiller-PE if available, otherwise first non-EPS series
                 const shillerPE = seriesWithNames.find((s: any) => s.series_name === 'Shiller-PE');
                 if (shillerPE) {
                     setSelectedSeries(['Shiller-PE']);
-                } else if (seriesWithNames.length > 0) {
-                    setSelectedSeries([seriesWithNames[0].series_name]);
+                } else {
+                    const nonEPSSeries = seriesWithNames.filter((s: any) => !s.series_name.includes('EPS'));
+                    if (nonEPSSeries.length > 0) {
+                        setSelectedSeries([nonEPSSeries[0].series_name]);
+                    }
                 }
+
+                // Set default ratio values
+                const sp500Price = seriesWithNames.find((s: any) => s.series_name === 'SP500-Price');
+                const sp500EPS = seriesWithNames.find((s: any) => s.series_name === 'SP500-EPS');
+                if (sp500Price) setRatioNumerator('SP500-Price');
+                if (sp500EPS) setRatioDenominator('SP500-EPS');
             } catch (err) {
                 console.error('Error loading series:', err);
                 setAvailableSeries([]);
@@ -303,18 +312,20 @@ export default function ValuationsChart({
                         Select Valuation Metrics (click to toggle)
                     </label>
                     <div className="flex flex-wrap gap-2">
-                        {availableSeries.map(series => (
-                            <button
-                                key={series.series_name}
-                                onClick={() => toggleSeries(series.series_name)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
-                            >
-                                {series.display_name}
-                            </button>
-                        ))}
+                        {availableSeries
+                            .filter(series => !series.series_name.includes('EPS') && !series.series_name.includes('Price'))
+                            .map(series => (
+                                <button
+                                    key={series.series_name}
+                                    onClick={() => toggleSeries(series.series_name)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                        }`}
+                                >
+                                    {series.display_name}
+                                </button>
+                            ))}
                         <button
                             onClick={() => toggleSeries('ratio')}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${showRatio
@@ -322,7 +333,7 @@ export default function ValuationsChart({
                                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
                         >
-                            Ratio
+                            Custom Ratio
                         </button>
                     </div>
                 </div>
@@ -331,7 +342,7 @@ export default function ValuationsChart({
                 {showRatio && (
                     <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
                         <label className="block text-sm font-medium text-card-foreground mb-3">
-                            Configure Ratio
+                            Configure Custom Ratio
                         </label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -342,11 +353,20 @@ export default function ValuationsChart({
                                     className="w-full px-3 py-2 rounded-md bg-card border border-border text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                                 >
                                     <option value="">Select series...</option>
-                                    {availableSeries.map(series => (
-                                        <option key={series.series_name} value={series.series_name}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
+                                    {availableSeries
+                                        .filter(s => s.series_name === 'SP500-Price')
+                                        .map(series => (
+                                            <option key={series.series_name} value={series.series_name}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                    {availableSeries
+                                        .filter(s => s.series_name !== 'SP500-Price' && !s.series_name.includes('EPS'))
+                                        .map(series => (
+                                            <option key={series.series_name} value={series.series_name}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             <div>
@@ -357,11 +377,13 @@ export default function ValuationsChart({
                                     className="w-full px-3 py-2 rounded-md bg-card border border-border text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                                 >
                                     <option value="">Select series...</option>
-                                    {availableSeries.map(series => (
-                                        <option key={series.series_name} value={series.series_name}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
+                                    {availableSeries
+                                        .filter(s => s.series_name.includes('EPS'))
+                                        .map(series => (
+                                            <option key={series.series_name} value={series.series_name}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                         </div>

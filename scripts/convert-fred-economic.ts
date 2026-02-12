@@ -25,7 +25,9 @@ const FRED_SERIES = [
     'M1SL',
     'M2SL',
     'WRMFNS',
-    'MMMFFAQ027S'
+    'MMMFFAQ027S',
+    'W006RC1Q027SBEA',
+    'FDHBFIN'
 ];
 
 // Series that need to be converted from millions to billions

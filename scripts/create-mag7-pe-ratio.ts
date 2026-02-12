@@ -11,15 +11,22 @@ async function createMag7PERatio() {
     const db = new Database(dbPath);
 
     try {
-        console.log('🔄 Creating Magnificent 6 Market-Cap-Weighted P/E Ratio...\n');
-        console.log('(Excluding NVDA due to different fiscal calendar)\n');
+        console.log('🔄 Creating Magnificent 6 Aggregate P/E Ratio...\n');
+        console.log('(Excluding NVDA due to different fiscal calendar)');
+        console.log('Using aggregate method: Total Market Cap / Total Earnings\n');
 
-        // Get all unique dates across all Mag6 stocks
+        // Get dates where ALL Mag6 stocks have Market-Cap, Shares, and TTM data
         const allDates = db.prepare(`
-            SELECT DISTINCT date
+            SELECT date
             FROM time_series
             WHERE asset_class = 'stocks' 
               AND series_name IN (${MAG6_STOCKS.map(() => '?').join(',')})
+              AND column_name IN ('Market-Cap', 'Shares', 'TTM')
+            GROUP BY date
+            HAVING COUNT(DISTINCT series_name) = ${MAG6_STOCKS.length}
+               AND COUNT(DISTINCT CASE WHEN column_name = 'Market-Cap' THEN series_name END) = ${MAG6_STOCKS.length}
+               AND COUNT(DISTINCT CASE WHEN column_name = 'Shares' THEN series_name END) = ${MAG6_STOCKS.length}
+               AND COUNT(DISTINCT CASE WHEN column_name = 'TTM' THEN series_name END) = ${MAG6_STOCKS.length}
             ORDER BY date
         `).all(...MAG6_STOCKS) as Array<{ date: number }>;
 
@@ -37,18 +44,24 @@ async function createMag7PERatio() {
         let skippedCount = 0;
 
         for (const { date } of allDates) {
-            // Get market caps and P/E ratios for all Mag6 stocks on this date
+            // Get market caps, shares, and TTM earnings for all Mag6 stocks on this date
             const stockData = db.prepare(`
                 SELECT 
                     ts1.series_name,
                     ts1.value as market_cap,
-                    ts2.value as pe_ratio
+                    ts2.value as shares,
+                    ts3.value as ttm_earnings
                 FROM time_series ts1
                 LEFT JOIN time_series ts2 
                     ON ts1.asset_class = ts2.asset_class 
                     AND ts1.series_name = ts2.series_name 
                     AND ts1.date = ts2.date
-                    AND ts2.column_name = 'PE-Ratio'
+                    AND ts2.column_name = 'Shares'
+                LEFT JOIN time_series ts3
+                    ON ts1.asset_class = ts3.asset_class 
+                    AND ts1.series_name = ts3.series_name 
+                    AND ts1.date = ts3.date
+                    AND ts3.column_name = 'TTM'
                 WHERE ts1.asset_class = 'stocks'
                   AND ts1.series_name IN (${MAG6_STOCKS.map(() => '?').join(',')})
                   AND ts1.column_name = 'Market-Cap'
@@ -56,38 +69,51 @@ async function createMag7PERatio() {
             `).all(...MAG6_STOCKS, date) as Array<{
                 series_name: string;
                 market_cap: number;
-                pe_ratio: number | null
+                shares: number | null;
+                ttm_earnings: number | null;
             }>;
 
-            // Only calculate if we have all 6 stocks with both market cap and P/E ratio
+            // Only calculate if we have all 6 stocks with market cap, shares, and TTM
             if (stockData.length !== MAG6_STOCKS.length) {
                 skippedCount++;
                 continue;
             }
 
-            // Check if all have P/E ratios
-            const allHavePE = stockData.every(s => s.pe_ratio !== null && s.pe_ratio > 0);
-            if (!allHavePE) {
+            // Check if all have the required data
+            const allHaveData = stockData.every(s =>
+                s.market_cap !== null &&
+                s.shares !== null &&
+                s.ttm_earnings !== null &&
+                s.market_cap > 0 &&
+                s.shares > 0
+            );
+
+            if (!allHaveData) {
                 skippedCount++;
                 continue;
             }
 
-            // Calculate market-cap-weighted P/E ratio
-            // Formula: Sum(Market Cap) / Sum(Market Cap / P/E Ratio)
-            // This is equivalent to: Total Market Cap / Total Earnings
+            // Calculate aggregate P/E ratio: Total Market Cap / Total Earnings
+            // Total Earnings = Sum(Shares * TTM EPS) for all companies
             const totalMarketCap = stockData.reduce((sum, s) => sum + s.market_cap, 0);
             const totalEarnings = stockData.reduce((sum, s) => {
-                // Earnings = Market Cap / P/E Ratio
-                return sum + (s.market_cap / s.pe_ratio!);
+                // Total earnings = shares * earnings per share
+                return sum + (s.shares! * s.ttm_earnings!);
             }, 0);
 
-            const weightedPE = totalMarketCap / totalEarnings;
+            // Skip if total earnings is zero or negative (net losses for the group)
+            if (totalEarnings <= 0) {
+                skippedCount++;
+                continue;
+            }
 
-            // Insert weighted P/E ratio
+            const aggregatePE = totalMarketCap / totalEarnings;
+
+            // Insert aggregate P/E ratio
             db.prepare(`
                 INSERT INTO time_series (asset_class, series_name, column_name, date, value)
                 VALUES ('indices', 'MAG7', 'PE-Ratio', ?, ?)
-            `).run(date, weightedPE);
+            `).run(date, aggregatePE);
 
             calculatedCount++;
         }
