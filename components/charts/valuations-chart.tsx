@@ -311,21 +311,68 @@ export default function ValuationsChart({
                     <label className="block text-sm font-medium text-card-foreground mb-3">
                         Select Valuation Metrics (click to toggle)
                     </label>
-                    <div className="flex flex-wrap gap-2">
-                        {availableSeries
-                            .filter(series => !series.series_name.includes('EPS') && !series.series_name.includes('Price'))
-                            .map(series => (
-                                <button
-                                    key={series.series_name}
-                                    onClick={() => toggleSeries(series.series_name)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
-                                        ? 'bg-primary text-primary-foreground shadow-sm'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                        }`}
-                                >
-                                    {series.display_name}
-                                </button>
-                            ))}
+
+                    {/* S&P 500 Section */}
+                    <div className="mb-4">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            S&P 500
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {availableSeries
+                                .filter(series =>
+                                    !series.series_name.includes('EPS') &&
+                                    !series.series_name.includes('Price') &&
+                                    !series.series_name.includes('Nasdaq') &&
+                                    series.series_name.startsWith('SP500') || series.series_name === 'Shiller-PE' || series.series_name === 'PE-5yr' || series.series_name === 'Earnings-Yield' || series.series_name === 'Earnings-Yield-5yr'
+                                )
+                                .map(series => (
+                                    <button
+                                        key={series.series_name}
+                                        onClick={() => toggleSeries(series.series_name)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                    >
+                                        {series.display_name}
+                                    </button>
+                                ))}
+                        </div>
+                    </div>
+
+                    {/* NASDAQ 100 Section */}
+                    <div className="mb-4">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            NASDAQ 100
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {availableSeries
+                                .filter(series =>
+                                    !series.series_name.includes('EPS') &&
+                                    !series.series_name.includes('Price') &&
+                                    !series.series_name.includes('SPS') &&
+                                    series.series_name.includes('Nasdaq')
+                                )
+                                .map(series => (
+                                    <button
+                                        key={series.series_name}
+                                        onClick={() => toggleSeries(series.series_name)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                    >
+                                        {series.display_name}
+                                    </button>
+                                ))}
+                        </div>
+                    </div>
+
+                    {/* Custom Ratio Button */}
+                    <div>
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            Custom
+                        </h3>
                         <button
                             onClick={() => toggleSeries('ratio')}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${showRatio
@@ -353,20 +400,24 @@ export default function ValuationsChart({
                                     className="w-full px-3 py-2 rounded-md bg-card border border-border text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                                 >
                                     <option value="">Select series...</option>
-                                    {availableSeries
-                                        .filter(s => s.series_name === 'SP500-Price')
-                                        .map(series => (
-                                            <option key={series.series_name} value={series.series_name}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                    {availableSeries
-                                        .filter(s => s.series_name !== 'SP500-Price' && !s.series_name.includes('EPS'))
-                                        .map(series => (
-                                            <option key={series.series_name} value={series.series_name}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
+                                    <optgroup label="S&P 500">
+                                        {availableSeries
+                                            .filter(s => s.series_name === 'SP500-Price')
+                                            .map(series => (
+                                                <option key={series.series_name} value={series.series_name}>
+                                                    {series.display_name}
+                                                </option>
+                                            ))}
+                                    </optgroup>
+                                    <optgroup label="Other Metrics">
+                                        {availableSeries
+                                            .filter(s => s.series_name !== 'SP500-Price' && !s.series_name.includes('EPS') && !s.series_name.includes('SPS'))
+                                            .map(series => (
+                                                <option key={series.series_name} value={series.series_name}>
+                                                    {series.display_name}
+                                                </option>
+                                            ))}
+                                    </optgroup>
                                 </select>
                             </div>
                             <div>
@@ -377,13 +428,24 @@ export default function ValuationsChart({
                                     className="w-full px-3 py-2 rounded-md bg-card border border-border text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                                 >
                                     <option value="">Select series...</option>
-                                    {availableSeries
-                                        .filter(s => s.series_name.includes('EPS'))
-                                        .map(series => (
-                                            <option key={series.series_name} value={series.series_name}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
+                                    <optgroup label="S&P 500 Earnings">
+                                        {availableSeries
+                                            .filter(s => s.series_name.includes('SP500') && s.series_name.includes('EPS'))
+                                            .map(series => (
+                                                <option key={series.series_name} value={series.series_name}>
+                                                    {series.display_name}
+                                                </option>
+                                            ))}
+                                    </optgroup>
+                                    <optgroup label="NASDAQ 100 Earnings">
+                                        {availableSeries
+                                            .filter(s => s.series_name.includes('Nasdaq') && s.series_name.includes('EPS'))
+                                            .map(series => (
+                                                <option key={series.series_name} value={series.series_name}>
+                                                    {series.display_name}
+                                                </option>
+                                            ))}
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>
@@ -401,7 +463,7 @@ export default function ValuationsChart({
                 </h4>
                 <div className="text-sm text-muted-foreground space-y-2">
                     <p>
-                        <strong className="text-card-foreground">S&P 500 P/E Ratio:</strong> Uses trailing 12-month earnings.
+                        <strong className="text-card-foreground">Standard P/E Ratio:</strong> Uses trailing 12-month earnings.
                         More responsive to current market conditions but can be volatile during earnings cycles.
                     </p>
                     <p>
@@ -409,9 +471,14 @@ export default function ValuationsChart({
                         uses 10-year average inflation-adjusted earnings. Smooths out business cycle fluctuations and provides
                         a longer-term valuation perspective.
                     </p>
+                    <p>
+                        <strong className="text-card-foreground">5-Year & 10-Year P/E:</strong> Uses rolling average earnings over 5 or 10 years.
+                        Provides a middle ground between current P/E and Shiller P/E, smoothing short-term volatility while remaining
+                        more responsive than CAPE.
+                    </p>
                     <p className="text-xs italic">
-                        💡 Tip: Shiller P/E is generally more useful for identifying long-term market valuation extremes,
-                        while the standard P/E reflects current market sentiment.
+                        💡 Tip: Compare S&P 500 and NASDAQ 100 valuations to understand relative market positioning.
+                        NASDAQ 100 typically trades at a premium due to its tech-heavy composition and higher growth expectations.
                     </p>
                 </div>
             </div>

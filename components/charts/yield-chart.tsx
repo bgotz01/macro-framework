@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea, ReferenceLine } from 'recharts';
 import { generateYearlyTicks } from '@/lib/chart-utils';
 
 interface YieldChartProps {
@@ -15,16 +15,6 @@ interface ChartDataPoint {
 }
 
 const CHART_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
-
-const DECADE_COLORS = [
-    { start: '1960-01-01', end: '1969-12-31', color: '#3b82f6', opacity: 0.05 },
-    { start: '1970-01-01', end: '1979-12-31', color: '#8b5cf6', opacity: 0.05 },
-    { start: '1980-01-01', end: '1989-12-31', color: '#ec4899', opacity: 0.05 },
-    { start: '1990-01-01', end: '1999-12-31', color: '#f59e0b', opacity: 0.05 },
-    { start: '2000-01-01', end: '2009-12-31', color: '#10b981', opacity: 0.05 },
-    { start: '2010-01-01', end: '2019-12-31', color: '#06b6d4', opacity: 0.05 },
-    { start: '2020-01-01', end: '2029-12-31', color: '#6366f1', opacity: 0.05 },
-];
 
 const DATE_PRESETS: Array<
     | { label: string; value: string }
@@ -72,19 +62,21 @@ export default function YieldChart({
             try {
                 setLoading(true);
 
-                // Load bonds and economic series (both have percent-based data)
-                const [bondsResponse, economicResponse] = await Promise.all([
+                // Load bonds, economic, and valuations series (all have percent-based data)
+                const [bondsResponse, economicResponse, valuationsResponse] = await Promise.all([
                     fetch('/api/data/bonds'),
-                    fetch('/api/data/economic')
+                    fetch('/api/data/economic'),
+                    fetch('/api/data/valuations')
                 ]);
 
-                if (!bondsResponse.ok || !economicResponse.ok) {
+                if (!bondsResponse.ok || !economicResponse.ok || !valuationsResponse.ok) {
                     throw new Error('Failed to load series list');
                 }
 
-                const [bondsResult, economicResult] = await Promise.all([
+                const [bondsResult, economicResult, valuationsResult] = await Promise.all([
                     bondsResponse.json(),
-                    economicResponse.json()
+                    economicResponse.json(),
+                    valuationsResponse.json()
                 ]);
 
                 // Filter for percent-based series only
@@ -104,7 +96,15 @@ export default function YieldChart({
                         asset_class: 'economic'
                     }));
 
-                const allSeries = [...bondsSeries, ...economicSeries];
+                const valuationsSeries = valuationsResult.seriesInfo
+                    .filter((s: any) => s.units === 'percent')
+                    .map((s: any) => ({
+                        series_name: s.series_name,
+                        display_name: s.display_name,
+                        asset_class: 'valuations'
+                    }));
+
+                const allSeries = [...bondsSeries, ...economicSeries, ...valuationsSeries];
                 setAvailableSeries(allSeries);
 
                 // Auto-select first series
@@ -294,21 +294,6 @@ export default function YieldChart({
         }
 
         const noDataInRange = datePreset !== 'all' && filteredData.length === 0;
-        const dataStartDate = chartData.length > 0 ? chartData[0].date : null;
-        const dataEndDate = chartData.length > 0 ? chartData[chartData.length - 1].date : null;
-
-        const visibleDecades = dataStartDate && dataEndDate
-            ? DECADE_COLORS.filter(decade => {
-                return decade.end >= dataStartDate && decade.start <= dataEndDate;
-            }).map(decade => ({
-                ...decade,
-                start: decade.start < dataStartDate ? dataStartDate : decade.start,
-                end: decade.end > dataEndDate ? dataEndDate : decade.end
-            }))
-            : [];
-
-        const series1Info = availableSeries.find(s => s.series_name === series1);
-        const series2Info = availableSeries.find(s => s.series_name === series2);
 
         return (
             <>
@@ -321,18 +306,6 @@ export default function YieldChart({
                 )}
                 <ResponsiveContainer width="100%" height={height}>
                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        {visibleDecades.map((decade, index) => (
-                            <ReferenceArea
-                                key={index}
-                                x1={decade.start}
-                                x2={decade.end}
-                                fill={decade.color}
-                                fillOpacity={decade.opacity}
-                                strokeOpacity={0}
-                                ifOverflow="hidden"
-                            />
-                        ))}
-
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
@@ -361,6 +334,16 @@ export default function YieldChart({
                             formatter={(value: any) => `${Number(value).toFixed(2)}%`}
                         />
                         <Legend wrapperStyle={{ color: '#9ca3af' }} />
+
+                        {/* Zero reference line */}
+                        <ReferenceLine
+                            y={0}
+                            stroke="#dc2626"
+                            strokeDasharray="5 5"
+                            strokeWidth={1.5}
+                            opacity={0.7}
+                        />
+
                         <Line
                             type="monotone"
                             dataKey="Value"
@@ -368,7 +351,7 @@ export default function YieldChart({
                             strokeWidth={2}
                             dot={false}
                             name={calculationMode === 'spread'
-                                ? `${series1Info?.display_name || series1} - ${series2Info?.display_name || series2}`
+                                ? `${availableSeries.find(s => s.series_name === series1)?.display_name || series1} - ${availableSeries.find(s => s.series_name === series2)?.display_name || series2}`
                                 : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
                             }
                         />
@@ -425,11 +408,33 @@ export default function YieldChart({
                                 }}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                {availableSeries.map(series => (
-                                    <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
+                                <optgroup label="Bond Markets">
+                                    {availableSeries
+                                        .filter(s => s.asset_class === 'bonds')
+                                        .map(series => (
+                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                </optgroup>
+                                <optgroup label="Economic">
+                                    {availableSeries
+                                        .filter(s => s.asset_class === 'economic')
+                                        .map(series => (
+                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                </optgroup>
+                                <optgroup label="Equity Valuation">
+                                    {availableSeries
+                                        .filter(s => s.asset_class === 'valuations')
+                                        .map(series => (
+                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                </optgroup>
                             </select>
                         </div>
                         <div>
@@ -445,11 +450,33 @@ export default function YieldChart({
                                 }}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                {availableSeries.map(series => (
-                                    <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
+                                <optgroup label="Bond Markets">
+                                    {availableSeries
+                                        .filter(s => s.asset_class === 'bonds')
+                                        .map(series => (
+                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                </optgroup>
+                                <optgroup label="Economic">
+                                    {availableSeries
+                                        .filter(s => s.asset_class === 'economic')
+                                        .map(series => (
+                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                </optgroup>
+                                <optgroup label="Equity Valuation">
+                                    {availableSeries
+                                        .filter(s => s.asset_class === 'valuations')
+                                        .map(series => (
+                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                </optgroup>
                             </select>
                         </div>
                     </div>
@@ -468,11 +495,33 @@ export default function YieldChart({
                             }}
                             className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                         >
-                            {availableSeries.map(series => (
-                                <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                    {series.display_name}
-                                </option>
-                            ))}
+                            <optgroup label="Bond Markets">
+                                {availableSeries
+                                    .filter(s => s.asset_class === 'bonds')
+                                    .map(series => (
+                                        <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                            </optgroup>
+                            <optgroup label="Economic">
+                                {availableSeries
+                                    .filter(s => s.asset_class === 'economic')
+                                    .map(series => (
+                                        <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                            </optgroup>
+                            <optgroup label="Equity Valuation">
+                                {availableSeries
+                                    .filter(s => s.asset_class === 'valuations')
+                                    .map(series => (
+                                        <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
+                                            {series.display_name}
+                                        </option>
+                                    ))}
+                            </optgroup>
                         </select>
                     </div>
                 )}

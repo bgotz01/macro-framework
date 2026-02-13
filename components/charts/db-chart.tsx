@@ -19,16 +19,6 @@ interface ChartDataPoint {
 
 const CHART_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
 
-const DECADE_COLORS = [
-    { start: '1960-01-01', end: '1969-12-31', color: '#3b82f6', opacity: 0.05 },
-    { start: '1970-01-01', end: '1979-12-31', color: '#8b5cf6', opacity: 0.05 },
-    { start: '1980-01-01', end: '1989-12-31', color: '#ec4899', opacity: 0.05 },
-    { start: '1990-01-01', end: '1999-12-31', color: '#f59e0b', opacity: 0.05 },
-    { start: '2000-01-01', end: '2009-12-31', color: '#10b981', opacity: 0.05 },
-    { start: '2010-01-01', end: '2019-12-31', color: '#06b6d4', opacity: 0.05 },
-    { start: '2020-01-01', end: '2029-12-31', color: '#6366f1', opacity: 0.05 },
-];
-
 const DATE_PRESETS: Array<
     | { label: string; value: string }
     | { label: string; value: string; start: string; end: string }
@@ -364,23 +354,6 @@ export default function DBChart({
         const chartData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
         const noDataInRange = datePreset !== 'all' && sourceFilteredData.length === 0;
 
-        // Get actual data range for decade bands
-        const dataStartDate = chartData.length > 0 ? chartData[0].date : null;
-        const dataEndDate = chartData.length > 0 ? chartData[chartData.length - 1].date : null;
-
-        // Filter decade colors to only show within data range
-        const visibleDecades = dataStartDate && dataEndDate
-            ? DECADE_COLORS.filter(decade => {
-                // Check if decade overlaps with data range
-                return decade.end >= dataStartDate && decade.start <= dataEndDate;
-            }).map(decade => ({
-                ...decade,
-                // Clamp decade boundaries to data range
-                start: decade.start < dataStartDate ? dataStartDate : decade.start,
-                end: decade.end > dataEndDate ? dataEndDate : decade.end
-            }))
-            : [];
-
         return (
             <>
                 {noDataInRange && (
@@ -392,19 +365,6 @@ export default function DBChart({
                 )}
                 <ResponsiveContainer width="100%" height={height}>
                     <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        {/* Decade background bands */}
-                        {visibleDecades.map((decade, index) => (
-                            <ReferenceArea
-                                key={index}
-                                x1={decade.start}
-                                x2={decade.end}
-                                fill={decade.color}
-                                fillOpacity={decade.opacity}
-                                strokeOpacity={0}
-                                ifOverflow="hidden"
-                            />
-                        ))}
-
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"

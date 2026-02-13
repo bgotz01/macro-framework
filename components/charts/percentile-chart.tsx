@@ -41,17 +41,6 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'rey', label: 'Real Earnings Yield', color: '#14b8a6', category: 'Equity Valuation' },
 ];
 
-const DECADE_COLORS = [
-    { start: '1950-01-01', end: '1959-12-31', color: '#3b82f6', opacity: 0.03 },
-    { start: '1960-01-01', end: '1969-12-31', color: '#8b5cf6', opacity: 0.03 },
-    { start: '1970-01-01', end: '1979-12-31', color: '#ec4899', opacity: 0.03 },
-    { start: '1980-01-01', end: '1989-12-31', color: '#f59e0b', opacity: 0.03 },
-    { start: '1990-01-01', end: '1999-12-31', color: '#10b981', opacity: 0.03 },
-    { start: '2000-01-01', end: '2009-12-31', color: '#06b6d4', opacity: 0.03 },
-    { start: '2010-01-01', end: '2019-12-31', color: '#6366f1', opacity: 0.03 },
-    { start: '2020-01-01', end: '2029-12-31', color: '#ef4444', opacity: 0.03 },
-];
-
 export default function PercentileChart({ height = 500 }: PercentileChartProps) {
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
@@ -226,17 +215,6 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                 <ResponsiveContainer width="100%" height={height}>
                     <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-
-                        {/* Decade shading */}
-                        {DECADE_COLORS.map((decade, idx) => (
-                            <ReferenceArea
-                                key={idx}
-                                x1={decade.start}
-                                x2={decade.end}
-                                fill={decade.color}
-                                fillOpacity={decade.opacity}
-                            />
-                        ))}
 
                         <XAxis
                             dataKey="date"

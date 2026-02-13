@@ -16,7 +16,7 @@ import os
 # ============================================================================
 
 # Ticker symbol (e.g., '^GSPC' for S&P 500, 'AAPL' for Apple, '^TNX' for 10-year Treasury)
-TICKER = "^VIX"
+TICKER = "^NDX"
 
 # Asset class and country for organizing the output
 # This determines the folder structure: data/{ASSET_CLASS}/{COUNTRY}/
@@ -38,6 +38,7 @@ VALUE_COLUMN = "Close"
 #   ^GSPC    - S&P 500
 #   ^DJI     - Dow Jones Industrial Average
 #   ^IXIC    - NASDAQ Composite
+#   ^NDX     - Nasdaq 100
 #   ^RUT     - Russell 2000
 #
 # International Equities:

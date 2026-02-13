@@ -1,8 +1,101 @@
+'use client';
+
+import { useState } from 'react';
+
+// Reusable Law Header Component
+interface LawHeaderProps {
+    title: string;
+    lawName: string;
+    axiom: string;
+    description: string;
+    colorClass: 'primary' | 'accent' | 'secondary';
+}
+
+function LawHeader({ title, lawName, axiom, description, colorClass }: LawHeaderProps) {
+    const colorClasses = {
+        primary: 'text-[#0ea5e9] dark:text-[#38bdf8]',
+        accent: 'text-[#0ea5e9] dark:text-[#38bdf8]',
+        secondary: 'text-[#0ea5e9] dark:text-[#38bdf8]'
+    };
+
+    return (
+        <div className="p-6 rounded-2xl border border-border/50 bg-card mb-8">
+            <h2 className="text-2xl font-bold text-card-foreground mb-2">{title}</h2>
+            <p className={`text-base ${colorClasses[colorClass]} italic mb-3`}>{lawName}</p>
+            <p className="text-base text-muted-foreground mb-3">{axiom}</p>
+            <p className="text-base text-muted-foreground">{description}</p>
+        </div>
+    );
+}
+
+// Reusable Criteria Card Component
+interface CriteriaCardProps {
+    number: number;
+    title: string;
+    subtitle?: string;
+    description: string;
+    test: string;
+    why: string;
+    colorClass: 'primary' | 'accent' | 'secondary';
+}
+
+function CriteriaCard({ number, title, subtitle, description, test, why, colorClass }: CriteriaCardProps) {
+    const bgColorClasses = {
+        primary: 'bg-[#0ea5e9]/10 dark:bg-[#38bdf8]/10',
+        accent: 'bg-[#0ea5e9]/10 dark:bg-[#38bdf8]/10',
+        secondary: 'bg-[#0ea5e9]/10 dark:bg-[#38bdf8]/10'
+    };
+
+    const textColorClasses = {
+        primary: 'text-[#0ea5e9] dark:text-[#38bdf8]',
+        accent: 'text-[#0ea5e9] dark:text-[#38bdf8]',
+        secondary: 'text-[#0ea5e9] dark:text-[#38bdf8]'
+    };
+
+    return (
+        <div className="p-6 rounded-xl border border-border/50 bg-card hover:border-border transition-colors flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center space-x-3 mb-3">
+                <div className={`h-7 w-7 rounded-lg ${bgColorClasses[colorClass]} ${textColorClasses[colorClass]} flex items-center justify-center flex-shrink-0`}>
+                    <span className="text-sm font-bold">{number}</span>
+                </div>
+                <div>
+                    <h3 className="text-lg font-bold text-card-foreground leading-tight">
+                        {title}
+                    </h3>
+                    {subtitle && (
+                        <span className="text-xs text-muted-foreground">{subtitle}</span>
+                    )}
+                </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-base text-muted-foreground mb-4 flex-grow">
+                {description}
+            </p>
+
+            {/* Test & Why - Bottom Section */}
+            <div className="space-y-2 pt-4 border-t border-border/30">
+                <div className="flex items-start space-x-2">
+                    <span className="font-semibold text-card-foreground text-sm min-w-[45px]">Test:</span>
+                    <span className="text-sm text-muted-foreground">{test}</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                    <span className="font-semibold text-card-foreground text-sm min-w-[45px]">Why:</span>
+                    <span className="text-sm text-muted-foreground">{why}</span>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function FrameworkPage() {
+    const [activeTab, setActiveTab] = useState<'signal' | 'swing' | 'outlier'>('signal');
+
     return (
         <div className="max-w-5xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-16">
+            <div className="text-center mb-12">
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
                     Three Laws of Market Behavior
                 </div>
@@ -14,161 +107,299 @@ export default function FrameworkPage() {
                 </p>
             </div>
 
-            <div className="space-y-12">
-                {/* O1: Swing */}
-                <div className="group p-10 rounded-3xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300">
-                    <div className="flex items-start space-x-6">
-                        <div className="flex-shrink-0">
-                            <div className="h-16 w-16 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
-                                <div className="w-8 h-8 border-3 border-primary-foreground rounded-full opacity-90"></div>
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center mb-4">
-                                <h2 className="text-2xl lg:text-3xl font-bold text-primary mr-4">O1: Swing</h2>
-                                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">Opposites</span>
-                            </div>
-                            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                                Trends swing to an extreme and then invert. When markets reach extreme positions, they tend to reverse direction.
-                                This law helps identify turning points in economic cycles and market sentiment.
-                            </p>
-                            <div className="bg-muted/50 p-6 rounded-2xl border border-border/30">
-                                <h4 className="font-semibold mb-4 text-card-foreground flex items-center">
-                                    <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-                                    Key Applications
-                                </h4>
-                                <div className="grid md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Market tops and bottoms
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Contrarian opportunities
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Cycle turning points
-                                    </div>
-                                </div>
-                            </div>
+            {/* Tabs */}
+            <div className="flex space-x-2 mb-8 border-b border-border">
+                <button
+                    onClick={() => setActiveTab('signal')}
+                    className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === 'signal'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    <span className="mr-2">◉</span>
+                    O1: Signal
+                </button>
+                <button
+                    onClick={() => setActiveTab('swing')}
+                    className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === 'swing'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    <span className="mr-2">⟜</span>
+                    O2: Swing
+                </button>
+                <button
+                    onClick={() => setActiveTab('outlier')}
+                    className={`px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === 'outlier'
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                        }`}
+                >
+                    <span className="mr-2">✦</span>
+                    O3: Story
+                </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="animate-fade-in">
+                {activeTab === 'signal' && <SignalContent />}
+                {activeTab === 'swing' && <SwingContent />}
+                {activeTab === 'outlier' && <OutlierContent />}
+            </div>
+        </div>
+    );
+}
+
+// O1: Signal Content
+function SignalContent() {
+    return (
+        <div>
+            <LawHeader
+                title="Signal"
+                lawName="Law of the Obvious"
+                axiom="When something becomes undeniably visible, capital must react."
+                description="The measurable trigger that forces attention."
+                colorClass="primary"
+            />
+
+            {/* Criteria */}
+            <div className="mb-8">
+                <h2 className="text-3xl font-bold text-card-foreground mb-6">Criteria (tests)</h2>
+                <p className="text-base text-muted-foreground mb-6">
+                    These four criteria are the gate: if a trend fails them, it's noise.
+                </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                    Note: A Structural Signal can be a cycle-within-cycle (sector/budget shift) or a full cycle reset — the gate is the same.
+                </p>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <CriteriaCard
+                        number={1}
+                        title="Novelty"
+                        description="Hasn't happened in recent history / breaks the local pattern library."
+                        test="Outside recent cycle memory (last cycle / ~5–15y)?"
+                        why="If common, already priced."
+                        colorClass="primary"
+                    />
+                    <CriteriaCard
+                        number={2}
+                        title="Observability"
+                        description="Measurable, verifiable, not vibe-based."
+                        test="Hard data, rule change, or price move?"
+                        why="Keeps you from narrative chasing."
+                        colorClass="primary"
+                    />
+                    <CriteriaCard
+                        number={3}
+                        title="Persistence"
+                        description="Long enough to matter for allocation (not just trading)."
+                        test="Likely persists 12–36 months?"
+                        why="Structural signal, not noise."
+                        colorClass="primary"
+                    />
+                    <CriteriaCard
+                        number={4}
+                        title="Capital Gravity"
+                        description="Forces money to move (budgets, capex, risk premia, flows)."
+                        test="Changes spending, financing, or returns?"
+                        why="Capital flow = mechanism that makes it real."
+                        colorClass="primary"
+                    />
+                </div>
+            </div>
+
+            {/* Examples */}
+            <div className="p-6 rounded-2xl border border-border/50 bg-card mb-8">
+                <h3 className="text-2xl font-bold text-card-foreground mb-4">Examples</h3>
+                <div className="space-y-3">
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">Market pain:</span>
+                            <span className="text-muted-foreground"> Credit spreads blowing out, VIX spikes, mass redemptions</span>
                         </div>
                     </div>
-                </div>
-
-                {/* O2: Signal */}
-                <div className="group p-10 rounded-3xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300">
-                    <div className="flex items-start space-x-6">
-                        <div className="flex-shrink-0">
-                            <div className="h-16 w-16 rounded-2xl gradient-accent flex items-center justify-center shadow-lg">
-                                <div className="w-8 h-8 border-3 border-accent-foreground rounded opacity-90"></div>
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center mb-4">
-                                <h2 className="text-2xl lg:text-3xl font-bold text-accent mr-4">O2: Signal</h2>
-                                <span className="px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-semibold">Obvious</span>
-                            </div>
-                            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                                Markets signal what the obvious new opportunity is. When market consensus becomes too obvious,
-                                it often signals the next major shift or opportunity that everyone can see but few act upon.
-                            </p>
-                            <div className="bg-muted/50 p-6 rounded-2xl border border-border/30">
-                                <h4 className="font-semibold mb-4 text-card-foreground flex items-center">
-                                    <span className="w-2 h-2 rounded-full bg-accent mr-3"></span>
-                                    Signal Indicators
-                                </h4>
-                                <div className="grid md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Media sentiment extremes
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Unanimous predictions
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Crowded positioning
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* O3: Story */}
-                <div className="group p-10 rounded-3xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300">
-                    <div className="flex items-start space-x-6">
-                        <div className="flex-shrink-0">
-                            <div className="h-16 w-16 rounded-2xl gradient-secondary flex items-center justify-center shadow-lg">
-                                <div className="w-8 h-8 border-3 border-secondary-foreground rounded-sm opacity-90"></div>
-                            </div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center mb-4">
-                                <h2 className="text-2xl lg:text-3xl font-bold text-secondary-foreground mr-4">O3: Story</h2>
-                                <span className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-semibold">Outliers</span>
-                            </div>
-                            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                                New stories emerge that control the narrative. Outlier events, technologies, and ideas often drive
-                                the biggest market moves by creating compelling new narratives that reshape how we think about value and opportunity.
-                            </p>
-                            <div className="bg-muted/50 p-6 rounded-2xl border border-border/30">
-                                <h4 className="font-semibold mb-4 text-card-foreground flex items-center">
-                                    <span className="w-2 h-2 rounded-full bg-secondary-foreground mr-3"></span>
-                                    Story Categories
-                                </h4>
-                                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Technological breakthroughs
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Geopolitical shifts
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        New economic narratives
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="mr-2">•</span>
-                                        Disruptive business models
-                                    </div>
-                                </div>
-                            </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">Policy shift:</span>
+                            <span className="text-muted-foreground"> Fed pivot from QE to QT, new tariff regime, industrial policy changes</span>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
 
-            {/* Integration Section */}
-            <div className="mt-16 p-10 rounded-3xl gradient-primary text-primary-foreground relative overflow-hidden">
-                <div className="absolute inset-0 bg-black/10"></div>
-                <div className="relative z-10">
-                    <h3 className="text-2xl lg:text-3xl font-bold mb-6 text-center">Framework Integration</h3>
-                    <p className="text-lg text-primary-foreground/90 text-center max-w-3xl mx-auto leading-relaxed mb-8">
-                        These three laws work together to provide a comprehensive view of market dynamics.
-                        Use them in combination to identify opportunities, manage risk, and understand the broader economic narrative.
-                    </p>
-                    <div className="grid md:grid-cols-3 gap-6 text-center">
-                        <div className="p-4 rounded-xl bg-white/10 backdrop-blur">
-                            <h4 className="font-semibold mb-2">Swing</h4>
-                            <p className="text-sm text-primary-foreground/80">Identify extremes and reversals</p>
+// O2: Swing Content
+function SwingContent() {
+    return (
+        <div>
+            <LawHeader
+                title="Swing"
+                lawName="Law of Opposites"
+                axiom="Markets swing toward the opposite traits of the prior phase."
+                description="The inversion of prior dominant traits — capital rotates toward a new set of winners (not a return)."
+                colorClass="accent"
+            />
+
+            {/* Criteria */}
+            <div className="mb-8">
+                <h2 className="text-3xl font-bold text-card-foreground mb-6">Criteria (tests)</h2>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                    <CriteriaCard
+                        number={1}
+                        title="Direction flip"
+                        description="Does it invert the prior cycle's 'winning logic' (what was rewarded becomes penalized)?"
+                        test="Are yesterday's winners today's losers?"
+                        why="A phase shift requires logic inversion."
+                        colorClass="accent"
+                    />
+                    <CriteriaCard
+                        number={2}
+                        title="Constraint reversal"
+                        description="Does the binding constraint change? (e.g., liquidity → funding scarcity; labor abundance → labor scarcity)"
+                        test="What was abundant becomes scarce?"
+                        why="New constraint = new phase."
+                        colorClass="accent"
+                    />
+                    <CriteriaCard
+                        number={3}
+                        title="Relative rotation"
+                        description="Do the opposite factor baskets outperform for a sustained window (not a one-week move)?"
+                        test="Sustained multi-month factor reversal?"
+                        why="Confirms structural shift, not noise."
+                        colorClass="accent"
+                    />
+                </div>
+            </div>
+
+            {/* Examples */}
+            <div className="p-6 rounded-2xl border border-border/50 bg-card mb-8">
+                <h3 className="text-2xl font-bold text-card-foreground mb-4">Examples</h3>
+                <div className="space-y-3">
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">ZIRP / abundant liquidity</span>
+                            <span className="text-muted-foreground"> → positive real rates / scarce funding</span>
                         </div>
-                        <div className="p-4 rounded-xl bg-white/10 backdrop-blur">
-                            <h4 className="font-semibold mb-2">Signal</h4>
-                            <p className="text-sm text-primary-foreground/80">Recognize obvious opportunities</p>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">Globalization</span>
+                            <span className="text-muted-foreground"> → fragmentation / reshoring</span>
                         </div>
-                        <div className="p-4 rounded-xl bg-white/10 backdrop-blur">
-                            <h4 className="font-semibold mb-2">Story</h4>
-                            <p className="text-sm text-primary-foreground/80">Follow emerging narratives</p>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">Growth-at-any-price</span>
+                            <span className="text-muted-foreground"> → profitability / cash flow</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">"Long duration wins"</span>
+                            <span className="text-muted-foreground"> → "duration is a liability"</span>
                         </div>
                     </div>
                 </div>
-                <div className="absolute top-4 right-4 w-32 h-32 rounded-full bg-white/5 blur-2xl"></div>
-                <div className="absolute bottom-4 left-4 w-24 h-24 rounded-full bg-white/5 blur-xl"></div>
+            </div>
+        </div>
+    );
+}
+
+// O3: Story Content
+function OutlierContent() {
+    return (
+        <div>
+            <LawHeader
+                title="Story"
+                lawName="Law of Outliers"
+                axiom="Sustained capital concentration forms around standout breakouts that reset what matters."
+                description="The standout breakout thesis that captures attention and concentrates capital."
+                colorClass="secondary"
+            />
+
+            {/* Criteria */}
+            <div className="mb-8">
+                <h2 className="text-3xl font-bold text-card-foreground mb-6">Criteria (tests)</h2>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                    <CriteriaCard
+                        number={1}
+                        title="New Rail"
+                        description="A new distribution / transaction channel that didn't exist at scale."
+                        test="Does it create a new 'default path' for delivery (platform, marketplace, protocol, exchange, app store)?"
+                        why="New rails create new winners by controlling access + economics."
+                        colorClass="secondary"
+                    />
+                    <CriteriaCard
+                        number={2}
+                        title="Access Unlock"
+                        description="A permission / accessibility step-change: more participants can now buy/build/use."
+                        test="Does it expand the addressable investor/user base by an order of magnitude (new geographies, new account types, new eligibility)?"
+                        why="Access expansion is how stories become capital events."
+                        colorClass="secondary"
+                    />
+                    <CriteriaCard
+                        number={3}
+                        title="Rulebook Shift"
+                        description="A durable change in the rules that changes incentives (policy, standards, enforcement, platform rules)."
+                        test="Is there a formal rule change (law/regulation/standard/platform policy) that persists and forces behavior change?"
+                        why="Rules coordinate everyone—this is how narratives become reality."
+                        colorClass="secondary"
+                    />
+                    <CriteriaCard
+                        number={4}
+                        title="Flow Gravity"
+                        description="Evidence that flows will concentrate (or are already concentrating) toward the story."
+                        test="Can you point to budgets / capex / procurement / allocations / forced buying (index reweights, mandates) that push money in one direction?"
+                        why="Outliers matter only if they pull capital repeatedly."
+                        colorClass="secondary"
+                    />
+                </div>
+            </div>
+
+            {/* Examples */}
+            <div className="p-6 rounded-2xl border border-border/50 bg-card mb-8">
+                <h3 className="text-2xl font-bold text-card-foreground mb-4">Breakout examples</h3>
+                <div className="space-y-3">
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">China joins WTO</span>
+                            <span className="text-muted-foreground"> → global labor arbitrage + supply chain re-architecture</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">QE/ZIRP</span>
+                            <span className="text-muted-foreground"> → price of money structurally altered</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">LLMs</span>
+                            <span className="text-muted-foreground"> → marginal cost of software/cognition collapses</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base">
+                        <span className="text-primary">•</span>
+                        <div>
+                            <span className="font-medium text-card-foreground">Security reset</span>
+                            <span className="text-muted-foreground"> → persistent surveillance/defense baseline</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

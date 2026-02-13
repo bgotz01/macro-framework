@@ -47,11 +47,6 @@ const sidebarData: SidebarItem[] = [
     {
         title: 'Framework',
         href: '/framework',
-        children: [
-            { title: 'O1: Swing', href: '/framework/swing' },
-            { title: 'O2: Signal', href: '/framework/signal' },
-            { title: 'O3: Story', href: '/framework/story' },
-        ],
     },
     {
         title: 'Cycles',

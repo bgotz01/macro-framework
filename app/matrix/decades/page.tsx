@@ -175,7 +175,7 @@ export default async function DecadesPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="font-semibold mb-2">Equity P/E</div>
+                        <div className="font-semibold mb-2">Shiller P/E</div>
                         <div className="space-y-1">
                             <div className={`px-2 py-1 rounded ${getLevelColor('LOW')}`}>CHEAP: &lt; 15x</div>
                             <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>FAIR: 15-20x</div>
@@ -205,7 +205,7 @@ export default async function DecadesPage() {
                             <th className="border border-border p-4 text-center font-bold">Real Yield</th>
                             <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                             <th className="border border-border p-4 text-center font-bold">Yield Curve</th>
-                            <th className="border border-border p-4 text-center font-bold">Equity P/E</th>
+                            <th className="border border-border p-4 text-center font-bold">Shiller P/E</th>
                             <th className="border border-border p-4 text-center font-bold">Earnings Yield</th>
                         </tr>
                     </thead>

@@ -18,9 +18,22 @@ export function generateYearlyTicks(chartData: Array<{ date: string | number }>)
         const ticks: string[] = [];
         const startYear = startDate.getFullYear();
         const endYear = endDate.getFullYear();
+        const yearSpan = endYear - startYear;
 
-        // For each year, find the first data point in that year
-        for (let year = startYear; year <= endYear; year++) {
+        // Determine interval based on date range for consistent spacing
+        let interval: number;
+        if (yearSpan <= 10) {
+            interval = 1; // Every year
+        } else if (yearSpan <= 30) {
+            interval = 2; // Every 2 years
+        } else if (yearSpan <= 50) {
+            interval = 5; // Every 5 years
+        } else {
+            interval = 10; // Every 10 years
+        }
+
+        // For each interval year, find the first data point in that year
+        for (let year = startYear; year <= endYear; year += interval) {
             // Find first data point in this year
             const yearStart = `${year}-01`;
             const dataPoint = chartData.find(d => {
@@ -34,6 +47,20 @@ export function generateYearlyTicks(chartData: Array<{ date: string | number }>)
                     : new Date(dataPoint.date).toISOString().split('T')[0];
                 ticks.push(dateStr);
             }
+        }
+
+        // Always include the last year if not already included
+        const lastYearStart = `${endYear}-01`;
+        const lastDataPoint = chartData.find(d => {
+            const dateStr = typeof d.date === 'string' ? d.date : new Date(d.date).toISOString();
+            return dateStr.startsWith(lastYearStart);
+        });
+
+        if (lastDataPoint && !ticks.some(t => t.startsWith(`${endYear}-`))) {
+            const dateStr = typeof lastDataPoint.date === 'string'
+                ? lastDataPoint.date
+                : new Date(lastDataPoint.date).toISOString().split('T')[0];
+            ticks.push(dateStr);
         }
 
         // If we didn't find enough ticks, fall back to evenly spaced ticks
