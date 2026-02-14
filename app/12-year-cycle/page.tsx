@@ -2,6 +2,7 @@ import TwelveYearCycleTable from '@/components/twelve-year-cycle-table';
 import TwelveYearOTable from '@/components/twelve-year-o-table';
 import TwelveYearSystemTable from '@/components/twelve-year-system-table';
 import TwelveYearSummary from '@/components/twelve-year-summary';
+import WhyTwelve from '@/components/why-twelve';
 
 export default function TwelveYearCyclePage() {
     return (
