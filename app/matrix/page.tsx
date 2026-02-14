@@ -39,11 +39,6 @@ const LEVELS = {
         low: { min: 0, max: 3, label: '0% – 3%', description: 'Low real return' },
         positive: { min: 3, label: '> 3%', description: 'Attractive real return' }
     },
-    vix: {
-        low: { max: 15, label: '< 15' },
-        mid: { min: 15, max: 25, label: '15 – 25' },
-        high: { min: 25, label: '> 25' }
-    },
     fedFunds: {
         low: { max: 2, label: '< 2%', description: 'Accommodative' },
         mid: { min: 2, max: 4, label: '2% – 4%', description: 'Neutral' },
@@ -144,24 +139,22 @@ function calculateTrend(current: number | null, ma12: number | null, threshold: 
 
 export default async function MatrixPage() {
     // Fetch all data server-side
-    const [cpi, tenYear, twoYear, threeMonth, shillerPE, vix, fedFunds] = await Promise.all([
+    const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds] = await Promise.all([
         getLatestValue('economic', 'CPI'),
         getLatestValue('bonds', 'US/TNX'),
         getLatestValue('bonds', 'US/US-2yr'),
         getLatestValue('bonds', 'US/IRX'),
         getLatestValue('valuations', 'Shiller-PE'),
-        getLatestValue('volatility', 'VIX'),
         getLatestValue('economic', 'US/FEDFUNDS'),
     ]);
 
     // Fetch 1-year moving averages (MA12)
-    const [cpiMA12, tenYearMA12, twoYearMA12, threeMonthMA12, peMA12, vixMA12, fedFundsMA12] = await Promise.all([
+    const [cpiMA12, tenYearMA12, twoYearMA12, threeMonthMA12, peMA12, fedFundsMA12] = await Promise.all([
         getLatestMA12('economic', 'CPI'),
         getLatestMA12('bonds', 'US/TNX'),
         getLatestMA12('bonds', 'US/US-2yr'),
         getLatestMA12('bonds', 'US/IRX'),
         getLatestMA12('valuations', 'Shiller-PE'),
-        getLatestMA12('volatility', 'VIX'),
         getLatestMA12('economic', 'US/FEDFUNDS'),
     ]);
 
@@ -195,12 +188,6 @@ export default async function MatrixPage() {
             date: shillerPE.date,
             ma12: peMA12.value,
             ma12Date: peMA12.date
-        },
-        vix: {
-            value: vix.value,
-            date: vix.date,
-            ma12: vixMA12.value,
-            ma12Date: vixMA12.date
         },
         fedFunds: {
             value: fedFunds.value,
@@ -644,45 +631,13 @@ export default async function MatrixPage() {
                     levelThresholds={{ low: 0, mid: 3 }}
                 />
 
-                <RegimeMatrix
-                    title="9. VIX Matrix"
-                    subtitle="Volatility / Fear Premium — Price of optionality"
-                    levels={[
-                        { label: 'LOW', value: LEVELS.vix.low.label, color: 'green' },
-                        { label: 'MID', value: LEVELS.vix.mid.label, color: 'yellow' },
-                        { label: 'HIGH', value: LEVELS.vix.high.label, color: 'red' },
-                    ]}
-                    cells={{
-                        falling: [
-                            { label: 'Complacent grind' },
-                            { label: 'Volatility compression' },
-                            { label: 'Post-panic' },
-                        ],
-                        stable: [
-                            { label: 'Suppressed risk' },
-                            { label: 'Normal risk' },
-                            { label: 'Structural fear' },
-                        ],
-                        rising: [
-                            { label: 'Fragile calm' },
-                            { label: 'Early stress' },
-                            { label: 'Crisis' },
-                        ],
-                    }}
-                    currentValue={currentValues.vix.value ?? undefined}
-                    currentDate={currentValues.vix.date ?? undefined}
-                    ma12={currentValues.vix.ma12 ?? undefined}
-                    ma12Date={currentValues.vix.ma12Date ?? undefined}
-                    currentTrend={calculateTrend(currentValues.vix.value, currentValues.vix.ma12, 2.0)}
-                    levelThresholds={{ low: 15, mid: 25 }}
-                    valueFormat="number"
-                />
+
             </div>
 
             {/* Compact Matrix Test */}
             <div className="mt-16 pt-16 border-t border-border">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Compact View (Test)</h2>
+                    <h2 className="text-3xl font-bold mb-2">Compact View</h2>
                     <p className="text-sm text-muted-foreground">
                         A condensed view with historical date selection
                     </p>
@@ -697,7 +652,6 @@ export default async function MatrixPage() {
                         equityPE: currentValues.equityPE.value,
                         earningsYieldPremium: currentValues.earningsYieldPremium.value,
                         realEarningsYield: currentValues.realEarningsYield.value,
-                        vix: currentValues.vix.value,
                     }}
                 />
             </div>

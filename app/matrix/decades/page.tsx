@@ -112,8 +112,51 @@ async function getDecadeData(): Promise<DecadeData[]> {
     return data;
 }
 
+async function get12YearCycleData(): Promise<DecadeData[]> {
+    const cycles = [
+        { decade: '1948-1959', date: '1959-12-31' },
+        { decade: '1960-1971', date: '1971-12-31' },
+        { decade: '1972-1983', date: '1983-12-31' },
+        { decade: '1984-1995', date: '1995-12-31' },
+        { decade: '1996-2007', date: '2007-12-31' },
+        { decade: '2008-2019', date: '2019-12-31' },
+        { decade: '2020-2031', date: '2024-12-31' }, // Most recent complete year
+    ];
+
+    const data: DecadeData[] = [];
+
+    for (const { decade, date } of cycles) {
+        const [cpi, tenYear, twoYear, shillerPE, fedFunds] = await Promise.all([
+            getValueAtDate('economic', 'CPI', date),
+            getValueAtDate('bonds', 'US/TNX', date),
+            getValueAtDate('bonds', 'US/US-2yr', date),
+            getValueAtDate('valuations', 'Shiller-PE', date),
+            getValueAtDate('economic', 'US/FEDFUNDS', date),
+        ]);
+
+        const realYield = tenYear !== null && cpi !== null ? tenYear - cpi : null;
+        const yieldCurve = tenYear !== null && twoYear !== null ? tenYear - twoYear : null;
+        const earningsYield = shillerPE !== null && shillerPE > 0 ? (100 / shillerPE) : null;
+
+        data.push({
+            decade,
+            date,
+            inflation: cpi,
+            bondYield: tenYear,
+            realYield,
+            yieldCurve,
+            equityPE: shillerPE,
+            earningsYield,
+            fedFunds,
+        });
+    }
+
+    return data;
+}
+
 export default async function DecadesPage() {
     const decadeData = await getDecadeData();
+    const cycleData = await get12YearCycleData();
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -201,9 +244,9 @@ export default async function DecadesPage() {
                             <th className="border border-border p-4 text-left font-bold">Decade</th>
                             <th className="border border-border p-4 text-left font-bold">Date</th>
                             <th className="border border-border p-4 text-center font-bold">Inflation</th>
+                            <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                             <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
                             <th className="border border-border p-4 text-center font-bold">Real Yield</th>
-                            <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                             <th className="border border-border p-4 text-center font-bold">Yield Curve</th>
                             <th className="border border-border p-4 text-center font-bold">Shiller P/E</th>
                             <th className="border border-border p-4 text-center font-bold">Earnings Yield</th>
@@ -235,6 +278,16 @@ export default async function DecadesPage() {
                                     </td>
                                     <td className="border border-border p-4">
                                         <div className="flex flex-col items-center gap-2">
+                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(fedFundsLevel)}`}>
+                                                {fedFundsLevel}
+                                            </div>
+                                            <div className="text-sm font-mono">
+                                                {row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '-'}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="border border-border p-4">
+                                        <div className="flex flex-col items-center gap-2">
                                             <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(bondYieldLevel)}`}>
                                                 {bondYieldLevel}
                                             </div>
@@ -250,16 +303,6 @@ export default async function DecadesPage() {
                                             </div>
                                             <div className="text-sm font-mono">
                                                 {row.realYield !== null ? `${row.realYield.toFixed(1)}%` : '-'}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="border border-border p-4">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(fedFundsLevel)}`}>
-                                                {fedFundsLevel}
-                                            </div>
-                                            <div className="text-sm font-mono">
-                                                {row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '-'}
                                             </div>
                                         </div>
                                     </td>
@@ -319,6 +362,152 @@ export default async function DecadesPage() {
                         a 3×3 matrix for each measure. Historical analysis of directional trends requires
                         comparing values over time windows.
                     </p>
+                </div>
+            </div>
+
+            {/* 12-Year Cycle Section */}
+            <div className="mt-16">
+                <div className="text-center mb-12">
+                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+                        12-Year Cycle Analysis
+                    </div>
+                    <h2 className="text-3xl lg:text-4xl font-bold tracking-tight mb-6">
+                        12-Year Cycle Matrix Levels
+                    </h2>
+                    <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                        Macro regime levels at the end of each 12-year cycle (starting from 1948)
+                    </p>
+                </div>
+
+                {/* Data Table */}
+                <div className="overflow-x-auto rounded-2xl border border-border shadow-lg">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                                <th className="border border-border p-4 text-left font-bold">Cycle</th>
+                                <th className="border border-border p-4 text-left font-bold">Date</th>
+                                <th className="border border-border p-4 text-center font-bold">Inflation</th>
+                                <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
+                                <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
+                                <th className="border border-border p-4 text-center font-bold">Real Yield</th>
+                                <th className="border border-border p-4 text-center font-bold">Yield Curve</th>
+                                <th className="border border-border p-4 text-center font-bold">Shiller P/E</th>
+                                <th className="border border-border p-4 text-center font-bold">Earnings Yield</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {cycleData.map((row) => {
+                                const inflationLevel = getLevel(row.inflation, LEVELS.inflation);
+                                const bondYieldLevel = getLevel(row.bondYield, LEVELS.bondYieldsNominal);
+                                const realYieldLevel = getLevel(row.realYield, LEVELS.bondYieldsReal);
+                                const fedFundsLevel = getLevel(row.fedFunds, LEVELS.fedFunds);
+                                const yieldCurveLevel = getLevel(row.yieldCurve, LEVELS.yieldCurve);
+                                const equityPELevel = getLevel(row.equityPE, LEVELS.equityPE);
+                                const earningsYieldLevel = getLevel(row.earningsYield, LEVELS.earningsYield);
+
+                                return (
+                                    <tr key={row.decade} className="hover:bg-muted/30 transition-colors">
+                                        <td className="border border-border p-4 font-bold text-lg">{row.decade}</td>
+                                        <td className="border border-border p-4 text-sm text-muted-foreground">{row.date}</td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(inflationLevel)}`}>
+                                                    {inflationLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.inflation !== null ? `${row.inflation.toFixed(1)}%` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(fedFundsLevel)}`}>
+                                                    {fedFundsLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(bondYieldLevel)}`}>
+                                                    {bondYieldLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.bondYield !== null ? `${row.bondYield.toFixed(1)}%` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(realYieldLevel)}`}>
+                                                    {realYieldLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.realYield !== null ? `${row.realYield.toFixed(1)}%` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(yieldCurveLevel)}`}>
+                                                    {yieldCurveLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.yieldCurve !== null ? `${row.yieldCurve > 0 ? '+' : ''}${row.yieldCurve.toFixed(2)}%` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(equityPELevel)}`}>
+                                                    {equityPELevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.equityPE !== null ? `${row.equityPE.toFixed(1)}x` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldLevel)}`}>
+                                                    {earningsYieldLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.earningsYield !== null ? `${row.earningsYield.toFixed(2)}%` : '-'}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* 12-Year Cycle Insights */}
+                <div className="mt-8 grid md:grid-cols-2 gap-6">
+                    <div className="p-6 rounded-2xl border border-border bg-card">
+                        <h3 className="text-lg font-bold mb-3">🔄 Cycle Observations</h3>
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                            <li>• <strong>1960-1971:</strong> Transition from stability to inflation</li>
+                            <li>• <strong>1972-1983:</strong> High inflation and Volcker disinflation</li>
+                            <li>• <strong>1984-1995:</strong> Great Moderation begins</li>
+                            <li>• <strong>1996-2007:</strong> Tech boom and housing bubble</li>
+                            <li>• <strong>2008-2019:</strong> Financial crisis and ZIRP era</li>
+                            <li>• <strong>2020-2031:</strong> Pandemic, inflation return, rate normalization</li>
+                        </ul>
+                    </div>
+                    <div className="p-6 rounded-2xl border border-border bg-card">
+                        <h3 className="text-lg font-bold mb-3">📈 12-Year Cycle Framework</h3>
+                        <p className="text-sm text-muted-foreground">
+                            The 12-year cycle framework aligns with Jupiter's orbital period and has historically
+                            corresponded with major economic and market regime shifts. This view captures end-of-cycle
+                            conditions, showing how macro regimes evolve across longer structural periods compared
+                            to decade-based analysis.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

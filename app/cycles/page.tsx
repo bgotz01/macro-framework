@@ -2,11 +2,7 @@ import Link from 'next/link';
 
 export default function CyclesPage() {
     const cycles = [
-        {
-            title: '12-Year Cycle',
-            href: '/cycles/12-year',
-            description: 'System Reconfiguration',
-        },
+
         {
             title: '80-Year Cycle',
             href: '/cycles/80-year',

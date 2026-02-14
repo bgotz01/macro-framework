@@ -1,4 +1,4 @@
-import WhyTwelve from '@/components/why-twelve';
+import WhyTwelve from '@/components/12-year-cycle/why-twelve';
 
 export default function WhyTwelvePage() {
     return (

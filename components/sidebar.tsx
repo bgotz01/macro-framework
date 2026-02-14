@@ -22,6 +22,7 @@ const sidebarData: SidebarItem[] = [
             { title: 'Highlights', href: '/data/highlights' },
             { title: 'Annual Returns', href: '/data/annual-returns' },
             { title: 'S&P 500', href: '/data/sp500' },
+            { title: 'Stocks', href: '/data/stocks' },
         ],
     },
     {
