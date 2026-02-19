@@ -1,8 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, ReferenceArea } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useTheme } from '../theme-provider';
+
+// Tooltip component for metric explanations
+function MetricTooltip({ children, content }: { children: React.ReactNode; content: string }) {
+    const [show, setShow] = useState(false);
+
+    return (
+        <div
+            className="relative inline-block"
+            onMouseEnter={() => setShow(true)}
+            onMouseLeave={() => setShow(false)}
+        >
+            {children}
+            {show && (
+                <div className="absolute z-50 px-3 py-2 text-xs bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg shadow-lg bottom-full mb-2 left-1/2 -translate-x-1/2 w-64 pointer-events-none whitespace-normal">
+                    {content}
+                    <div className="absolute w-2 h-2 bg-gray-900 dark:bg-gray-100 rotate-45 -bottom-1 left-1/2 -translate-x-1/2"></div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 interface PercentileChartProps {
     height?: number;
@@ -34,12 +55,20 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'irx', label: '3M Treasury', color: '#9333ea', category: 'Bond Yields' },
     { value: 'realyield', label: 'Real Yield (10Y-CPI)', color: '#06b6d4', category: 'Bond Yields' },
     { value: 'yieldcurve', label: 'Yield Curve (10Y-2Y)', color: '#f97316', category: 'Bond Yields' },
+    { value: 'yieldcurve3m', label: 'Yield Curve (10Y-3M)', color: '#fb923c', category: 'Bond Yields' },
     // Equity Valuation
     { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899', category: 'Equity Valuation' },
     { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e', category: 'Equity Valuation' },
     { value: 'eyp', label: 'Earnings Yield Premium', color: '#8b5cf6', category: 'Equity Valuation' },
+    { value: 'eyp5yr', label: 'EY Premium 5yr', color: '#a78bfa', category: 'Equity Valuation' },
     { value: 'rey', label: 'Real Earnings Yield', color: '#14b8a6', category: 'Equity Valuation' },
 ];
+
+const METRIC_TOOLTIPS: Record<string, string> = {
+    'eyp': 'Earnings Yield Premium = (1 / Shiller P/E) - 3M Treasury Rate. Measures equity risk premium over cash.',
+    'eyp5yr': 'Earnings Yield Premium 5yr = (1 / P/E-5yr) - 3M Treasury Rate. Measures equity risk premium over cash using 5-year average earnings.',
+    'rey': 'Real Earnings Yield = (1 / Shiller P/E) - CPI Inflation. Measures real return potential of equities.',
+};
 
 export default function PercentileChart({ height = 500 }: PercentileChartProps) {
     const [data, setData] = useState<ChartDataPoint[]>([]);
@@ -86,15 +115,25 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
         );
     }
 
+    // Filter data based on selected series to show only relevant date range
+    const filteredData = data.filter(point => {
+        // Check if any selected series has data at this point
+        return selectedSeries.some(seriesValue => {
+            const valueKey = `${seriesValue}_value`;
+            const value = point[valueKey as keyof ChartDataPoint];
+            return value !== null && value !== undefined;
+        });
+    });
+
     const isDark = theme === 'dark';
     const gridColor = isDark ? '#374151' : '#e5e7eb';
     const textColor = isDark ? '#9ca3af' : '#6b7280';
 
-    // Generate yearly ticks
-    const yearlyTicks = data
+    // Generate yearly ticks from filtered data
+    const yearlyTicks = filteredData
         .filter((_, index) => {
-            const year = new Date(data[index].dateTimestamp).getFullYear();
-            const prevYear = index > 0 ? new Date(data[index - 1].dateTimestamp).getFullYear() : null;
+            const year = new Date(filteredData[index].dateTimestamp).getFullYear();
+            const prevYear = index > 0 ? new Date(filteredData[index - 1].dateTimestamp).getFullYear() : null;
             return year !== prevYear && year % 5 === 0;
         })
         .map(d => d.date);
@@ -189,20 +228,35 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                                         {category}
                                     </div>
                                     <div className="space-y-2">
-                                        {categorySeries.map(series => (
-                                            <label
-                                                key={series.value}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedSeries.includes(series.value)}
-                                                    onChange={() => handleSeriesToggle(series.value)}
-                                                    className="cursor-pointer"
-                                                />
-                                                <span className="font-medium">{series.label}</span>
-                                            </label>
-                                        ))}
+                                        {categorySeries.map(series => {
+                                            const tooltip = METRIC_TOOLTIPS[series.value];
+                                            const checkbox = (
+                                                <label
+                                                    key={series.value}
+                                                    className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedSeries.includes(series.value)}
+                                                        onChange={() => handleSeriesToggle(series.value)}
+                                                        className="cursor-pointer"
+                                                    />
+                                                    <span className={`font-medium ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
+                                                        {series.label}
+                                                    </span>
+                                                </label>
+                                            );
+
+                                            if (tooltip) {
+                                                return (
+                                                    <MetricTooltip key={series.value} content={tooltip}>
+                                                        {checkbox}
+                                                    </MetricTooltip>
+                                                );
+                                            }
+
+                                            return checkbox;
+                                        })}
                                     </div>
                                 </div>
                             );
@@ -213,7 +267,7 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
 
             <div className="pt-6">
                 <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <LineChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
                         <XAxis
@@ -221,6 +275,10 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             stroke={textColor}
                             ticks={yearlyTicks}
                             tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return date.getFullYear().toString();
+                            }}
                         />
 
                         <YAxis
@@ -248,6 +306,11 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             </>
                         )}
 
+                        {/* Zero line for actual values */}
+                        {metric === 'value' && (
+                            <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={2} />
+                        )}
+
                         {/* Lines - dynamically render based on selected series */}
                         {selectedSeries.map(seriesValue => {
                             const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
@@ -269,22 +332,32 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                     </LineChart>
                 </ResponsiveContainer>
 
-                {metric === 'percentile' && (
-                    <div className="mt-4 flex justify-center gap-6 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-0.5 bg-green-500"></div>
-                            <span>25th percentile</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-0.5 bg-gray-500"></div>
-                            <span>50th percentile (median)</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-0.5 bg-red-500"></div>
-                            <span>75th percentile</span>
-                        </div>
+                {/* Display selected metrics and their tooltips */}
+                <div className="mt-4 space-y-2">
+                    <div className="text-sm font-medium text-foreground">
+                        Selected Metrics: {selectedSeries.map(seriesValue => {
+                            const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
+                            return series?.label;
+                        }).join(', ')}
                     </div>
-                )}
+                    {selectedSeries.some(s => METRIC_TOOLTIPS[s]) && (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                            {selectedSeries.map(seriesValue => {
+                                const tooltip = METRIC_TOOLTIPS[seriesValue];
+                                const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
+                                if (!tooltip) return null;
+                                return (
+                                    <div key={seriesValue} className="flex items-start gap-2">
+                                        <span className="font-semibold" style={{ color: series?.color }}>
+                                            {series?.label}:
+                                        </span>
+                                        <span>{tooltip}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </div >
     );

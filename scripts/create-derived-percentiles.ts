@@ -137,6 +137,69 @@ function createDerivedPercentiles() {
         insertManyYieldCurve(yieldCurveResults);
         console.log(`  ✅ Inserted ${yieldCurveResults.length} Yield Curve percentiles\n`);
 
+        // 2b. Yield Curve 10Y-3M (10Y - 3M)
+        console.log('2b. Calculating Yield Curve 10Y-3M (10Y - 3M)...');
+        const yieldCurve3MQuery = `
+            WITH combined AS (
+                SELECT 
+                    pa1.date,
+                    pa1.value as tnx_value,
+                    pa2.value as irx_value,
+                    pa1.value - pa2.value as yield_curve_3m
+                FROM percentile_analysis pa1
+                INNER JOIN percentile_analysis pa2 
+                    ON pa1.date = pa2.date
+                WHERE pa1.asset_class = 'bonds'
+                  AND pa1.series_name = 'US/TNX-Monthly'
+                  AND pa2.asset_class = 'bonds'
+                  AND pa2.series_name = 'US/IRX-Monthly'
+                  AND pa1.value IS NOT NULL
+                  AND pa2.value IS NOT NULL
+            ),
+            ranked AS (
+                SELECT 
+                    date,
+                    yield_curve_3m as value,
+                    (
+                        SELECT COUNT(*)
+                        FROM combined c2
+                        WHERE c2.date <= c1.date
+                          AND c2.yield_curve_3m < c1.yield_curve_3m
+                    ) as rank_below,
+                    (
+                        SELECT COUNT(*)
+                        FROM combined c2
+                        WHERE c2.date <= c1.date
+                    ) as total_count
+                FROM combined c1
+            )
+            SELECT 
+                date,
+                value,
+                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+            FROM ranked
+            ORDER BY date
+        `;
+
+        const yieldCurve3MResults = db.prepare(yieldCurve3MQuery).all() as any[];
+        console.log(`  Found ${yieldCurve3MResults.length} data points`);
+
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Yield-Curve-10Y-3M'`).run();
+
+        const insertYieldCurve3M = db.prepare(`
+            INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
+            VALUES (?, 'derived', 'Yield-Curve-10Y-3M', 'Value', ?, ?)
+        `);
+
+        const insertManyYieldCurve3M = db.transaction((data: any[]) => {
+            for (const row of data) {
+                insertYieldCurve3M.run(row.date, row.value, row.percentile_rank);
+            }
+        });
+
+        insertManyYieldCurve3M(yieldCurve3MResults);
+        console.log(`  ✅ Inserted ${yieldCurve3MResults.length} Yield Curve 10Y-3M percentiles\n`);
+
         // 3. Earnings Yield Premium (E/P - 3M)
         console.log('3. Calculating Earnings Yield Premium (E/P - 3M)...');
         const eypQuery = `
@@ -200,6 +263,70 @@ function createDerivedPercentiles() {
 
         insertManyEYP(eypResults);
         console.log(`  ✅ Inserted ${eypResults.length} Earnings Yield Premium percentiles\n`);
+
+        // 3b. Earnings Yield Premium 5yr (1/PE-5yr - 3M)
+        console.log('3b. Calculating Earnings Yield Premium 5yr (1/PE-5yr - 3M)...');
+        const eyp5yrQuery = `
+            WITH combined AS (
+                SELECT 
+                    pa1.date,
+                    pa1.value as pe5yr_value,
+                    pa2.value as irx_value,
+                    (100.0 / pa1.value) - pa2.value as eyp5yr
+                FROM percentile_analysis pa1
+                INNER JOIN percentile_analysis pa2 
+                    ON pa1.date = pa2.date
+                WHERE pa1.asset_class = 'valuations'
+                  AND pa1.series_name = 'PE-5yr'
+                  AND pa2.asset_class = 'bonds'
+                  AND pa2.series_name = 'US/IRX-Monthly'
+                  AND pa1.value IS NOT NULL
+                  AND pa1.value > 0
+                  AND pa2.value IS NOT NULL
+            ),
+            ranked AS (
+                SELECT 
+                    date,
+                    eyp5yr as value,
+                    (
+                        SELECT COUNT(*)
+                        FROM combined c2
+                        WHERE c2.date <= c1.date
+                          AND c2.eyp5yr < c1.eyp5yr
+                    ) as rank_below,
+                    (
+                        SELECT COUNT(*)
+                        FROM combined c2
+                        WHERE c2.date <= c1.date
+                    ) as total_count
+                FROM combined c1
+            )
+            SELECT 
+                date,
+                value,
+                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+            FROM ranked
+            ORDER BY date
+        `;
+
+        const eyp5yrResults = db.prepare(eyp5yrQuery).all() as any[];
+        console.log(`  Found ${eyp5yrResults.length} data points`);
+
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Earnings-Yield-Premium-5yr'`).run();
+
+        const insertEYP5yr = db.prepare(`
+            INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
+            VALUES (?, 'derived', 'Earnings-Yield-Premium-5yr', 'Value', ?, ?)
+        `);
+
+        const insertManyEYP5yr = db.transaction((data: any[]) => {
+            for (const row of data) {
+                insertEYP5yr.run(row.date, row.value, row.percentile_rank);
+            }
+        });
+
+        insertManyEYP5yr(eyp5yrResults);
+        console.log(`  ✅ Inserted ${eyp5yrResults.length} Earnings Yield Premium 5yr percentiles\n`);
 
         // 4. Real Earnings Yield (E/P - CPI)
         console.log('4. Calculating Real Earnings Yield (E/P - CPI)...');

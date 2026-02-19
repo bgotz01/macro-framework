@@ -32,6 +32,7 @@ const METRICS: MetricConfig[] = [
     { key: 'irx', label: '3M Treasury', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'realYield', label: 'Real Yield (10Y-CPI)', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'yieldCurve3M', label: 'Yield Curve (10Y-3M)', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'shillerPE', label: 'Shiller P/E (CAPE)', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
     { key: 'pe5yr', label: 'P/E-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
     { key: 'eyp', label: 'Earnings Yield Premium', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
@@ -63,14 +64,34 @@ export default function PercentileViewer({
         }
     };
 
-    function getPercentileColor(percentile: number): string {
+    function getPercentileColor(percentile: number, metricKey?: string): string {
+        // For EYP and REY, reverse the colors (low is bad, high is good)
+        const isReversed = metricKey === 'eyp' || metricKey === 'rey';
+
+        if (isReversed) {
+            if (percentile < 25) return 'text-red-600 dark:text-red-400';
+            if (percentile < 50) return 'text-yellow-600 dark:text-yellow-400';
+            if (percentile < 75) return 'text-blue-600 dark:text-blue-400';
+            return 'text-green-600 dark:text-green-400';
+        }
+
         if (percentile < 25) return 'text-green-600 dark:text-green-400';
         if (percentile < 50) return 'text-blue-600 dark:text-blue-400';
         if (percentile < 75) return 'text-yellow-600 dark:text-yellow-400';
         return 'text-red-600 dark:text-red-400';
     }
 
-    function getPercentileBg(percentile: number): string {
+    function getPercentileBg(percentile: number, metricKey?: string): string {
+        // For EYP and REY, reverse the colors (low is bad, high is good)
+        const isReversed = metricKey === 'eyp' || metricKey === 'rey';
+
+        if (isReversed) {
+            if (percentile < 25) return 'bg-red-50 dark:bg-red-950';
+            if (percentile < 50) return 'bg-yellow-50 dark:bg-yellow-950';
+            if (percentile < 75) return 'bg-blue-50 dark:bg-blue-950';
+            return 'bg-green-50 dark:bg-green-950';
+        }
+
         if (percentile < 25) return 'bg-green-50 dark:bg-green-950';
         if (percentile < 50) return 'bg-blue-50 dark:bg-blue-950';
         if (percentile < 75) return 'bg-yellow-50 dark:bg-yellow-950';
@@ -175,11 +196,11 @@ export default function PercentileViewer({
                                                     <td className="p-3 text-right font-mono">
                                                         {metric.format(metricData.value)}
                                                     </td>
-                                                    <td className={`p-3 text-right font-bold ${getPercentileColor(percentile)}`}>
+                                                    <td className={`p-3 text-right font-bold ${getPercentileColor(percentile, metric.key)}`}>
                                                         {percentile.toFixed(1)}th
                                                     </td>
                                                     <td className="p-3">
-                                                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getPercentileBg(percentile)} ${getPercentileColor(percentile)}`}>
+                                                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getPercentileBg(percentile, metric.key)} ${getPercentileColor(percentile, metric.key)}`}>
                                                             {interpretation}
                                                         </span>
                                                     </td>

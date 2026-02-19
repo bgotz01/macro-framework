@@ -11,6 +11,7 @@ import FXChart from '@/components/charts/fx-chart';
 import DBChart from '@/components/charts/db-chart';
 import ReturnsChart from '@/components/charts/returns-chart';
 import StockValuationChart from '@/components/charts/stock-valuation-chart';
+import PercentileChart from '@/components/charts/percentile-chart';
 
 function ChartPageContent() {
     const router = useRouter();
@@ -85,6 +86,11 @@ function ChartPageContent() {
                 />
 
                 {renderChart()}
+
+                {/* Historical Percentile Chart */}
+                <div className="mt-12">
+                    <PercentileChart height={500} />
+                </div>
             </div>
         </div>
     );

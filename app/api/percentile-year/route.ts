@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
             { asset_class: 'valuations', series_name: 'PE-5yr', key: 'pe5yr' },
             { asset_class: 'derived', series_name: 'Real-Yield', key: 'realYield' },
             { asset_class: 'derived', series_name: 'Yield-Curve', key: 'yieldCurve' },
+            { asset_class: 'derived', series_name: 'Yield-Curve-10Y-3M', key: 'yieldCurve3M' },
             { asset_class: 'derived', series_name: 'Earnings-Yield-Premium', key: 'eyp' },
+            { asset_class: 'derived', series_name: 'Earnings-Yield-Premium-5yr', key: 'eyp5yr' },
             { asset_class: 'derived', series_name: 'Real-Earnings-Yield', key: 'rey' },
         ];
 

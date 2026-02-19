@@ -32,6 +32,11 @@ const sidebarData: SidebarItem[] = [
     {
         title: 'Matrix',
         href: '/matrix',
+        children: [
+            { title: 'Historical', href: '/matrix/historical' },
+            { title: 'Decades', href: '/matrix/decades' },
+            { title: 'Percentile', href: '/matrix/percentile' },
+        ],
     },
     {
         title: 'Chart',

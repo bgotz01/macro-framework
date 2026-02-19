@@ -72,12 +72,19 @@ async function getValueAtDate(assetClass: string, seriesName: string, targetDate
 
 async function getDecadeData(): Promise<DecadeData[]> {
     const decades = [
+        { decade: '1960s (mid)', date: '1964-12-31' },
         { decade: '1960s', date: '1969-12-31' },
+        { decade: '1970s (mid)', date: '1974-12-31' },
         { decade: '1970s', date: '1979-12-31' },
+        { decade: '1980s (mid)', date: '1984-12-31' },
         { decade: '1980s', date: '1989-12-31' },
+        { decade: '1990s (mid)', date: '1994-12-31' },
         { decade: '1990s', date: '1999-12-31' },
+        { decade: '2000s (mid)', date: '2004-12-31' },
         { decade: '2000s', date: '2009-12-31' },
+        { decade: '2010s (mid)', date: '2014-12-31' },
         { decade: '2010s', date: '2019-12-31' },
+        { decade: '2020s (mid)', date: '2022-12-31' },
         { decade: '2020s', date: '2024-12-31' }, // Most recent complete year
     ];
 
@@ -114,12 +121,19 @@ async function getDecadeData(): Promise<DecadeData[]> {
 
 async function get12YearCycleData(): Promise<DecadeData[]> {
     const cycles = [
+        { decade: '1948-1959 (mid)', date: '1953-12-31' },
         { decade: '1948-1959', date: '1959-12-31' },
+        { decade: '1960-1971 (mid)', date: '1965-12-31' },
         { decade: '1960-1971', date: '1971-12-31' },
+        { decade: '1972-1983 (mid)', date: '1977-12-31' },
         { decade: '1972-1983', date: '1983-12-31' },
+        { decade: '1984-1995 (mid)', date: '1989-12-31' },
         { decade: '1984-1995', date: '1995-12-31' },
+        { decade: '1996-2007 (mid)', date: '2001-12-31' },
         { decade: '1996-2007', date: '2007-12-31' },
+        { decade: '2008-2019 (mid)', date: '2013-12-31' },
         { decade: '2008-2019', date: '2019-12-31' },
+        { decade: '2020-2031 (mid)', date: '2025-12-31' },
         { decade: '2020-2031', date: '2024-12-31' }, // Most recent complete year
     ];
 
@@ -242,7 +256,7 @@ export default async function DecadesPage() {
                     <thead>
                         <tr className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                             <th className="border border-border p-4 text-left font-bold">Decade</th>
-                            <th className="border border-border p-4 text-left font-bold">Date</th>
+                            <th className="border border-border p-4 text-left font-bold">Year</th>
                             <th className="border border-border p-4 text-center font-bold">Inflation</th>
                             <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                             <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
@@ -265,7 +279,7 @@ export default async function DecadesPage() {
                             return (
                                 <tr key={row.decade} className="hover:bg-muted/30 transition-colors">
                                     <td className="border border-border p-4 font-bold text-lg">{row.decade}</td>
-                                    <td className="border border-border p-4 text-sm text-muted-foreground">{row.date}</td>
+                                    <td className="border border-border p-4 text-sm text-muted-foreground">{row.date.split('-')[0]}</td>
                                     <td className="border border-border p-4">
                                         <div className="flex flex-col items-center gap-2">
                                             <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(inflationLevel)}`}>
@@ -385,7 +399,7 @@ export default async function DecadesPage() {
                         <thead>
                             <tr className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                                 <th className="border border-border p-4 text-left font-bold">Cycle</th>
-                                <th className="border border-border p-4 text-left font-bold">Date</th>
+                                <th className="border border-border p-4 text-left font-bold">Year</th>
                                 <th className="border border-border p-4 text-center font-bold">Inflation</th>
                                 <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                                 <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
@@ -408,7 +422,7 @@ export default async function DecadesPage() {
                                 return (
                                     <tr key={row.decade} className="hover:bg-muted/30 transition-colors">
                                         <td className="border border-border p-4 font-bold text-lg">{row.decade}</td>
-                                        <td className="border border-border p-4 text-sm text-muted-foreground">{row.date}</td>
+                                        <td className="border border-border p-4 text-sm text-muted-foreground">{row.date.split('-')[0]}</td>
                                         <td className="border border-border p-4">
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(inflationLevel)}`}>

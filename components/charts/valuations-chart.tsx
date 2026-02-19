@@ -179,36 +179,69 @@ export default function ValuationsChart({
             );
         }
 
-        // Merge all series data by date
+        // Helper function to get year-month key for resampling
+        const getMonthKey = (dateStr: string) => {
+            return dateStr.substring(0, 7); // YYYY-MM
+        };
+
+        // Resample data to monthly frequency to handle mixed daily/monthly data
+        const resampleToMonthly = (seriesData: ChartDataPoint[], seriesName: string) => {
+            const monthlyData: { [month: string]: { sum: number; count: number; lastDate: string } } = {};
+
+            seriesData.forEach((point) => {
+                if (point.Value === undefined || point.Value === null) return;
+
+                const monthKey = getMonthKey(point.date);
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { sum: 0, count: 0, lastDate: point.date };
+                }
+                monthlyData[monthKey].sum += point.Value;
+                monthlyData[monthKey].count += 1;
+                // Keep the last date in the month
+                if (point.date > monthlyData[monthKey].lastDate) {
+                    monthlyData[monthKey].lastDate = point.date;
+                }
+            });
+
+            return Object.entries(monthlyData).map(([month, data]) => ({
+                date: data.lastDate, // Use last date in month for consistency
+                Value: data.sum / data.count // Average value for the month
+            }));
+        };
+
+        // Merge all series data by date (resampled to monthly)
         const mergedData: { [date: string]: any } = {};
 
         // If in ratio mode, load numerator and denominator data
         if (showRatio && ratioNumerator && ratioDenominator) {
-            const numData = data[ratioNumerator] || [];
-            const denData = data[ratioDenominator] || [];
+            const numData = resampleToMonthly(data[ratioNumerator] || [], ratioNumerator);
+            const denData = resampleToMonthly(data[ratioDenominator] || [], ratioDenominator);
 
             numData.forEach((point) => {
-                if (!mergedData[point.date]) {
-                    mergedData[point.date] = { date: point.date };
+                const monthKey = getMonthKey(point.date);
+                if (!mergedData[monthKey]) {
+                    mergedData[monthKey] = { date: point.date };
                 }
-                mergedData[point.date][ratioNumerator] = point.Value;
+                mergedData[monthKey][ratioNumerator] = point.Value;
             });
 
             denData.forEach((point) => {
-                if (!mergedData[point.date]) {
-                    mergedData[point.date] = { date: point.date };
+                const monthKey = getMonthKey(point.date);
+                if (!mergedData[monthKey]) {
+                    mergedData[monthKey] = { date: point.date };
                 }
-                mergedData[point.date][ratioDenominator] = point.Value;
+                mergedData[monthKey][ratioDenominator] = point.Value;
             });
         } else {
-            // Normal mode - load selected series
+            // Normal mode - load selected series (resampled to monthly)
             selectedSeries.forEach((seriesName) => {
-                const seriesData = data[seriesName] || [];
+                const seriesData = resampleToMonthly(data[seriesName] || [], seriesName);
                 seriesData.forEach((point) => {
-                    if (!mergedData[point.date]) {
-                        mergedData[point.date] = { date: point.date };
+                    const monthKey = getMonthKey(point.date);
+                    if (!mergedData[monthKey]) {
+                        mergedData[monthKey] = { date: point.date };
                     }
-                    mergedData[point.date][seriesName] = point.Value;
+                    mergedData[monthKey][seriesName] = point.Value;
                 });
             });
         }
@@ -224,7 +257,17 @@ export default function ValuationsChart({
             });
         }
 
-        const chartData = Object.values(mergedData).sort((a, b) => a.date.localeCompare(b.date));
+        let chartData = Object.values(mergedData).sort((a, b) => a.date.localeCompare(b.date));
+
+        // Filter to only include dates where at least one selected series has data
+        // This prevents issues when combining series with vastly different date ranges
+        const activeKeys = showRatio && ratioNumerator && ratioDenominator
+            ? ['ratio']
+            : selectedSeries;
+
+        chartData = chartData.filter(point => {
+            return activeKeys.some(key => point[key] !== undefined && point[key] !== null);
+        });
 
         return (
             <ResponsiveContainer width="100%" height={height}>
