@@ -10,8 +10,8 @@ import ValuationsChart from '@/components/charts/valuations-chart';
 import FXChart from '@/components/charts/fx-chart';
 import DBChart from '@/components/charts/db-chart';
 import ReturnsChart from '@/components/charts/returns-chart';
+import VolatilityChart from '@/components/charts/volatility-chart';
 import StockValuationChart from '@/components/charts/stock-valuation-chart';
-import PercentileChart from '@/components/charts/percentile-chart';
 
 function ChartPageContent() {
     const router = useRouter();
@@ -19,7 +19,7 @@ function ChartPageContent() {
     const chartParam = searchParams.get('type') as ChartType | null;
 
     const [currentChart, setCurrentChart] = useState<ChartType>(
-        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'stocks', 'all'].includes(chartParam)
+        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'volatility', 'stocks', 'all'].includes(chartParam)
             ? chartParam
             : 'yields'
     );
@@ -32,7 +32,7 @@ function ChartPageContent() {
 
     // Sync state with URL changes (e.g., browser back/forward)
     useEffect(() => {
-        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'stocks', 'all'].includes(chartParam)) {
+        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'volatility', 'stocks', 'all'].includes(chartParam)) {
             setCurrentChart(chartParam);
         }
     }, [chartParam]);
@@ -51,6 +51,8 @@ function ChartPageContent() {
                 return <FXChart height={500} />;
             case 'returns':
                 return <ReturnsChart />;
+            case 'volatility':
+                return <VolatilityChart />;
             case 'stocks':
                 return <StockValuationChart height={500} />;
             case 'all':
@@ -86,11 +88,6 @@ function ChartPageContent() {
                 />
 
                 {renderChart()}
-
-                {/* Historical Percentile Chart */}
-                <div className="mt-12">
-                    <PercentileChart height={500} />
-                </div>
             </div>
         </div>
     );

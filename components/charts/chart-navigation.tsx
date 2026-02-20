@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'stocks' | 'all';
+export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'volatility' | 'stocks' | 'all';
 
 interface ChartNavigationProps {
     onChartChange: (chartType: ChartType) => void;
@@ -39,6 +39,11 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; description: string 
         value: 'returns',
         label: 'Cyclical Returns',
         description: '2Y, 5Y, and 10Y rolling returns for markets'
+    },
+    {
+        value: 'volatility',
+        label: 'Volatility',
+        description: '63, 126, and 252-day rolling volatility for equities'
     },
     {
         value: 'stocks',

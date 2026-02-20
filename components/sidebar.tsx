@@ -41,6 +41,11 @@ const sidebarData: SidebarItem[] = [
     {
         title: 'Chart',
         href: '/chart',
+        children: [
+            { title: 'All Charts', href: '/chart' },
+            { title: 'Percentile Analysis', href: '/chart/percentile' },
+            { title: 'Data Explorer', href: '/chart/data' },
+        ],
     },
     {
         title: 'Macro Data',

@@ -19,7 +19,10 @@
     "sp500-analytics": "tsx scripts/sp500-analytics.ts",
     "sp500-advanced": "tsx scripts/sp500-advanced-analytics.ts",
     "sp500-rotation": "tsx scripts/sp500-sector-rotation.ts",
-    "sp500-snapshots": "tsx scripts/sp500-historical-snapshots.ts"
+    "sp500-snapshots": "tsx scripts/sp500-historical-snapshots.ts",
+    "deduplicate": "tsx scripts/deduplicate-monthly-data.ts",
+    "calculate-percentiles": "tsx scripts/calculate-percentiles.ts",
+    "calculate-yoy-percentile": "tsx scripts/calculate-yoy-percentile-change.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

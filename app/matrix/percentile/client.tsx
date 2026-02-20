@@ -1,8 +1,8 @@
 'use client';
 
-import PercentileViewer from '@/components/percentile-viewer';
 import PercentileChart from '@/components/charts/percentile-chart';
-import CompactMatrixPercentile from '@/components/compact-matrix-percentile';
+import PercentileBars from '@/components/percentile-bars';
+import PercentileDataTable from '@/components/percentile-data-table';
 import { useState } from 'react';
 
 // Tooltip component for methodology
@@ -35,27 +35,6 @@ function MethodologyTooltip({ children }: { children: React.ReactNode }) {
     );
 }
 
-// Tooltip component for metric explanations
-function MetricTooltip({ children, content }: { children: React.ReactNode; content: string }) {
-    const [show, setShow] = useState(false);
-
-    return (
-        <div
-            className="relative inline-block"
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={() => setShow(false)}
-        >
-            {children}
-            {show && (
-                <div className="absolute z-50 px-3 py-2 text-xs bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg shadow-lg -top-10 left-1/2 -translate-x-1/2 w-64 pointer-events-none whitespace-normal">
-                    {content}
-                    <div className="absolute w-2 h-2 bg-gray-900 dark:bg-gray-100 rotate-45 -bottom-1 left-1/2 -translate-x-1/2"></div>
-                </div>
-            )}
-        </div>
-    );
-}
-
 interface PercentileAnalysisClientProps {
     initialData: any;
     availableYears: number[];
@@ -78,11 +57,11 @@ export default function PercentileAnalysisClient({ initialData, availableYears }
                 </p>
             </div>
 
-            {/* Interactive Viewer */}
-            <PercentileViewer
-                initialYear={9999}
-                availableYears={availableYears}
+            {/* Percentile Bars Visualization */}
+            <PercentileBars
                 initialData={initialData}
+                availableYears={availableYears}
+                initialYear={9999}
             />
 
             {/* Historical Chart */}
@@ -90,46 +69,9 @@ export default function PercentileAnalysisClient({ initialData, availableYears }
                 <PercentileChart height={500} />
             </div>
 
-
-
-            {/* Compact Matrix Percentile */}
+            {/* Historical Data Table */}
             <div className="mb-8 mt-8">
-                <CompactMatrixPercentile
-                    initialValues={{
-                        inflation: {
-                            percentile: initialData.cpi?.percentileRank ?? null,
-                            value: initialData.cpi?.value ?? null
-                        },
-                        bondYieldNominal: {
-                            percentile: initialData.tnx?.percentileRank ?? null,
-                            value: initialData.tnx?.value ?? null
-                        },
-                        bondYieldReal: {
-                            percentile: initialData.realYield?.percentileRank ?? null,
-                            value: initialData.realYield?.value ?? null
-                        },
-                        yieldCurve: {
-                            percentile: initialData.yieldCurve?.percentileRank ?? null,
-                            value: initialData.yieldCurve?.value ?? null
-                        },
-                        fedFunds: {
-                            percentile: initialData.fedFunds?.percentileRank ?? null,
-                            value: initialData.fedFunds?.value ?? null
-                        },
-                        equityPE: {
-                            percentile: initialData.shillerPE?.percentileRank ?? null,
-                            value: initialData.shillerPE?.value ?? null
-                        },
-                        earningsYieldPremium: {
-                            percentile: initialData.eyp?.percentileRank ?? null,
-                            value: initialData.eyp?.value ?? null
-                        },
-                        realEarningsYield: {
-                            percentile: initialData.rey?.percentileRank ?? null,
-                            value: initialData.rey?.value ?? null
-                        },
-                    }}
-                />
+                <PercentileDataTable />
             </div>
 
             {/* Navigation */}

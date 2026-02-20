@@ -15,6 +15,7 @@ interface PercentileViewerProps {
     initialYear: number;
     availableYears: number[];
     initialData: any;
+    onYearChange?: (year: number, data: any) => void;
 }
 
 interface MetricConfig {
@@ -42,7 +43,8 @@ const METRICS: MetricConfig[] = [
 export default function PercentileViewer({
     initialYear,
     availableYears,
-    initialData
+    initialData,
+    onYearChange
 }: PercentileViewerProps) {
     const [selectedYear, setSelectedYear] = useState(initialYear);
     const [data, setData] = useState(initialData);
@@ -57,6 +59,7 @@ export default function PercentileViewer({
             const response = await fetch(`/api/percentile-year?year=${yearValue}`);
             const result = await response.json();
             setData(result);
+            onYearChange?.(year, result);
         } catch (error) {
             console.error('Error fetching percentile data:', error);
         } finally {
