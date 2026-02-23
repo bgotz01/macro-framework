@@ -6,7 +6,7 @@ export default function ParadigmPage() {
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                     Framework • Operating System
                 </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
                     The OS Paradigm
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">

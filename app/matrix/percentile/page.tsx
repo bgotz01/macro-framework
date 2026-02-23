@@ -15,12 +15,15 @@ async function getInitialData(year: number | 'latest') {
         { asset_class: 'bonds', series_name: 'US/IRX-Monthly', key: 'irx' },
         { asset_class: 'valuations', series_name: 'Shiller-PE', key: 'shillerPE' },
         { asset_class: 'valuations', series_name: 'PE-5yr', key: 'pe5yr' },
+        { asset_class: 'valuations', series_name: 'Earnings-Yield', key: 'eyCAPE' },
+        { asset_class: 'valuations', series_name: 'Earnings-Yield-5yr', key: 'ey5yr' },
         { asset_class: 'derived', series_name: 'Real-Yield', key: 'realYield' },
         { asset_class: 'derived', series_name: 'Yield-Curve', key: 'yieldCurve' },
         { asset_class: 'derived', series_name: 'Yield-Curve-10Y-3M', key: 'yieldCurve3M' },
         { asset_class: 'derived', series_name: 'Earnings-Yield-Premium', key: 'eyp' },
         { asset_class: 'derived', series_name: 'Earnings-Yield-Premium-5yr', key: 'eyp5yr' },
         { asset_class: 'derived', series_name: 'Real-Earnings-Yield', key: 'rey' },
+        { asset_class: 'derived', series_name: 'Real-Earnings-Yield-5yr', key: 'rey5yr' },
     ];
 
     const result: any = { year };

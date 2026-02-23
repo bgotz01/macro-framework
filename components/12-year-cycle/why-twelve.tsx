@@ -92,14 +92,14 @@ function CategoryRow({
     return (
         <div className="rounded-2xl border border-border/50 bg-card p-6">
             {/* Category header */}
-            <div className="flex flex-col items-center gap-2 mb-5">
+            <div className="flex flex-col items-center gap-2 mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-xl">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/30 bg-primary/10 text-2xl">
                         {category.icon}
                     </div>
-                    <h3 className="text-xl font-bold">{category.title}</h3>
+                    <h3 className="page-title text-2xl font-bold">{category.title}</h3>
                 </div>
-                <p className="text-sm text-muted-foreground text-center">{category.subtitle}</p>
+                <p className="text-base text-muted-foreground text-center max-w-2xl">{category.subtitle}</p>
             </div>
 
             {/* 3-column examples grid */}
@@ -124,7 +124,7 @@ function CategoryRow({
 }
 
 export default function WhyTwelve() {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
     const [openId, setOpenId] = useState<string | null>(null);
 
     const categories: Category[] = useMemo(
@@ -253,12 +253,12 @@ export default function WhyTwelve() {
                 >
                     <div className="flex items-center justify-between gap-4 mb-6">
                         <div className="flex items-center gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border/60 bg-muted/40">
-                                <span className="text-xl font-bold">12</span>
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-primary/30 bg-primary/10">
+                                <span className="text-2xl font-bold text-primary">12</span>
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold">Why 12?</h2>
-                                <p className="mt-2 text-sm text-muted-foreground">
+                                <h2 className="page-title text-3xl font-bold">Why 12?</h2>
+                                <p className="mt-2 text-base text-muted-foreground">
                                     12 feels complete because it's a natural container: divisible, repeatable, and easy to segment into human-sized structure.
                                 </p>
                             </div>
@@ -273,10 +273,10 @@ export default function WhyTwelve() {
                         {categories.map((cat) => (
                             <div
                                 key={cat.key}
-                                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/60 bg-muted/30"
+                                className="flex flex-col items-center gap-2 p-5 rounded-xl border-2 border-border/60 bg-muted/40"
                             >
-                                <span className="text-2xl">{cat.icon}</span>
-                                <span className="text-sm font-semibold text-center">{cat.title}</span>
+                                <span className="text-3xl">{cat.icon}</span>
+                                <span className="text-base font-bold text-center">{cat.title}</span>
                             </div>
                         ))}
                     </div>

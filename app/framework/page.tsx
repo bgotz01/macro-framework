@@ -96,10 +96,10 @@ export default function FrameworkPage() {
         <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="text-center mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                     Three Laws of Market Behavior
                 </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
                     Power Law
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
@@ -217,7 +217,7 @@ function SignalContent() {
                         <span className="text-primary">•</span>
                         <div>
                             <span className="font-medium text-card-foreground">Market pain:</span>
-                            <span className="text-muted-foreground"> Credit spreads blowing out, VIX spikes, mass redemptions</span>
+                            <span className="text-muted-foreground"> Inflation, yields, or valuations in 90+ percentile</span>
                         </div>
                     </div>
                     <div className="flex items-center space-x-3 text-base">

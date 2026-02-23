@@ -19,9 +19,12 @@ export async function GET() {
             { key: 'yieldcurve3m', asset_class: 'derived', series_name: 'Yield-Curve-10Y-3M' },
             { key: 'shillerpe', asset_class: 'valuations', series_name: 'Shiller-PE' },
             { key: 'pe5yr', asset_class: 'valuations', series_name: 'PE-5yr' },
+            { key: 'eycape', asset_class: 'valuations', series_name: 'Earnings-Yield' },
+            { key: 'ey5yr', asset_class: 'valuations', series_name: 'Earnings-Yield-5yr' },
             { key: 'eyp', asset_class: 'derived', series_name: 'Earnings-Yield-Premium' },
             { key: 'eyp5yr', asset_class: 'derived', series_name: 'Earnings-Yield-Premium-5yr' },
             { key: 'rey', asset_class: 'derived', series_name: 'Real-Earnings-Yield' },
+            { key: 'rey5yr', asset_class: 'derived', series_name: 'Real-Earnings-Yield-5yr' },
         ];
 
         // Fetch data for each series
@@ -32,7 +35,8 @@ export async function GET() {
                 SELECT 
                     date,
                     value,
-                    percentile_rank
+                    percentile_rank,
+                    yoy_percentile_change
                 FROM percentile_analysis
                 WHERE asset_class = ?
                   AND series_name = ?
@@ -58,6 +62,7 @@ export async function GET() {
                 const point = dateMap.get(row.date)!;
                 point[`${key}_value`] = row.value;
                 point[`${key}_percentile`] = row.percentile_rank;
+                point[`${key}_yoy`] = row.yoy_percentile_change;
             }
         }
 

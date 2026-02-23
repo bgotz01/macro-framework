@@ -176,7 +176,7 @@ export default function AnnualReturnsPage() {
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                     Markets • Historical Data
                 </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
                     Annual Returns by Asset Class
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">

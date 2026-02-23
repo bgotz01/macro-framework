@@ -19,6 +19,23 @@ interface ChartDataPoint {
     [key: string]: any;
 }
 
+interface SeriesInfo {
+    series_name: string;
+    display_name: string;
+    units?: string;
+    currency?: string;
+}
+
+// Map currencies to FX series names
+const CURRENCY_TO_FX_SERIES: { [key: string]: { assetClass: string; seriesName: string; inverted: boolean } } = {
+    'GBP': { assetClass: 'fx', seriesName: 'GBPUSD', inverted: false },
+    'EUR': { assetClass: 'fx', seriesName: 'EURUSD', inverted: false },
+    'JPY': { assetClass: 'fx', seriesName: 'USDJPY', inverted: true }, // USD/JPY needs to be inverted
+    'TRY': { assetClass: 'fx', seriesName: 'USDTRY', inverted: true },
+    'ARS': { assetClass: 'fx', seriesName: 'USDARS', inverted: true },
+    'CAD': { assetClass: 'fx', seriesName: 'USDCAD', inverted: true },
+};
+
 const CHART_COLORS = ['#2563eb', '#dc2626'];
 
 const DATE_PRESETS: Array<
@@ -52,16 +69,18 @@ export default function EquitiesChart({
     onDateRangeChange
 }: EquitiesChartProps) {
     const [assetClass, setAssetClass] = useState<EquityAssetClass>('equities');
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [availableSeries, setAvailableSeries] = useState<SeriesInfo[]>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
+    const [selectedCurrency, setSelectedCurrency] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
-    const [datePreset, setDatePreset] = useState<string>('all');
+    const [datePreset, setDatePreset] = useState<string>('10y');
     const [customStartDate, setCustomStartDate] = useState<string>('');
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [convertToUSD, setConvertToUSD] = useState(false);
 
     // Ratio calculation state
     const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
@@ -85,15 +104,18 @@ export default function EquitiesChart({
                 const seriesWithNames = result.seriesInfo.map((s: any) => ({
                     series_name: s.series_name,
                     display_name: s.display_name,
-                    units: s.units
+                    units: s.units,
+                    currency: s.currency
                 }));
                 setAvailableSeries(seriesWithNames);
 
                 // Auto-select S&P 500 (US/GSPC) if available, otherwise first series
                 if (seriesWithNames.length > 0) {
-                    const sp500 = seriesWithNames.find((s: { series_name: string; display_name: string; units?: string }) => s.series_name === 'US/GSPC');
-                    setSelectedSeries(sp500 ? sp500.series_name : seriesWithNames[0].series_name);
-                    setSelectedUnits(sp500 ? sp500.units : seriesWithNames[0].units);
+                    const sp500 = seriesWithNames.find((s: SeriesInfo) => s.series_name === 'US/GSPC');
+                    const selected = sp500 || seriesWithNames[0];
+                    setSelectedSeries(selected.series_name);
+                    setSelectedUnits(selected.units);
+                    setSelectedCurrency(selected.currency);
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
@@ -182,7 +204,56 @@ export default function EquitiesChart({
                 }
 
                 const result = await response.json();
-                setData(result.data);
+                let processedData = result.data;
+
+                // Apply USD conversion if enabled
+                if (convertToUSD && selectedCurrency && selectedCurrency !== 'USD' && CURRENCY_TO_FX_SERIES[selectedCurrency]) {
+                    const fxInfo = CURRENCY_TO_FX_SERIES[selectedCurrency];
+                    const fxResponse = await fetch(`/api/data/${fxInfo.assetClass}?series=${encodeURIComponent(fxInfo.seriesName)}`);
+
+                    if (fxResponse.ok) {
+                        const fxResult = await fxResponse.json();
+
+                        // Create a sorted array of FX data for forward-filling
+                        const fxData = fxResult.data.sort((a: ChartDataPoint, b: ChartDataPoint) =>
+                            a.date.localeCompare(b.date)
+                        );
+
+                        // Build a map with forward-filling for missing dates
+                        const fxMap = new Map<string, number>();
+                        fxData.forEach((point: ChartDataPoint) => {
+                            if (point.Value !== undefined && point.Value !== null) {
+                                fxMap.set(point.date, point.Value);
+                            }
+                        });
+
+                        // Convert index values using FX rates with forward-filling
+                        processedData = processedData.map((point: ChartDataPoint) => {
+                            let fxRate = fxMap.get(point.date);
+
+                            // If no exact match, find the most recent FX rate before this date
+                            if (!fxRate) {
+                                for (let i = fxData.length - 1; i >= 0; i--) {
+                                    if (fxData[i].date <= point.date && fxData[i].Value) {
+                                        fxRate = fxData[i].Value;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (fxRate && point.Value !== undefined) {
+                                // If inverted (like USD/JPY), divide; otherwise multiply
+                                const convertedValue = fxInfo.inverted
+                                    ? point.Value / fxRate
+                                    : point.Value * fxRate;
+                                return { ...point, Value: convertedValue };
+                            }
+                            return point;
+                        });
+                    }
+                }
+
+                setData(processedData);
 
                 // Notify parent of selection change
                 if (onSelectionChange) {
@@ -196,7 +267,7 @@ export default function EquitiesChart({
         };
 
         loadData();
-    }, [assetClass, selectedSeries, calculationMode, onSelectionChange]);
+    }, [assetClass, selectedSeries, calculationMode, onSelectionChange, convertToUSD, selectedCurrency]);
 
     // Calculate ratio when in ratio mode
     useEffect(() => {
@@ -548,17 +619,59 @@ export default function EquitiesChart({
                                     setSelectedSeries(e.target.value);
                                     const series = availableSeries.find(s => s.series_name === e.target.value);
                                     setSelectedUnits(series?.units);
+                                    setSelectedCurrency(series?.currency);
+                                    setConvertToUSD(false); // Reset conversion when changing series
                                 }}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                                 disabled={availableSeries.length === 0}
                             >
-                                {availableSeries.map(series => (
-                                    <option key={series.series_name} value={series.series_name}>
-                                        {series.display_name}
-                                    </option>
-                                ))}
+                                {assetClass === 'equities' ? (
+                                    <>
+                                        <optgroup label="US Indices">
+                                            {availableSeries
+                                                .filter(s => s.series_name.startsWith('US/') || s.series_name === 'NDX' || s.series_name === 'DJI')
+                                                .map(series => (
+                                                    <option key={series.series_name} value={series.series_name}>
+                                                        {series.display_name}
+                                                    </option>
+                                                ))}
+                                        </optgroup>
+                                        <optgroup label="International Indices">
+                                            {availableSeries
+                                                .filter(s => !s.series_name.startsWith('US/') && s.series_name !== 'NDX' && s.series_name !== 'DJI')
+                                                .map(series => (
+                                                    <option key={series.series_name} value={series.series_name}>
+                                                        {series.display_name}
+                                                    </option>
+                                                ))}
+                                        </optgroup>
+                                    </>
+                                ) : (
+                                    availableSeries.map(series => (
+                                        <option key={series.series_name} value={series.series_name}>
+                                            {series.display_name}
+                                        </option>
+                                    ))
+                                )}
                             </select>
                         </div>
+                    </div>
+                )}
+
+                {/* USD Conversion Toggle (only for equities with non-USD currency) */}
+                {assetClass === 'equities' && selectedCurrency && selectedCurrency !== 'USD' && CURRENCY_TO_FX_SERIES[selectedCurrency] && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={convertToUSD}
+                                onChange={(e) => setConvertToUSD(e.target.checked)}
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+                            />
+                            <span className="text-sm font-medium text-card-foreground">
+                                Convert to USD (currently in {selectedCurrency})
+                            </span>
+                        </label>
                     </div>
                 )}
 
@@ -622,8 +735,13 @@ export default function EquitiesChart({
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">Current Value</div>
                                     <div className="text-2xl font-bold text-card-foreground">
-                                        {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
+                                        {formatTooltipValue(data[data.length - 1].Value, convertToUSD ? 'usd' : selectedUnits)}
                                     </div>
+                                    {selectedCurrency && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                            {convertToUSD ? 'USD (converted)' : selectedCurrency}
+                                        </div>
+                                    )}
                                 </div>
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">As of</div>

@@ -1,9 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Crimson Pro', Georgia, 'Times New Roman', serif;
 
   /* Color system */
   --color-background: var(--background);
@@ -146,7 +150,7 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -160,10 +164,17 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;
+}
+
+/* Display font for page titles */
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* Tabular numbers for data */
@@ -194,6 +205,37 @@ html {
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-foreground);
+}
+
+/* Sidebar scrollbar - hidden by default, visible on hover */
+.sidebar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.sidebar-scroll:hover {
+  scrollbar-width: thin;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--color-muted-foreground);
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
   background: var(--color-foreground);
 }
 

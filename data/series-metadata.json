@@ -161,31 +161,56 @@
       "displayName": "FTSE 100",
       "description": "UK FTSE 100 Index",
       "geography": "UK",
-      "units": "index"
+      "units": "index",
+      "currency": "GBP"
     },
     "GDAXI": {
       "displayName": "DAX",
       "description": "German DAX Index",
       "geography": "DE",
-      "units": "index"
+      "units": "index",
+      "currency": "EUR"
     },
     "N225": {
       "displayName": "Nikkei 225",
       "description": "Japan Nikkei 225 Index",
       "geography": "JP",
-      "units": "index"
+      "units": "index",
+      "currency": "JPY"
     },
     "HSI": {
       "displayName": "Hang Seng",
       "description": "Hong Kong Hang Seng Index",
       "geography": "HK",
-      "units": "index"
+      "units": "index",
+      "currency": "HKD"
     },
     "NDX": {
       "displayName": "NASDAQ 100",
       "description": "NASDAQ 100 Index",
       "geography": "US",
       "units": "index"
+    },
+    "GSPTSE": {
+      "displayName": "S&P/TSX Composite",
+      "description": "Toronto Stock Exchange Composite Index",
+      "geography": "CA",
+      "units": "index",
+      "currency": "CAD"
+    },
+    "Turkey/XU100.IS": {
+      "displayName": "BIST 100 (Istanbul)",
+      "description": "Borsa Istanbul 100 Index",
+      "geography": "TR",
+      "units": "index",
+      "currency": "TRY"
+    },
+    "Argentina/MERV": {
+      "displayName": "MERV (Buenos Aires)",
+      "description": "Argentina Merval Index",
+      "geography": "AR",
+      "units": "index",
+      "currency": "ARS"
     }
   },
   "commodities": {
@@ -208,17 +233,38 @@
   "fx": {
     "EURUSD": {
       "displayName": "EUR/USD",
-      "description": "Euro to US Dollar Exchange Rate",
+      "description": "Euro to US Dollar exchange rate",
+      "geography": "EU",
       "units": "exchange_rate"
     },
     "GBPUSD": {
       "displayName": "GBP/USD",
-      "description": "British Pound to US Dollar Exchange Rate",
+      "description": "British Pound to US Dollar exchange rate",
+      "geography": "UK",
       "units": "exchange_rate"
     },
     "USDJPY": {
       "displayName": "USD/JPY",
-      "description": "US Dollar to Japanese Yen Exchange Rate",
+      "description": "US Dollar to Japanese Yen exchange rate",
+      "geography": "JP",
+      "units": "exchange_rate"
+    },
+    "USDTRY": {
+      "displayName": "USD/TRY",
+      "description": "US Dollar to Turkish Lira exchange rate",
+      "geography": "TR",
+      "units": "exchange_rate"
+    },
+    "USDARS": {
+      "displayName": "USD/ARS",
+      "description": "US Dollar to Argentine Peso exchange rate",
+      "geography": "AR",
+      "units": "exchange_rate"
+    },
+    "USDCAD": {
+      "displayName": "USD/CAD",
+      "description": "US Dollar to Canadian Dollar exchange rate",
+      "geography": "CA",
       "units": "exchange_rate"
     }
   },

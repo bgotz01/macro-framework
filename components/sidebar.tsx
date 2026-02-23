@@ -10,100 +10,116 @@ interface SidebarItem {
     children?: SidebarItem[];
 }
 
-const sidebarData: SidebarItem[] = [
+interface SidebarCategory {
+    category: string;
+    items: SidebarItem[];
+}
+
+interface SidebarCategory {
+    category: string;
+    items: SidebarItem[];
+}
+
+const sidebarData: SidebarCategory[] = [
     {
-        title: 'Guide',
-        href: '/guide',
-    },
-    {
-        title: 'Data',
-        href: '/data',
-        children: [
-            { title: 'Highlights', href: '/data/highlights' },
-            { title: 'Annual Returns', href: '/data/annual-returns' },
-            { title: 'S&P 500', href: '/data/sp500' },
-            { title: 'Stocks', href: '/data/stocks' },
+        category: 'Markets',
+        items: [
+            {
+                title: 'Matrix',
+                href: '/matrix',
+                children: [
+                    { title: 'Historical', href: '/matrix/historical' },
+                    { title: 'Decades', href: '/matrix/decades' },
+                    { title: 'Percentile', href: '/matrix/percentile' },
+                ],
+            },
+            {
+                title: 'Regime',
+                href: '/regime',
+            },
+            {
+                title: 'Chart',
+                href: '/chart',
+                children: [
+                    { title: 'All Charts', href: '/chart' },
+                    { title: 'Percentile Analysis', href: '/chart/percentile' },
+                    { title: 'Data Explorer', href: '/chart/data' },
+                ],
+            },
+            {
+                title: 'Data',
+                href: '/data',
+                children: [
+                    { title: 'Highlights', href: '/data/highlights' },
+                    { title: 'Annual Returns', href: '/data/annual-returns' },
+                    { title: 'S&P 500', href: '/data/sp500' },
+                    { title: 'Stocks', href: '/data/stocks' },
+                ],
+            },
         ],
     },
     {
-        title: 'Paradigm',
-        href: '/paradigm',
-    },
-    {
-        title: 'Matrix',
-        href: '/matrix',
-        children: [
-            { title: 'Historical', href: '/matrix/historical' },
-            { title: 'Decades', href: '/matrix/decades' },
-            { title: 'Percentile', href: '/matrix/percentile' },
+        category: 'Perspectives',
+        items: [
+            {
+                title: 'Framework',
+                href: '/framework',
+            },
+            {
+                title: '12-Year Cycle',
+                href: '/12-year-cycle',
+                children: [
+                    { title: 'Why 12?', href: '/12-year-cycle/why-twelve' },
+                    { title: '1948 — Reconstruction', href: '/12-year-cycle/1948' },
+                    { title: '1960 — Brand Capital', href: '/12-year-cycle/1960' },
+                    { title: '1972 — Fiat Discovery', href: '/12-year-cycle/1972' },
+                    { title: '1984 — Credit Expansion', href: '/12-year-cycle/1984' },
+                    { title: '1996 — Digital Infrastructure', href: '/12-year-cycle/1996' },
+                    { title: '2008 — Monetary Intervention', href: '/12-year-cycle/2008' },
+                    { title: '2020 — Digital Economy', href: '/12-year-cycle/2020' },
+                ]
+            },
+            {
+                title: 'Cycles',
+                href: '/cycles',
+                children: [
+                    { title: '80-Year Cycle', href: '/cycles/80-year' },
+                    { title: 'Debt Cycle', href: '/cycles/debt-cycle' },
+                    { title: 'Credit Cycle', href: '/cycles/credit-cycle' },
+                    { title: 'Business Cycle', href: '/cycles/business-cycle' },
+                ],
+            },
+            {
+                title: 'Paradigm',
+                href: '/paradigm',
+            },
         ],
     },
     {
-        title: 'Chart',
-        href: '/chart',
-        children: [
-            { title: 'All Charts', href: '/chart' },
-            { title: 'Percentile Analysis', href: '/chart/percentile' },
-            { title: 'Data Explorer', href: '/chart/data' },
-        ],
-    },
-    {
-        title: 'Macro Data',
-        href: '/macro-data',
-        children: [
-            { title: 'US Data', href: '/macro-data/us' },
-            { title: 'Japan Data', href: '/macro-data/japan' },
-            { title: 'UK Data', href: '/macro-data/uk' },
-            { title: 'Canada Data', href: '/macro-data/canada' },
-            { title: 'Bond Yields', href: '/macro-data/bond-yields' },
-            { title: 'FX', href: '/macro-data/fx' },
-            { title: 'Equity Indexes', href: '/macro-data/equity-indexes' },
-        ],
-    },
-    {
-        title: 'Framework',
-        href: '/framework',
-    },
-    {
-        title: '12-Year Cycle',
-        href: '/12-year-cycle',
-        children: [
-            { title: 'Why 12?', href: '/12-year-cycle/why-twelve' },
-            { title: '1948 — Reconstruction', href: '/12-year-cycle/1948' },
-            { title: '1960 — Brand Capital', href: '/12-year-cycle/1960' },
-            { title: '1972 — Fiat Discovery', href: '/12-year-cycle/1972' },
-            { title: '1984 — Credit Expansion', href: '/12-year-cycle/1984' },
-            { title: '1996 — Digital Infrastructure', href: '/12-year-cycle/1996' },
-            { title: '2008 — Monetary Intervention', href: '/12-year-cycle/2008' },
-            { title: '2020 — Digital Economy', href: '/12-year-cycle/2020' },
-        ]
-    },
-    {
-        title: 'Cycles',
-        href: '/cycles',
-        children: [
-            { title: '80-Year Cycle', href: '/cycles/80-year' },
-            { title: 'Debt Cycle', href: '/cycles/debt-cycle' },
-            { title: 'Credit Cycle', href: '/cycles/credit-cycle' },
-            { title: 'Business Cycle', href: '/cycles/business-cycle' },
-        ],
-    },
-    {
-        title: 'Major Money Events',
-        href: '/major-events',
-        children: [
-            { title: '1971 Gold Depeg', href: '/major-events/1971-gold-depeg' },
-            { title: '1970s Inflation Trap', href: '/major-events/1970s-inflation' },
-            { title: '2000 Low Rates', href: '/major-events/2000-low-rates' },
-            { title: '2006 Yield Curve', href: '/major-events/2006-yield-curve' },
-            { title: '2008 QE', href: '/major-events/2008-qe' },
-        ],
-    },
-    {
-        title: 'Other Macro Events',
-        href: '/other-events',
-        children: [
-            { title: '2001 China joins WTO', href: '/other-events/2001-china-wto' },
+        category: 'Insights',
+        items: [
+            {
+                title: 'Guide',
+                href: '/guide',
+            },
+            {
+                title: 'Major Money Events',
+                href: '/major-events',
+                children: [
+                    { title: '1971 Gold Depeg', href: '/major-events/1971-gold-depeg' },
+                    { title: '1970s Inflation Trap', href: '/major-events/1970s-inflation' },
+                    { title: '2000 Low Rates', href: '/major-events/2000-low-rates' },
+                    { title: '2006 Yield Curve', href: '/major-events/2006-yield-curve' },
+                    { title: '2008 QE', href: '/major-events/2008-qe' },
+                ],
+            },
+            {
+                title: 'Other Macro Events',
+                href: '/other-events',
+                children: [
+                    { title: '2001 China joins WTO', href: '/other-events/2001-china-wto' },
+                ],
+            },
         ],
     },
 ];
@@ -124,17 +140,19 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     useEffect(() => {
         if (!hasInitialized) {
             const itemsToExpand: string[] = [];
-            sidebarData.forEach(item => {
-                if (pathname.startsWith(item.href)) {
-                    itemsToExpand.push(item.href);
-                    if (item.children) {
-                        item.children.forEach(child => {
-                            if (pathname.startsWith(child.href)) {
-                                itemsToExpand.push(child.href);
-                            }
-                        });
+            sidebarData.forEach(category => {
+                category.items.forEach(item => {
+                    if (pathname.startsWith(item.href)) {
+                        itemsToExpand.push(item.href);
+                        if (item.children) {
+                            item.children.forEach(child => {
+                                if (pathname.startsWith(child.href)) {
+                                    itemsToExpand.push(child.href);
+                                }
+                            });
+                        }
                     }
-                }
+                });
             });
             setExpandedItems(itemsToExpand);
             setHasInitialized(true);
@@ -155,6 +173,24 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
 
     return (
         <>
+            <style jsx>{`
+                .sidebar-scroll::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .sidebar-scroll::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .sidebar-scroll::-webkit-scrollbar-thumb {
+                    background: transparent;
+                    border-radius: 3px;
+                }
+                .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+                    background: hsl(var(--muted-foreground));
+                }
+                .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+                    background: hsl(var(--foreground));
+                }
+            `}</style>
             {/* Mobile overlay */}
             {isOpen && (
                 <div
@@ -172,136 +208,93 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
         `}
             >
                 <div className="flex h-full flex-col">
-                    <div className="flex-1 overflow-y-auto p-6">
+                    <div className="flex-1 overflow-y-auto p-6 sidebar-scroll">
                         {!isCollapsed && (
                             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">
                                 Navigation
                             </h2>
                         )}
 
-                        <nav className={`space-y-2 ${isCollapsed ? 'hidden' : ''}`}>
-                            {sidebarData.map((item) => (
-                                <div key={item.href} className="animate-slide-in">
-                                    <div className="flex items-center">
-                                        <Link
-                                            href={item.href}
-                                            className={`
+                        <nav className={`space-y-6 ${isCollapsed ? 'hidden' : ''}`}>
+                            {sidebarData.map((category) => (
+                                <div key={category.category} className="space-y-2">
+                                    {/* Category Header */}
+                                    <h3 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest px-4 mb-3 border-b border-muted-foreground/10 pb-2">
+                                        {category.category}
+                                    </h3>
+
+                                    {/* Category Items */}
+                                    {category.items.map((item) => (
+                                        <div key={item.href} className="animate-slide-in">
+                                            <div className="flex items-center">
+                                                <Link
+                                                    href={item.href}
+                                                    className={`
                         flex-1 flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 group
                         ${isActive(item.href)
-                                                    ? 'bg-muted/60 text-foreground'
-                                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                                                }
+                                                            ? 'bg-muted/60 text-foreground'
+                                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                                                        }
                         ${isCollapsed ? 'justify-center' : ''}
                       `}
-                                            onClick={() => {
-                                                // Only close sidebar on mobile
-                                                if (window.innerWidth < 1024) {
-                                                    onClose();
-                                                }
-                                            }}
-                                            title={isCollapsed ? item.title : undefined}
-                                        >
-                                            {isCollapsed ? (
-                                                // Hide content when collapsed - only show hamburger menu
-                                                null
-                                            ) : (
-                                                <span className="flex-1">{item.title}</span>
-                                            )}
-                                        </Link>
-                                        {item.children && !isCollapsed && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    toggleExpanded(item.href);
-                                                }}
-                                                className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
-                                                aria-label={`Toggle ${item.title} submenu`}
-                                            >
-                                                <svg
-                                                    className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(item.href) ? 'rotate-90' : ''
-                                                        }`}
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
+                                                    onClick={() => {
+                                                        // Only close sidebar on mobile
+                                                        if (window.innerWidth < 1024) {
+                                                            onClose();
+                                                        }
+                                                    }}
+                                                    title={isCollapsed ? item.title : undefined}
                                                 >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M9 5l7 7-7 7"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        )}
-                                    </div>
+                                                    {isCollapsed ? (
+                                                        // Hide content when collapsed - only show hamburger menu
+                                                        null
+                                                    ) : (
+                                                        <span className="flex-1">{item.title}</span>
+                                                    )}
+                                                </Link>
+                                                {item.children && !isCollapsed && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            toggleExpanded(item.href);
+                                                        }}
+                                                        className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
+                                                        aria-label={`Toggle ${item.title} submenu`}
+                                                    >
+                                                        <svg
+                                                            className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(item.href) ? 'rotate-90' : ''
+                                                                }`}
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M9 5l7 7-7 7"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
 
-                                    {/* Submenu */}
-                                    {item.children && isExpanded(item.href) && !isCollapsed && (
-                                        <div className="ml-6 mt-2 space-y-1 animate-fade-in">
-                                            {item.children.map((child) => (
-                                                <div key={child.href}>
-                                                    <div className="flex items-center">
-                                                        <Link
-                                                            href={child.href}
-                                                            className={`
+                                            {/* Submenu */}
+                                            {item.children && isExpanded(item.href) && !isCollapsed && (
+                                                <div className="ml-6 mt-2 space-y-1 animate-fade-in">
+                                                    {item.children.map((child) => (
+                                                        <div key={child.href}>
+                                                            <div className="flex items-center">
+                                                                <Link
+                                                                    href={child.href}
+                                                                    className={`
                                 flex-1 flex items-center rounded-lg px-4 py-2.5 text-sm transition-all duration-200 group
                                 ${isActive(child.href)
-                                                                    ? 'bg-muted/50 text-foreground'
-                                                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                                                                }
-                              `}
-                                                            onClick={() => {
-                                                                // Only close sidebar on mobile
-                                                                if (window.innerWidth < 1024) {
-                                                                    onClose();
-                                                                }
-                                                            }}
-                                                        >
-                                                            <span>{child.title}</span>
-                                                        </Link>
-                                                        {child.children && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    toggleExpanded(child.href);
-                                                                }}
-                                                                className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
-                                                                aria-label={`Toggle ${child.title} submenu`}
-                                                            >
-                                                                <svg
-                                                                    className={`h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(child.href) ? 'rotate-90' : ''
-                                                                        }`}
-                                                                    fill="none"
-                                                                    stroke="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth={2}
-                                                                        d="M9 5l7 7-7 7"
-                                                                    />
-                                                                </svg>
-                                                            </button>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Third level submenu */}
-                                                    {child.children && isExpanded(child.href) && (
-                                                        <div className="ml-6 mt-1 space-y-1 animate-fade-in">
-                                                            {child.children.map((grandchild) => (
-                                                                <Link
-                                                                    key={grandchild.href}
-                                                                    href={grandchild.href}
-                                                                    className={`
-                                    flex items-center rounded-lg px-4 py-2 text-sm transition-all duration-200 group
-                                    ${isActive(grandchild.href)
                                                                             ? 'bg-muted/50 text-foreground'
                                                                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
                                                                         }
-                                  `}
+                              `}
                                                                     onClick={() => {
                                                                         // Only close sidebar on mobile
                                                                         if (window.innerWidth < 1024) {
@@ -309,15 +302,68 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                                                                         }
                                                                     }}
                                                                 >
-                                                                    <span>{grandchild.title}</span>
+                                                                    <span>{child.title}</span>
                                                                 </Link>
-                                                            ))}
+                                                                {child.children && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            toggleExpanded(child.href);
+                                                                        }}
+                                                                        className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
+                                                                        aria-label={`Toggle ${child.title} submenu`}
+                                                                    >
+                                                                        <svg
+                                                                            className={`h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(child.href) ? 'rotate-90' : ''
+                                                                                }`}
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <path
+                                                                                strokeLinecap="round"
+                                                                                strokeLinejoin="round"
+                                                                                strokeWidth={2}
+                                                                                d="M9 5l7 7-7 7"
+                                                                            />
+                                                                        </svg>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Third level submenu */}
+                                                            {child.children && isExpanded(child.href) && (
+                                                                <div className="ml-6 mt-1 space-y-1 animate-fade-in">
+                                                                    {child.children.map((grandchild) => (
+                                                                        <Link
+                                                                            key={grandchild.href}
+                                                                            href={grandchild.href}
+                                                                            className={`
+                                    flex items-center rounded-lg px-4 py-2 text-sm transition-all duration-200 group
+                                    ${isActive(grandchild.href)
+                                                                                    ? 'bg-muted/50 text-foreground'
+                                                                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                                                                }
+                                  `}
+                                                                            onClick={() => {
+                                                                                // Only close sidebar on mobile
+                                                                                if (window.innerWidth < 1024) {
+                                                                                    onClose();
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            <span>{grandchild.title}</span>
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    ))}
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
                             ))}
                         </nav>
@@ -329,22 +375,21 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                     <div className="hidden lg:block absolute -right-3 top-6">
                         <button
                             onClick={onToggleCollapse}
-                            className="p-1.5 rounded-full bg-card hover:bg-muted/80 transition-all duration-200 group shadow-sm"
+                            className="p-2 rounded-full bg-card hover:bg-muted/80 transition-all duration-200 group shadow-lg border border-border"
                             aria-label="Toggle sidebar"
                         >
                             {/* Hamburger menu icon */}
                             <svg
-                                className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200"
+                                className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors duration-200"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                strokeWidth="2"
+                                strokeLinecap="round"
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                />
+                                <line x1="3" y1="6" x2="21" y2="6" />
+                                <line x1="3" y1="12" x2="21" y2="12" />
+                                <line x1="3" y1="18" x2="21" y2="18" />
                             </svg>
                         </button>
                     </div>

@@ -23,6 +23,7 @@ export interface SeriesInfo {
     columns: string[];
     units?: string;
     geography?: string;
+    currency?: string;
 }
 
 class DatabaseService {
@@ -51,7 +52,8 @@ class DatabaseService {
                 ts.column_name,
                 COALESCE(sm.display_name, ts.series_name) as display_name,
                 sm.units,
-                sm.geography
+                sm.geography,
+                sm.currency
             FROM time_series ts
             LEFT JOIN series_metadata sm 
                 ON ts.asset_class = sm.asset_class 
@@ -73,7 +75,8 @@ class DatabaseService {
                     display_name: row.display_name,
                     columns: [],
                     units: row.units,
-                    geography: row.geography
+                    geography: row.geography,
+                    currency: row.currency
                 });
             }
             seriesMap.get(row.series_name)!.columns.push(row.column_name);

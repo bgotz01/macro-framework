@@ -46,6 +46,8 @@ export default function ValuationsChart({
                     display_name: s.display_name,
                     units: s.units
                 }));
+                console.log('Available series:', seriesWithNames.map(s => s.series_name));
+                console.log('YoY series:', seriesWithNames.filter(s => s.series_name.includes('YoY')));
                 setAvailableSeries(seriesWithNames);
 
                 // Auto-select Shiller-PE if available, otherwise first non-EPS series
@@ -358,15 +360,66 @@ export default function ValuationsChart({
                     {/* S&P 500 Section */}
                     <div className="mb-4">
                         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                            S&P 500
+                            S&P 500 Valuations
                         </h3>
                         <div className="flex flex-wrap gap-2">
                             {availableSeries
                                 .filter(series =>
                                     !series.series_name.includes('EPS') &&
                                     !series.series_name.includes('Price') &&
+                                    !series.series_name.includes('SPS') &&
                                     !series.series_name.includes('Nasdaq') &&
-                                    series.series_name.startsWith('SP500') || series.series_name === 'Shiller-PE' || series.series_name === 'PE-5yr' || series.series_name === 'Earnings-Yield' || series.series_name === 'Earnings-Yield-5yr'
+                                    (series.series_name.startsWith('SP500') || series.series_name === 'Shiller-PE' || series.series_name === 'PE-5yr' || series.series_name === 'Earnings-Yield' || series.series_name === 'Earnings-Yield-5yr')
+                                )
+                                .map(series => (
+                                    <button
+                                        key={series.series_name}
+                                        onClick={() => toggleSeries(series.series_name)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                    >
+                                        {series.display_name}
+                                    </button>
+                                ))}
+                        </div>
+                    </div>
+
+                    {/* S&P 500 Fundamentals Section */}
+                    <div className="mb-4">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            S&P 500 Fundamentals
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {availableSeries
+                                .filter(series =>
+                                    (series.series_name === 'SP500-EPS' || series.series_name === 'SP500SPS')
+                                )
+                                .map(series => (
+                                    <button
+                                        key={series.series_name}
+                                        onClick={() => toggleSeries(series.series_name)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSeries.includes(series.series_name)
+                                            ? 'bg-primary text-primary-foreground shadow-sm'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                    >
+                                        {series.display_name}
+                                    </button>
+                                ))}
+                        </div>
+                    </div>
+
+                    {/* S&P 500 Growth Rates Section */}
+                    <div className="mb-4">
+                        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                            S&P 500 Growth Rates (YoY)
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {availableSeries
+                                .filter(series =>
+                                    (series.series_name === 'SP500-EPS-YoY' || series.series_name === 'SP500SPS-YoY')
                                 )
                                 .map(series => (
                                     <button

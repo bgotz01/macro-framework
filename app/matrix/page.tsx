@@ -139,13 +139,15 @@ function calculateTrend(current: number | null, ma12: number | null, threshold: 
 
 export default async function MatrixPage() {
     // Fetch all data server-side
-    const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds] = await Promise.all([
+    const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds, pe5yr, earningsYield5yr] = await Promise.all([
         getLatestValue('economic', 'CPI'),
         getLatestValue('bonds', 'US/TNX'),
         getLatestValue('bonds', 'US/US-2yr'),
         getLatestValue('bonds', 'US/IRX'),
         getLatestValue('valuations', 'Shiller-PE'),
         getLatestValue('economic', 'US/FEDFUNDS'),
+        getLatestValue('valuations', 'PE-5yr'),
+        getLatestValue('valuations', 'Earnings-Yield-5yr'),
     ]);
 
     // Fetch 1-year moving averages (MA12)
@@ -224,7 +226,7 @@ export default async function MatrixPage() {
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                     Framework • Regime Analysis
                 </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                <h1 className="page-title text-5xl lg:text-6xl font-semibold tracking-tight mb-6">
                     The Two-Axis Regime Framework
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
@@ -256,63 +258,63 @@ export default async function MatrixPage() {
 
             {/* Conceptual Architecture */}
             <div className="mb-12">
-                <h2 className="text-2xl font-bold text-center mb-6">Conceptual Architecture</h2>
+                <h2 className="page-title text-3xl font-semibold text-center mb-6">Conceptual Architecture</h2>
 
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
-                    <div className="p-6 rounded-2xl border-2 border-blue-500/30 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+                    <div className="p-6 rounded-2xl border border-border bg-card">
                         <div className="flex items-center mb-4">
                             <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3 text-sm">
                                 IN
                             </div>
-                            <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100">INPUT LAYER</h3>
+                            <h3 className="text-xl font-bold">INPUT LAYER</h3>
                         </div>
-                        <p className="text-sm mb-3 text-blue-700 dark:text-blue-300">
+                        <p className="text-sm mb-3 text-muted-foreground">
                             Valuation & constraint variables that define pressure
                         </p>
                         <div className="space-y-2 text-sm">
-                            <div className="flex items-center text-blue-900 dark:text-blue-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>Inflation</strong> — purchasing power</span>
                             </div>
-                            <div className="flex items-center text-blue-900 dark:text-blue-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>Bond Yields</strong> — duration valuation</span>
                             </div>
-                            <div className="flex items-center text-blue-900 dark:text-blue-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>Equity Valuation</strong> — P/E, ERP, CAPE</span>
                             </div>
-                            <div className="flex items-center text-blue-900 dark:text-blue-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>VIX</strong> — price of optionality</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="p-6 rounded-2xl border-2 border-green-500/30 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+                    <div className="p-6 rounded-2xl border border-border bg-card">
                         <div className="flex items-center mb-4">
                             <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold mr-3 text-sm">
                                 OUT
                             </div>
-                            <h3 className="text-xl font-bold text-green-900 dark:text-green-100">OUTPUT LAYER</h3>
+                            <h3 className="text-xl font-bold">OUTPUT LAYER</h3>
                         </div>
-                        <p className="text-sm mb-3 text-green-700 dark:text-green-300">
+                        <p className="text-sm mb-3 text-muted-foreground">
                             Actual prices that move in response to inputs
                         </p>
                         <div className="space-y-2 text-sm">
-                            <div className="flex items-center text-green-900 dark:text-green-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>Equity Indexes</strong> — S&P 500, MSCI World</span>
                             </div>
-                            <div className="flex items-center text-green-900 dark:text-green-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>Bond Prices</strong> — UST total return</span>
                             </div>
-                            <div className="flex items-center text-green-900 dark:text-green-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>Credit ETFs</strong> — HYG, LQD</span>
                             </div>
-                            <div className="flex items-center text-green-900 dark:text-green-100">
+                            <div className="flex items-center">
                                 <span className="font-mono mr-2">•</span>
                                 <span><strong>FX & Commodities</strong></span>
                             </div>
@@ -320,8 +322,8 @@ export default async function MatrixPage() {
                     </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-yellow-50 dark:bg-yellow-950 border-l-4 border-yellow-500">
-                    <p className="text-sm font-semibold text-yellow-900 dark:text-yellow-100">
+                <div className="p-4 rounded-xl bg-card border border-yellow-500/30 border-l-4">
+                    <p className="text-sm font-semibold">
                         💡 Key distinction: Bond yields are to bonds what P/E is to equities. Bond prices are the actual asset.
                     </p>
                 </div>
@@ -340,7 +342,7 @@ export default async function MatrixPage() {
             {/* INFLATION SECTION */}
             <div className="mb-16">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Inflation</h2>
+                    <h2 className="page-title text-4xl font-semibold mb-2">Inflation</h2>
                     <p className="text-sm text-muted-foreground">Purchasing power and monetary constraint</p>
                 </div>
 
@@ -381,7 +383,7 @@ export default async function MatrixPage() {
             {/* RATES (BONDS) SECTION */}
             <div className="mb-16">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Rates (Bonds)</h2>
+                    <h2 className="page-title text-4xl font-semibold mb-2">Rates (Bonds)</h2>
                     <p className="text-sm text-muted-foreground">Interest rates, yields, and fixed income valuation</p>
                 </div>
 
@@ -524,13 +526,13 @@ export default async function MatrixPage() {
             {/* EQUITIES SECTION */}
             <div className="mb-16">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Equities</h2>
+                    <h2 className="page-title text-4xl font-semibold mb-2">Equities</h2>
                     <p className="text-sm text-muted-foreground">Equity valuation and risk premium measures</p>
                 </div>
 
                 <RegimeMatrix
-                    title="6. Equity Valuation Matrix"
-                    subtitle="P/E, ERP, CAPE — Valuation metrics (not price)"
+                    title="6. Equity Valuation Matrix (Shiller P/E)"
+                    subtitle="Shiller CAPE — 10-year cyclically adjusted P/E ratio (valuation metric, not price)"
                     levels={[
                         { label: 'CHEAP', value: LEVELS.equityPE.cheap.label, color: 'green' },
                         { label: 'FAIR', value: LEVELS.equityPE.fair.label, color: 'yellow' },
@@ -553,7 +555,7 @@ export default async function MatrixPage() {
                             { label: 'Melt-up' },
                         ],
                     }}
-                    insight="High & rising ≠ healthy. High & stable is often the most dangerous state."
+                    insight="High & rising ≠ healthy. High & stable is often the most dangerous state. Based on Shiller's 10-year cyclically adjusted earnings."
                     currentValue={currentValues.equityPE.value ?? undefined}
                     currentDate={currentValues.equityPE.date ?? undefined}
                     ma12={currentValues.equityPE.ma12 ?? undefined}
@@ -564,8 +566,8 @@ export default async function MatrixPage() {
                 />
 
                 <RegimeMatrix
-                    title="7. Earnings Yield Premium Matrix"
-                    subtitle="Earnings Yield (E/P) − 3M Treasury — Equity risk premium vs cash"
+                    title="7. Earnings Yield Premium Matrix (Shiller)"
+                    subtitle="Shiller Earnings Yield (E/P) − 3M Treasury — Equity risk premium vs cash using CAPE"
                     levels={[
                         { label: 'NEGATIVE', value: LEVELS.earningsYieldPremium.negative.label, description: LEVELS.earningsYieldPremium.negative.description, color: 'red' },
                         { label: 'NEUTRAL', value: LEVELS.earningsYieldPremium.neutral.label, description: LEVELS.earningsYieldPremium.neutral.description, color: 'yellow' },
@@ -588,7 +590,7 @@ export default async function MatrixPage() {
                             { label: 'Deep value' },
                         ],
                     }}
-                    insight="Negative premium = equities expensive vs cash. Positive premium > 2% = equities attractive vs risk-free rate."
+                    insight="Negative premium = equities expensive vs cash. Positive premium > 2% = equities attractive vs risk-free rate. Based on Shiller CAPE."
                     currentValue={currentValues.earningsYieldPremium.value ?? undefined}
                     currentDate={currentValues.earningsYieldPremium.date ?? undefined}
                     ma12={currentValues.earningsYieldPremium.ma12 ?? undefined}
@@ -598,8 +600,8 @@ export default async function MatrixPage() {
                 />
 
                 <RegimeMatrix
-                    title="8. Real Earnings Yield Matrix"
-                    subtitle="Earnings Yield (E/P) − CPI — Real equity return potential"
+                    title="8. Real Earnings Yield Matrix (Shiller)"
+                    subtitle="Shiller Earnings Yield (E/P) − CPI — Real equity return potential using CAPE"
                     levels={[
                         { label: 'NEGATIVE', value: LEVELS.realEarningsYield.negative.label, description: LEVELS.realEarningsYield.negative.description, color: 'red' },
                         { label: 'LOW', value: LEVELS.realEarningsYield.low.label, description: LEVELS.realEarningsYield.low.description, color: 'yellow' },
@@ -622,7 +624,7 @@ export default async function MatrixPage() {
                             { label: 'Value expansion' },
                         ],
                     }}
-                    insight="Real earnings yield shows inflation-adjusted return potential. Negative = equities losing to inflation."
+                    insight="Real earnings yield shows inflation-adjusted return potential. Negative = equities losing to inflation. Based on Shiller CAPE."
                     currentValue={currentValues.realEarningsYield.value ?? undefined}
                     currentDate={currentValues.realEarningsYield.date ?? undefined}
                     ma12={currentValues.realEarningsYield.ma12 ?? undefined}
@@ -637,7 +639,7 @@ export default async function MatrixPage() {
             {/* Compact Matrix Test */}
             <div className="mt-16 pt-16 border-t border-border">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Compact View</h2>
+                    <h2 className="page-title text-4xl font-semibold mb-2">Compact View</h2>
                     <p className="text-sm text-muted-foreground">
                         A condensed view with historical date selection
                     </p>
@@ -652,6 +654,14 @@ export default async function MatrixPage() {
                         equityPE: currentValues.equityPE.value,
                         earningsYieldPremium: currentValues.earningsYieldPremium.value,
                         realEarningsYield: currentValues.realEarningsYield.value,
+                        // 5-year metrics
+                        equityPE5yr: pe5yr.value,
+                        earningsYieldPremium5yr: earningsYield5yr.value !== null && threeMonth.value !== null
+                            ? earningsYield5yr.value - threeMonth.value
+                            : null,
+                        realEarningsYield5yr: earningsYield5yr.value !== null && cpi.value !== null
+                            ? earningsYield5yr.value - cpi.value
+                            : null,
                     }}
                 />
             </div>

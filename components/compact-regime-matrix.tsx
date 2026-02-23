@@ -11,6 +11,10 @@ interface MatrixValues {
     equityPE: number | null;
     earningsYieldPremium: number | null;
     realEarningsYield: number | null;
+    // 5-year metrics
+    equityPE5yr: number | null;
+    earningsYieldPremium5yr: number | null;
+    realEarningsYield5yr: number | null;
 }
 
 interface CompactRegimeMatrixProps {
@@ -62,13 +66,15 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
             try {
                 const targetDate = `${selectedYear}-${selectedMonth}`;
 
-                const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds] = await Promise.all([
+                const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds, pe5yr, earningsYield5yr] = await Promise.all([
                     fetchValueAtDate('economic', 'CPI', targetDate),
                     fetchValueAtDate('bonds', 'US/TNX', targetDate),
                     fetchValueAtDate('bonds', 'US/US-2yr', targetDate),
                     fetchValueAtDate('bonds', 'US/IRX', targetDate),
                     fetchValueAtDate('valuations', 'Shiller-PE', targetDate),
                     fetchValueAtDate('economic', 'US/FEDFUNDS', targetDate),
+                    fetchValueAtDate('valuations', 'PE-5yr', targetDate),
+                    fetchValueAtDate('valuations', 'Earnings-Yield-5yr', targetDate),
                 ]);
 
                 setValues({
@@ -83,6 +89,14 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                         : null,
                     realEarningsYield: shillerPE !== null && shillerPE > 0 && cpi !== null
                         ? (100 / shillerPE) - cpi
+                        : null,
+                    // 5-year metrics
+                    equityPE5yr: pe5yr,
+                    earningsYieldPremium5yr: earningsYield5yr !== null && threeMonth !== null
+                        ? earningsYield5yr - threeMonth
+                        : null,
+                    realEarningsYield5yr: earningsYield5yr !== null && cpi !== null
+                        ? earningsYield5yr - cpi
                         : null,
                 });
             } catch (error) {
@@ -246,6 +260,7 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                                     {values.yieldCurve !== null && values.yieldCurve < -0.5 && 'Inverted'}
                                     {values.yieldCurve !== null && values.yieldCurve >= -0.5 && values.yieldCurve < 0.5 && 'Flat'}
                                     {values.yieldCurve !== null && values.yieldCurve >= 0.5 && 'Steep'}
+                                    {values.yieldCurve === null && 'N/A'}
                                 </div>
                             </div>
                         </div>
@@ -281,9 +296,9 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                         </div>
                     </div>
 
-                    {/* Third Row: All Equity */}
+                    {/* Third Row: Shiller P/E Equity */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation</h3>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation (Shiller P/E)</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className={`p-6 rounded-xl bg-card border-2 ${getRegimeColor(values.equityPE, { low: 15, mid: 20 })} transition-all hover:shadow-md`}>
                                 <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Shiller P/E</div>
@@ -294,11 +309,12 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                                     {values.equityPE !== null && values.equityPE < 15 && 'Cheap'}
                                     {values.equityPE !== null && values.equityPE >= 15 && values.equityPE < 20 && 'Fair'}
                                     {values.equityPE !== null && values.equityPE >= 20 && 'Expensive'}
+                                    {values.equityPE === null && 'N/A'}
                                 </div>
                             </div>
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getRegimeColorReversed(values.earningsYieldPremium, { low: 0, mid: 2 })} transition-all hover:shadow-md`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">EY Premium</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">EY Premium (Shiller)</div>
                                 <div className={`text-3xl font-bold mb-2 ${getRegimeTextColorReversed(values.earningsYieldPremium, { low: 0, mid: 2 })}`}>
                                     {formatValue(values.earningsYieldPremium)}
                                 </div>
@@ -306,11 +322,12 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                                     {values.earningsYieldPremium !== null && values.earningsYieldPremium < 0 && 'Negative'}
                                     {values.earningsYieldPremium !== null && values.earningsYieldPremium >= 0 && values.earningsYieldPremium < 2 && 'Neutral'}
                                     {values.earningsYieldPremium !== null && values.earningsYieldPremium >= 2 && 'Positive'}
+                                    {values.earningsYieldPremium === null && 'N/A'}
                                 </div>
                             </div>
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getRegimeColorReversed(values.realEarningsYield, { low: 0, mid: 3 })} transition-all hover:shadow-md`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Real EY</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Real EY (Shiller)</div>
                                 <div className={`text-3xl font-bold mb-2 ${getRegimeTextColorReversed(values.realEarningsYield, { low: 0, mid: 3 })}`}>
                                     {formatValue(values.realEarningsYield)}
                                 </div>
@@ -318,6 +335,52 @@ export default function CompactRegimeMatrix({ initialValues }: CompactRegimeMatr
                                     {values.realEarningsYield !== null && values.realEarningsYield < 0 && 'Negative'}
                                     {values.realEarningsYield !== null && values.realEarningsYield >= 0 && values.realEarningsYield < 3 && 'Low'}
                                     {values.realEarningsYield !== null && values.realEarningsYield >= 3 && 'Positive'}
+                                    {values.realEarningsYield === null && 'N/A'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Fourth Row: 5-Year P/E Equity */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation (5-Year P/E)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getRegimeColor(values.equityPE5yr, { low: 15, mid: 20 })} transition-all hover:shadow-md`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">P/E 5yr</div>
+                                <div className={`text-3xl font-bold mb-2 ${getRegimeTextColor(values.equityPE5yr, { low: 15, mid: 20 })}`}>
+                                    {formatValue(values.equityPE5yr, 'number')}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {values.equityPE5yr !== null && values.equityPE5yr < 15 && 'Cheap'}
+                                    {values.equityPE5yr !== null && values.equityPE5yr >= 15 && values.equityPE5yr < 20 && 'Fair'}
+                                    {values.equityPE5yr !== null && values.equityPE5yr >= 20 && 'Expensive'}
+                                    {values.equityPE5yr === null && 'N/A'}
+                                </div>
+                            </div>
+
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getRegimeColorReversed(values.earningsYieldPremium5yr, { low: 0, mid: 2 })} transition-all hover:shadow-md`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">EY Premium (5yr)</div>
+                                <div className={`text-3xl font-bold mb-2 ${getRegimeTextColorReversed(values.earningsYieldPremium5yr, { low: 0, mid: 2 })}`}>
+                                    {formatValue(values.earningsYieldPremium5yr)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {values.earningsYieldPremium5yr !== null && values.earningsYieldPremium5yr < 0 && 'Negative'}
+                                    {values.earningsYieldPremium5yr !== null && values.earningsYieldPremium5yr >= 0 && values.earningsYieldPremium5yr < 2 && 'Neutral'}
+                                    {values.earningsYieldPremium5yr !== null && values.earningsYieldPremium5yr >= 2 && 'Positive'}
+                                    {values.earningsYieldPremium5yr === null && 'N/A'}
+                                </div>
+                            </div>
+
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getRegimeColorReversed(values.realEarningsYield5yr, { low: 0, mid: 3 })} transition-all hover:shadow-md`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Real EY (5yr)</div>
+                                <div className={`text-3xl font-bold mb-2 ${getRegimeTextColorReversed(values.realEarningsYield5yr, { low: 0, mid: 3 })}`}>
+                                    {formatValue(values.realEarningsYield5yr)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    {values.realEarningsYield5yr !== null && values.realEarningsYield5yr < 0 && 'Negative'}
+                                    {values.realEarningsYield5yr !== null && values.realEarningsYield5yr >= 0 && values.realEarningsYield5yr < 3 && 'Low'}
+                                    {values.realEarningsYield5yr !== null && values.realEarningsYield5yr >= 3 && 'Positive'}
+                                    {values.realEarningsYield5yr === null && 'N/A'}
                                 </div>
                             </div>
                         </div>

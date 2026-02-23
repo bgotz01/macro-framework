@@ -59,21 +59,25 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     // Equity Valuation
     { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899', category: 'Equity Valuation' },
     { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e', category: 'Equity Valuation' },
+    { value: 'eycape', label: 'EY CAPE', color: '#db2777', category: 'Equity Valuation' },
     { value: 'eyp', label: 'Earnings Yield Premium', color: '#8b5cf6', category: 'Equity Valuation' },
+    { value: 'ey5yr', label: 'Earnings Yield 5yr', color: '#fb7185', category: 'Equity Valuation' },
     { value: 'eyp5yr', label: 'EY Premium 5yr', color: '#a78bfa', category: 'Equity Valuation' },
-    { value: 'rey', label: 'Real Earnings Yield', color: '#14b8a6', category: 'Equity Valuation' },
+    { value: 'rey5yr', label: 'Real EY 5yr', color: '#0d9488', category: 'Equity Valuation' },
 ];
 
 const METRIC_TOOLTIPS: Record<string, string> = {
     'eyp': 'Earnings Yield Premium = (1 / Shiller P/E) - 3M Treasury Rate. Measures equity risk premium over cash.',
     'eyp5yr': 'Earnings Yield Premium 5yr = (1 / P/E-5yr) - 3M Treasury Rate. Measures equity risk premium over cash using 5-year average earnings.',
-    'rey': 'Real Earnings Yield = (1 / Shiller P/E) - CPI Inflation. Measures real return potential of equities.',
+    'eycape': 'Earnings Yield CAPE = 1 / Shiller P/E. The inverse of CAPE, representing expected earnings yield using inflation-adjusted 10-year average earnings.',
+    'ey5yr': 'Earnings Yield 5yr = 1 / P/E-5yr. The inverse of P/E-5yr, representing expected earnings yield using 5-year average earnings.',
+    'rey5yr': 'Real Earnings Yield 5yr = (1 / P/E-5yr) - CPI Inflation. Measures real return potential using 5-year average earnings.',
 };
 
 export default function PercentileChart({ height = 500 }: PercentileChartProps) {
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
-    const [metric, setMetric] = useState<'percentile' | 'value'>('percentile');
+    const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('percentile');
     const [selectedSeries, setSelectedSeries] = useState<string[]>(['cpi', 'fedfunds']);
     const { theme } = useTheme();
 
@@ -167,7 +171,7 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             );
                         })}
                     </div>
-                ) : (
+                ) : metric === 'value' ? (
                     <div className="space-y-1">
                         {selectedSeries.map(seriesValue => {
                             const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
@@ -184,6 +188,25 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             );
                         })}
                     </div>
+                ) : (
+                    <div className="space-y-1">
+                        {selectedSeries.map(seriesValue => {
+                            const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
+                            const yoyKey = `${seriesValue}_yoy`;
+                            const yoyValue = data[yoyKey];
+
+                            if (yoyValue === null || yoyValue === undefined) return null;
+
+                            return (
+                                <p key={seriesValue} className="text-sm">
+                                    <span style={{ color: series?.color }}>{series?.label}:</span>{' '}
+                                    <span className={yoyValue > 0 ? 'text-red-600 dark:text-red-400' : yoyValue < 0 ? 'text-green-600 dark:text-green-400' : ''}>
+                                        {yoyValue > 0 ? '+' : ''}{yoyValue.toFixed(1)} pts
+                                    </span>
+                                </p>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
         );
@@ -192,7 +215,18 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
     return (
         <div className="p-6 rounded-xl border bg-card">
             <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-3">Historical Percentile Chart</h2>
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-2xl font-bold">Historical Percentile Chart</h2>
+                    {filteredData.length > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                            Latest: {new Date(filteredData[filteredData.length - 1].dateTimestamp).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            })}
+                        </div>
+                    )}
+                </div>
 
                 {/* Metric Dropdown */}
                 <div className="flex items-center gap-2 mb-4">
@@ -202,18 +236,21 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                     <select
                         id="metric-select"
                         value={metric}
-                        onChange={(e) => setMetric(e.target.value as 'percentile' | 'value')}
+                        onChange={(e) => setMetric(e.target.value as 'percentile' | 'value' | 'yoy')}
                         className="px-3 py-2 rounded-lg border-2 bg-background text-foreground font-medium text-sm cursor-pointer hover:border-primary transition-colors"
                     >
                         <option value="percentile">Percentile Rank</option>
                         <option value="value">Actual Value</option>
+                        <option value="yoy">Percentile Growth (YoY)</option>
                     </select>
                 </div>
 
                 <p className="text-sm text-muted-foreground mb-4">
                     {metric === 'percentile'
                         ? 'Shows where values rank compared to all historical data up to that point'
-                        : 'Shows the actual values over time'}
+                        : metric === 'value'
+                            ? 'Shows the actual values over time'
+                            : 'Shows year-over-year change in percentile rank (how fast the percentile is moving)'}
                 </p>
 
                 {/* Series Selection - 3 Column Layout */}
@@ -285,7 +322,7 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             stroke={textColor}
                             tick={{ fontSize: 12 }}
                             label={{
-                                value: metric === 'percentile' ? 'Percentile Rank' : 'Value (%)',
+                                value: metric === 'percentile' ? 'Percentile Rank' : metric === 'value' ? 'Value (%)' : 'YoY Change (pts)',
                                 angle: -90,
                                 position: 'insideLeft',
                                 style: { fill: textColor }
@@ -306,8 +343,8 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             </>
                         )}
 
-                        {/* Zero line for actual values */}
-                        {metric === 'value' && (
+                        {/* Zero line for actual values and YoY */}
+                        {(metric === 'value' || metric === 'yoy') && (
                             <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" strokeWidth={2} />
                         )}
 
@@ -316,11 +353,17 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
                             if (!series) return null;
 
+                            const dataKey = metric === 'percentile'
+                                ? `${seriesValue}_percentile`
+                                : metric === 'value'
+                                    ? `${seriesValue}_value`
+                                    : `${seriesValue}_yoy`;
+
                             return (
                                 <Line
                                     key={seriesValue}
                                     type="monotone"
-                                    dataKey={metric === 'percentile' ? `${seriesValue}_percentile` : `${seriesValue}_value`}
+                                    dataKey={dataKey}
                                     stroke={series.color}
                                     strokeWidth={2}
                                     dot={false}

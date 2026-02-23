@@ -10,7 +10,10 @@
     "migrate": "tsx scripts/migrate-to-sqlite.ts",
     "split-csv": "tsx scripts/split-csv-files.ts",
     "preprocess": "tsx scripts/preprocess-data.ts",
-    "import-data": "tsx scripts/preprocess-data.ts && tsx scripts/import-data.ts && tsx scripts/calculate-rolling-averages.ts && tsx scripts/calculate-monthly-averages.ts",
+    "import-data": "tsx scripts/preprocess-data.ts && tsx scripts/import-data.ts",
+    "calc-averages-incremental": "tsx scripts/calculate-rolling-averages-incremental.ts && tsx scripts/calculate-monthly-averages-incremental.ts",
+    "calc-averages-selective": "tsx scripts/calculate-rolling-averages-selective.ts",
+    "import-data-full": "tsx scripts/preprocess-data.ts && tsx scripts/import-data.ts && tsx scripts/calculate-rolling-averages.ts && tsx scripts/calculate-monthly-averages.ts",
     "calc-averages": "tsx scripts/calculate-rolling-averages.ts",
     "calc-monthly-averages": "tsx scripts/calculate-monthly-averages.ts",
     "recalc-all-averages": "tsx scripts/recalculate-all-averages.ts && tsx scripts/calculate-rolling-averages.ts && tsx scripts/calculate-monthly-averages.ts",
@@ -22,7 +25,9 @@
     "sp500-snapshots": "tsx scripts/sp500-historical-snapshots.ts",
     "deduplicate": "tsx scripts/deduplicate-monthly-data.ts",
     "calculate-percentiles": "tsx scripts/calculate-percentiles.ts",
-    "calculate-yoy-percentile": "tsx scripts/calculate-yoy-percentile-change.ts"
+    "calculate-yoy-percentile": "tsx scripts/calculate-yoy-percentile-change.ts",
+    "calculate-yoy-growth": "tsx scripts/calculate-yoy-growth.ts",
+    "update-yoy-growth": "tsx scripts/calculate-yoy-growth-incremental.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

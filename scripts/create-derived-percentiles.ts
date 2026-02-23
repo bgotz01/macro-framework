@@ -20,7 +20,8 @@ function createDerivedPercentiles() {
                     pa1.value - pa2.value as real_yield
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON pa1.date = pa2.date
+                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
+                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
                 WHERE pa1.asset_class = 'bonds'
                   AND pa1.series_name = 'US/TNX-Monthly'
                   AND pa2.asset_class = 'economic'
@@ -339,7 +340,8 @@ function createDerivedPercentiles() {
                     (100.0 / pa1.value) - pa2.value as rey
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON pa1.date = pa2.date
+                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
+                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
                 WHERE pa1.asset_class = 'valuations'
                   AND pa1.series_name = 'Shiller-PE'
                   AND pa2.asset_class = 'economic'
@@ -391,6 +393,70 @@ function createDerivedPercentiles() {
 
         insertManyREY(reyResults);
         console.log(`  ✅ Inserted ${reyResults.length} Real Earnings Yield percentiles\n`);
+
+        // 5. Real Earnings Yield 5yr (EY-5yr - CPI)
+        console.log('5. Calculating Real Earnings Yield 5yr (EY-5yr - CPI)...');
+        const rey5yrQuery = `
+            WITH combined AS (
+                SELECT 
+                    pa1.date,
+                    pa1.value as ey5yr_value,
+                    pa2.value as cpi_value,
+                    pa1.value - pa2.value as rey5yr
+                FROM percentile_analysis pa1
+                INNER JOIN percentile_analysis pa2 
+                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
+                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                WHERE pa1.asset_class = 'valuations'
+                  AND pa1.series_name = 'Earnings-Yield-5yr'
+                  AND pa2.asset_class = 'economic'
+                  AND pa2.series_name = 'CPI'
+                  AND pa1.value IS NOT NULL
+                  AND pa2.value IS NOT NULL
+            ),
+            ranked AS (
+                SELECT 
+                    date,
+                    rey5yr as value,
+                    (
+                        SELECT COUNT(*)
+                        FROM combined c2
+                        WHERE c2.date <= c1.date
+                          AND c2.rey5yr < c1.rey5yr
+                    ) as rank_below,
+                    (
+                        SELECT COUNT(*)
+                        FROM combined c2
+                        WHERE c2.date <= c1.date
+                    ) as total_count
+                FROM combined c1
+            )
+            SELECT 
+                date,
+                value,
+                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+            FROM ranked
+            ORDER BY date
+        `;
+
+        const rey5yrResults = db.prepare(rey5yrQuery).all() as any[];
+        console.log(`  Found ${rey5yrResults.length} data points`);
+
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-Earnings-Yield-5yr'`).run();
+
+        const insertREY5yr = db.prepare(`
+            INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
+            VALUES (?, 'derived', 'Real-Earnings-Yield-5yr', 'Value', ?, ?)
+        `);
+
+        const insertManyREY5yr = db.transaction((data: any[]) => {
+            for (const row of data) {
+                insertREY5yr.run(row.date, row.value, row.percentile_rank);
+            }
+        });
+
+        insertManyREY5yr(rey5yrResults);
+        console.log(`  ✅ Inserted ${rey5yrResults.length} Real Earnings Yield 5yr percentiles\n`);
 
         console.log('✅ All derived metric percentiles created!\n');
 

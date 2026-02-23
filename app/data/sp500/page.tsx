@@ -163,7 +163,7 @@ export default function SP500Page() {
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-4xl font-bold mb-2">S&P 500 Index</h1>
+                <h1 className="page-title text-4xl font-bold mb-2">S&P 500 Index</h1>
                 <p className="text-gray-600 mb-8">Constituents, historical changes, and analytics</p>
 
                 {/* Stats Cards */}

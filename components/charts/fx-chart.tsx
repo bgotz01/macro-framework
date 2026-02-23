@@ -37,8 +37,9 @@ export default function FXChart({
     height = 400,
     className = ''
 }: FXChartProps) {
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string; geography?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
+    const [selectedGeography, setSelectedGeography] = useState<string | undefined>(undefined);
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
@@ -68,7 +69,8 @@ export default function FXChart({
                 const seriesWithNames = result.seriesInfo.map((s: any) => ({
                     series_name: s.series_name,
                     display_name: s.display_name,
-                    units: s.units
+                    units: s.units,
+                    geography: s.geography
                 }));
                 setAvailableSeries(seriesWithNames);
                 setAvailableSeries1(seriesWithNames);
@@ -76,11 +78,12 @@ export default function FXChart({
 
                 // Auto-select DXY (US Dollar Index) if available, otherwise first series
                 if (seriesWithNames.length > 0) {
-                    const dxy = seriesWithNames.find((s: { series_name: string; display_name: string; units?: string }) => s.series_name === 'DXY');
-                    const defaultSeries = dxy ? dxy.series_name : seriesWithNames[0].series_name;
-                    setSelectedSeries(defaultSeries);
-                    setSelectedUnits(dxy ? dxy.units : seriesWithNames[0].units);
-                    setSeries1(defaultSeries);
+                    const dxy = seriesWithNames.find((s: { series_name: string; display_name: string; units?: string; geography?: string }) => s.series_name === 'DXY');
+                    const defaultSeries = dxy || seriesWithNames[0];
+                    setSelectedSeries(defaultSeries.series_name);
+                    setSelectedUnits(defaultSeries.units);
+                    setSelectedGeography(defaultSeries.geography);
+                    setSeries1(defaultSeries.series_name);
                     if (seriesWithNames.length > 1) {
                         setSeries2(seriesWithNames[1].series_name);
                     }
@@ -399,13 +402,14 @@ export default function FXChart({
                                     setSelectedSeries(e.target.value);
                                     const series = availableSeries.find(s => s.series_name === e.target.value);
                                     setSelectedUnits(series?.units);
+                                    setSelectedGeography(series?.geography);
                                 }}
                                 className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                                 disabled={availableSeries.length === 0}
                             >
                                 {availableSeries.map(series => (
                                     <option key={series.series_name} value={series.series_name}>
-                                        {series.display_name}
+                                        {series.display_name}{series.geography ? ` (${series.geography})` : ''}
                                     </option>
                                 ))}
                             </select>

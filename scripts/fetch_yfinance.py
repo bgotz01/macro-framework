@@ -16,11 +16,11 @@ import os
 # ============================================================================
 
 # Ticker symbol (e.g., '^GSPC' for S&P 500, 'AAPL' for Apple, '^TNX' for 10-year Treasury)
-TICKER = "^NDX"
+TICKER = "2YY=F"
 
 # Asset class and country for organizing the output
 # This determines the folder structure: data/{ASSET_CLASS}/{COUNTRY}/
-ASSET_CLASS = "commodities"  # e.g., equities, bonds, fx, commodities
+ASSET_CLASS = "bonds"  # e.g., equities, bonds, fx, commodities
 COUNTRY = ""            # e.g., US, UK, Germany, Japan
 
 # Date range
@@ -46,12 +46,16 @@ VALUE_COLUMN = "Close"
 #   ^GDAXI   - DAX (Germany)
 #   ^N225    - Nikkei 225 (Japan)
 #   ^HSI     - Hang Seng (Hong Kong)
+#   ^MERV   - Argentina
+#   XU100.IS - Turkey
+#   ^GSPTSE - Canada
 #
 # Bonds/Rates:
 #   ^IRX     - 3-Month Treasury Yield
 #   ^TNX     - 10-Year Treasury Yield
 #   ^FVX     - 5-Year Treasury Yield
 #   ^TYX     - 30-Year Treasury Yield
+#   2YY=F   - 2-Year Treasury Yield
 
 
 #
@@ -64,6 +68,9 @@ VALUE_COLUMN = "Close"
 #   EURUSD=X - Euro/USD
 #   GBPUSD=X - British Pound/USD
 #   USDJPY=X - USD/Japanese Yen
+#   USDCAD=X - Canadian Dollar
+#   USDARS=X - Argentine Peso
+#   USDTRY=X - Turkish Lira
 #
 # Crypto:
 #   BTC-USD  - Bitcoin

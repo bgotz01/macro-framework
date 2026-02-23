@@ -49,6 +49,18 @@ const SERIES_TO_ANALYZE: PercentileConfig[] = [
         assetClass: 'valuations',
         seriesName: 'PE-5yr',
         columnName: 'Value'
+    },
+    // Earnings Yield 5yr (1 / PE-5yr)
+    {
+        assetClass: 'valuations',
+        seriesName: 'Earnings-Yield-5yr',
+        columnName: 'Value'
+    },
+    // Earnings Yield CAPE (1 / Shiller PE)
+    {
+        assetClass: 'valuations',
+        seriesName: 'Earnings-Yield',
+        columnName: 'Value'
     }
 ];
 

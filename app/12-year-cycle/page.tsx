@@ -7,10 +7,10 @@ import WhyTwelve from '@/components/12-year-cycle/why-twelve';
 export default function TwelveYearCyclePage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <h1 className="text-4xl font-bold mb-6">12-Year Macro Reconfiguration Cycles</h1>
+            <h1 className="page-title text-4xl text-center font-bold mb-6">12-Year Macro Reconfiguration Cycles</h1>
 
             <div className="mb-12">
-                <p className="text-xl mb-6">Each 12-year cycle does one primary job:</p>
+
 
                 {/* One-Line Summaries */}
                 <div className="mb-8">

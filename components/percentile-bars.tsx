@@ -35,7 +35,9 @@ const METRICS: MetricConfig[] = [
     { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', shortLabel: '10Y-2Y', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
     { key: 'yieldCurve3M', label: 'Yield Curve (10Y-3M)', shortLabel: '10Y-3M', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
     { key: 'eyp', label: 'Earnings Yield Premium (EY-3M)', shortLabel: 'EY-3M', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'rey', label: 'Real Earnings Yield (EY-CPI)', shortLabel: 'EY-CPI', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'eyCAPE', label: 'Earnings Yield CAPE (1/CAPE)', shortLabel: 'EY CAPE', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'ey5yr', label: 'Earnings Yield 5yr (1/P/E-5yr)', shortLabel: 'EY-5yr', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'rey5yr', label: 'Real Earnings Yield 5yr (EY5yr-CPI)', shortLabel: 'Real EY-5yr', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
     { key: 'shillerPE', label: 'Shiller P/E (CAPE)', shortLabel: 'CAPE', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
     { key: 'pe5yr', label: 'P/E-5yr', shortLabel: 'P/E-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
 ];
@@ -66,7 +68,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
     const displayYear = isLatest ? 'Latest' : selectedYear.toString();
 
     function getPercentileColor(percentile: number, metricKey?: string): string {
-        const isReversed = metricKey === 'eyp' || metricKey === 'rey' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
+        const isReversed = metricKey === 'eyp' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
 
         if (isReversed) {
             if (percentile < 25) return 'bg-red-500';
@@ -82,7 +84,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
     }
 
     function getPercentileTextColor(percentile: number, metricKey?: string): string {
-        const isReversed = metricKey === 'eyp' || metricKey === 'rey' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
+        const isReversed = metricKey === 'eyp' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
 
         if (isReversed) {
             if (percentile < 25) return 'text-red-600 dark:text-red-400';
@@ -98,7 +100,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
     }
 
     function getPercentileBg(percentile: number, metricKey?: string): string {
-        const isReversed = metricKey === 'eyp' || metricKey === 'rey' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
+        const isReversed = metricKey === 'eyp' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
 
         if (isReversed) {
             if (percentile < 25) return 'bg-red-50 dark:bg-red-950';

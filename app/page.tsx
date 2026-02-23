@@ -6,7 +6,7 @@ export default function Home() {
         <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
           Economic Analysis Framework
         </div>
-        <h1 className="text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
+        <h1 className="page-title text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
           Power Law
         </h1>
         <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
