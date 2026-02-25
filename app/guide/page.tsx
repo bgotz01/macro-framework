@@ -1,5 +1,6 @@
 // app/guide/page.tsx
-import { OsGuide } from '@/components/OsGuide';
+import { BusinessOverview } from '@/components/guide/BusinessOverview';
+import { OsGuide } from '@/components/guide/OsGuide';
 
 export default function GuidePage() {
     return (
@@ -20,6 +21,7 @@ export default function GuidePage() {
             </div>
 
             <OsGuide />
+            <BusinessOverview />
         </div>
     );
 }

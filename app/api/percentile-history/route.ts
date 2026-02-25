@@ -15,6 +15,7 @@ export async function GET() {
             { key: 'us2yr', asset_class: 'bonds', series_name: 'US/US-2yr-Monthly' },
             { key: 'irx', asset_class: 'bonds', series_name: 'US/IRX-Monthly' },
             { key: 'realyield', asset_class: 'derived', series_name: 'Real-Yield' },
+            { key: 'realyield3m', asset_class: 'derived', series_name: 'Real-Yield-3M' },
             { key: 'yieldcurve', asset_class: 'derived', series_name: 'Yield-Curve' },
             { key: 'yieldcurve3m', asset_class: 'derived', series_name: 'Yield-Curve-10Y-3M' },
             { key: 'shillerpe', asset_class: 'valuations', series_name: 'Shiller-PE' },

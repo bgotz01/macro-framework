@@ -1,5 +1,6 @@
 import RegimeMatrix from '../../components/regime-matrix';
 import CompactRegimeMatrix from '../../components/compact-regime-matrix';
+import MatrixSlider from '../../components/matrix-slider';
 import { DataServiceNew } from '@/lib/data-service-new';
 
 // Configurable absolute levels for each matrix
@@ -645,6 +646,36 @@ export default async function MatrixPage() {
                     </p>
                 </div>
                 <CompactRegimeMatrix
+                    initialValues={{
+                        inflation: currentValues.inflation.value,
+                        bondYieldNominal: currentValues.bondYieldNominal.value,
+                        bondYieldReal: currentValues.bondYieldReal.value,
+                        yieldCurve: currentValues.yieldCurve.value,
+                        fedFunds: currentValues.fedFunds.value,
+                        equityPE: currentValues.equityPE.value,
+                        earningsYieldPremium: currentValues.earningsYieldPremium.value,
+                        realEarningsYield: currentValues.realEarningsYield.value,
+                        // 5-year metrics
+                        equityPE5yr: pe5yr.value,
+                        earningsYieldPremium5yr: earningsYield5yr.value !== null && threeMonth.value !== null
+                            ? earningsYield5yr.value - threeMonth.value
+                            : null,
+                        realEarningsYield5yr: earningsYield5yr.value !== null && cpi.value !== null
+                            ? earningsYield5yr.value - cpi.value
+                            : null,
+                    }}
+                />
+            </div>
+
+            {/* Matrix Slider */}
+            <div className="mt-16 pt-16 border-t border-border">
+                <div className="text-center mb-8">
+                    <h2 className="page-title text-4xl font-semibold mb-2">Interactive Timeline</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Drag the timeline to explore historical regime data
+                    </p>
+                </div>
+                <MatrixSlider
                     initialValues={{
                         inflation: currentValues.inflation.value,
                         bondYieldNominal: currentValues.bondYieldNominal.value,

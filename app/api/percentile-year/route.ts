@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
             { asset_class: 'valuations', series_name: 'Earnings-Yield', key: 'eyCAPE' },
             { asset_class: 'valuations', series_name: 'Earnings-Yield-5yr', key: 'ey5yr' },
             { asset_class: 'derived', series_name: 'Real-Yield', key: 'realYield' },
+            { asset_class: 'derived', series_name: 'Real-Yield-3M', key: 'realYield3m' },
             { asset_class: 'derived', series_name: 'Yield-Curve', key: 'yieldCurve' },
             { asset_class: 'derived', series_name: 'Yield-Curve-10Y-3M', key: 'yieldCurve3M' },
             { asset_class: 'derived', series_name: 'Earnings-Yield-Premium', key: 'eyp' },
@@ -54,7 +55,8 @@ export async function GET(request: NextRequest) {
                         series_name,
                         date,
                         value,
-                        percentile_rank
+                        percentile_rank,
+                        yoy_percentile_change
                     FROM percentile_analysis
                     WHERE asset_class = ? 
                       AND series_name = ?
@@ -64,8 +66,9 @@ export async function GET(request: NextRequest) {
                 params = [s.asset_class, s.series_name];
             } else if (month) {
                 // Get data for specific month and year
-                const monthStart = new Date(year!, month - 1, 1).getTime();
-                const monthEnd = new Date(year!, month, 0, 23, 59, 59).getTime();
+                const monthStart = new Date(Date.UTC(year!, month - 1, 1)).getTime();
+                // Calculate the last day of the month correctly (day 0 of next month = last day of current month)
+                const monthEnd = new Date(Date.UTC(year!, month, 0, 23, 59, 59, 999)).getTime();
 
                 query = `
                     SELECT 
@@ -73,7 +76,8 @@ export async function GET(request: NextRequest) {
                         series_name,
                         date,
                         value,
-                        percentile_rank
+                        percentile_rank,
+                        yoy_percentile_change
                     FROM percentile_analysis
                     WHERE asset_class = ? 
                       AND series_name = ?
@@ -95,7 +99,8 @@ export async function GET(request: NextRequest) {
                         series_name,
                         date,
                         value,
-                        percentile_rank
+                        percentile_rank,
+                        yoy_percentile_change
                     FROM percentile_analysis
                     WHERE asset_class = ? 
                       AND series_name = ?
@@ -116,7 +121,8 @@ export async function GET(request: NextRequest) {
                     date: row.date,
                     dateStr: new Date(row.date).toISOString().split('T')[0],
                     value: row.value,
-                    percentileRank: row.percentile_rank
+                    percentileRank: row.percentile_rank,
+                    yoyPercentileChange: row.yoy_percentile_change
                 };
             } else {
                 result[s.key] = null;

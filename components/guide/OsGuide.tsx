@@ -110,22 +110,22 @@ function OCard({
     onToggle: () => void;
 }) {
     return (
-        <Card className="rounded-2xl border-border/60 shadow-sm !flex !flex-col h-full">
+        <Card className="rounded-2xl border-border/60 shadow-sm !flex !flex-col h-full hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
             <Collapsible open={open} onOpenChange={onToggle} className="flex-1 flex flex-col min-h-0">
                 <CardHeader className="pb-3 flex-shrink-0">
                     <div className="min-w-0 w-full text-center">
                         <CardTitle className="text-base sm:text-lg">
                             {item.key === 'O1' ? (
                                 <>
-                                    <span className="italic">O1</span> — <span className="italic">Obvious</span> Signal
+                                    <span className="text-blue-600 dark:text-blue-400">O1</span> — <span className="italic text-blue-500 dark:text-blue-300">Obvious</span> Signal
                                 </>
                             ) : item.key === 'O2' ? (
                                 <>
-                                    O2 — <span className="italic">Opposite</span> Swing
+                                    <span className="text-blue-600 dark:text-blue-400">O2</span> — <span className="italic text-blue-500 dark:text-blue-300">Opposite</span> Swing
                                 </>
                             ) : (
                                 <>
-                                    O3 — <span className="italic">Outlier</span> Story{' '}
+                                    <span className="text-blue-600 dark:text-blue-400">O3</span> — <span className="italic text-blue-500 dark:text-blue-300">Outlier</span> Story{' '}
                                     <span className="text-muted-foreground">(9sigma)</span>
                                 </>
                             )}
@@ -194,22 +194,22 @@ function FlowRow() {
 
     return (
         <div className="mt-8 flex flex-col items-center gap-3">
-            <div className="text-sm font-medium text-foreground/80">How it flows</div>
+            <div className="text-sm font-medium text-blue-600 dark:text-blue-400">How it flows</div>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
                 {items.map((it, idx) => (
                     <React.Fragment key={it.key}>
-                        <div className="rounded-full border border-border/60 bg-muted/30 px-4 py-2 text-sm">
-                            <span className="font-semibold">{it.key}</span>
+                        <div className="rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-2 text-sm">
+                            <span className="font-semibold text-blue-600 dark:text-blue-400">{it.key}</span>
                             <span className="text-muted-foreground"> — {it.label}</span>
                         </div>
-                        {idx < items.length - 1 && <ArrowRight className="h-4 w-4 text-muted-foreground" />}
+                        {idx < items.length - 1 && <ArrowRight className="h-4 w-4 text-blue-400 dark:text-blue-500" />}
                     </React.Fragment>
                 ))}
             </div>
 
             <p className="max-w-2xl text-center text-sm text-muted-foreground">
-                O1 identifies the environment, O2 structures decisions inside it, and O3 surfaces anomalies worth acting on.
+                <span className="text-blue-600 dark:text-blue-400 font-medium">O1</span> identifies the environment, <span className="text-blue-600 dark:text-blue-400 font-medium">O2</span> structures decisions inside it, and <span className="text-blue-600 dark:text-blue-400 font-medium">O3</span> surfaces anomalies worth acting on.
             </p>
         </div>
     );
@@ -220,7 +220,9 @@ export function OsGuide() {
 
     return (
         <section className="w-full">
-            <h2 className="mb-6 text-center text-2xl font-bold tracking-tight">The Macro OS Framework</h2>
+            <h2 className="mb-6 text-center text-2xl font-bold tracking-tight">
+                The <span className="text-blue-600 dark:text-blue-400">Macro OS</span> Framework
+            </h2>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-stretch">
                 {O_SECTIONS.map((item) => (

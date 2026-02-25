@@ -28,6 +28,10 @@ const sidebarData: SidebarCategory[] = [
                 title: 'Guide',
                 href: '/guide',
             },
+            {
+                title: 'Wealth Distribution',
+                href: '/wealth-distribution',
+            },
         ],
     },
     {
