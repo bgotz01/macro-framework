@@ -1,3 +1,5 @@
+import TransmissionSignals from '@/components/transmission/transmission-signals';
+
 export default function TransmissionEnginePage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -21,6 +23,9 @@ export default function TransmissionEnginePage() {
                     The <strong>Transmission Engine</strong> maps the six distinct channels through which these shocks propagate into real business outcomes.
                 </p>
             </div>
+
+            {/* Transmission Signals */}
+            <TransmissionSignals />
 
             {/* The 6 Rails */}
             <div className="space-y-12">

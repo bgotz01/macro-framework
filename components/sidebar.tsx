@@ -22,6 +22,15 @@ interface SidebarCategory {
 
 const sidebarData: SidebarCategory[] = [
     {
+        category: 'Overview',
+        items: [
+            {
+                title: 'Guide',
+                href: '/guide',
+            },
+        ],
+    },
+    {
         category: 'Markets',
         items: [
             {
@@ -99,27 +108,22 @@ const sidebarData: SidebarCategory[] = [
         category: 'Insights',
         items: [
             {
-                title: 'Guide',
-                href: '/guide',
+                title: 'Mechanics',
+                href: '/insights/mechanics',
             },
             {
                 title: 'Major Money Events',
-                href: '/major-events',
+                href: '/insights/major-events',
                 children: [
                     { title: '1971 Gold Depeg', href: '/major-events/1971-gold-depeg' },
                     { title: '1970s Inflation Trap', href: '/major-events/1970s-inflation' },
                     { title: '2000 Low Rates', href: '/major-events/2000-low-rates' },
                     { title: '2006 Yield Curve', href: '/major-events/2006-yield-curve' },
                     { title: '2008 QE', href: '/major-events/2008-qe' },
-                ],
-            },
-            {
-                title: 'Other Macro Events',
-                href: '/other-events',
-                children: [
                     { title: '2001 China joins WTO', href: '/other-events/2001-china-wto' },
                 ],
             },
+
         ],
     },
 ];

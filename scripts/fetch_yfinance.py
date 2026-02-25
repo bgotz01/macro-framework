@@ -16,11 +16,11 @@ import os
 # ============================================================================
 
 # Ticker symbol (e.g., '^GSPC' for S&P 500, 'AAPL' for Apple, '^TNX' for 10-year Treasury)
-TICKER = "2YY=F"
+TICKER = "AAPL"
 
 # Asset class and country for organizing the output
 # This determines the folder structure: data/{ASSET_CLASS}/{COUNTRY}/
-ASSET_CLASS = "bonds"  # e.g., equities, bonds, fx, commodities
+ASSET_CLASS = "stocks"  # e.g., equities, bonds, fx, commodities
 COUNTRY = ""            # e.g., US, UK, Germany, Japan
 
 # Date range

@@ -31,15 +31,16 @@ const METRICS: MetricConfig[] = [
     { key: 'tnx', label: '10Y Treasury', shortLabel: '10Y', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'us2yr', label: '2Y Treasury', shortLabel: '2Y', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'irx', label: '3M Treasury', shortLabel: '3M', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'realYield', label: 'Real Yield (10Y-CPI)', shortLabel: '10Y-CPI', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', shortLabel: '10Y-2Y', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'yieldCurve3M', label: 'Yield Curve (10Y-3M)', shortLabel: '10Y-3M', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'eyp', label: 'Earnings Yield Premium (EY-3M)', shortLabel: 'EY-3M', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'eyCAPE', label: 'Earnings Yield CAPE (1/CAPE)', shortLabel: 'EY CAPE', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'ey5yr', label: 'Earnings Yield 5yr (1/P/E-5yr)', shortLabel: 'EY-5yr', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'rey5yr', label: 'Real Earnings Yield 5yr (EY5yr-CPI)', shortLabel: 'Real EY-5yr', category: 'Implied Yields & Spreads', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'realYield', label: 'Real Yield (10Y-CPI)', shortLabel: '10Y-CPI', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', shortLabel: '10Y-2Y', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'yieldCurve3M', label: 'Yield Curve (10Y-3M)', shortLabel: '10Y-3M', category: 'Bond Yields', format: (v) => `${v.toFixed(2)}%` },
     { key: 'shillerPE', label: 'Shiller P/E (CAPE)', shortLabel: 'CAPE', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
     { key: 'pe5yr', label: 'P/E-5yr', shortLabel: 'P/E-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
+    { key: 'eyCAPE', label: 'Earnings Yield CAPE (1/CAPE)', shortLabel: 'EY CAPE', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'ey5yr', label: 'Earnings Yield 5yr (1/P/E-5yr)', shortLabel: 'EY-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'eyp', label: 'EYP (CAPE)', shortLabel: 'EYP (CAPE)', category: 'Equity Spreads', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'eyp5yr', label: 'EYP-5yr', shortLabel: 'EYP-5yr', category: 'Equity Spreads', format: (v) => `${v.toFixed(2)}%` },
+    { key: 'rey5yr', label: 'Real Earnings Yield 5yr (EY5yr-CPI)', shortLabel: 'Real EY-5yr', category: 'Equity Spreads', format: (v) => `${v.toFixed(2)}%` },
 ];
 
 export default function PercentileBars({ initialData, availableYears, initialYear = 9999 }: PercentileBarsProps) {
@@ -68,7 +69,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
     const displayYear = isLatest ? 'Latest' : selectedYear.toString();
 
     function getPercentileColor(percentile: number, metricKey?: string): string {
-        const isReversed = metricKey === 'eyp' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
+        const isReversed = metricKey === 'eyp' || metricKey === 'eyp5yr' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
 
         if (isReversed) {
             if (percentile < 25) return 'bg-red-500';
@@ -84,7 +85,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
     }
 
     function getPercentileTextColor(percentile: number, metricKey?: string): string {
-        const isReversed = metricKey === 'eyp' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
+        const isReversed = metricKey === 'eyp' || metricKey === 'eyp5yr' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
 
         if (isReversed) {
             if (percentile < 25) return 'text-red-600 dark:text-red-400';
@@ -100,7 +101,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
     }
 
     function getPercentileBg(percentile: number, metricKey?: string): string {
-        const isReversed = metricKey === 'eyp' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
+        const isReversed = metricKey === 'eyp' || metricKey === 'eyp5yr' || metricKey === 'eyCAPE' || metricKey === 'ey5yr' || metricKey === 'rey5yr' || metricKey === 'realYield' || metricKey === 'yieldCurve' || metricKey === 'yieldCurve3M';
 
         if (isReversed) {
             if (percentile < 25) return 'bg-red-50 dark:bg-red-950';
@@ -242,13 +243,13 @@ export default function PercentileBars({ initialData, availableYears, initialYea
                     </div>
                     <div className="mt-2 text-center space-y-0.5">
                         <p className="text-xs text-muted-foreground">
-                            * Implied Yields & Spreads use reversed colors (higher is better)
+                            * Bond Yields, Equity Valuation, and Equity Spreads use reversed colors (higher is better)
                         </p>
                         <p className="text-xs text-muted-foreground">
                             10Y-CPI = 10Y Treasury - CPI
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            EY-3M = (1 / CAPE) - 3M Treasury | EY-CPI = (1 / CAPE) - CPI
+                            EYP = Earnings Yield - 3M Treasury | Real EY-5yr = (1/P/E-5yr) - CPI
                         </p>
                         <p className="text-xs text-muted-foreground">
                             CAPE (Shiller P/E) uses 10-year trailing inflation-adjusted earnings

@@ -46,8 +46,8 @@ export default function ValuationsChart({
                     display_name: s.display_name,
                     units: s.units
                 }));
-                console.log('Available series:', seriesWithNames.map(s => s.series_name));
-                console.log('YoY series:', seriesWithNames.filter(s => s.series_name.includes('YoY')));
+                console.log('Available series:', seriesWithNames.map((s: { series_name: string }) => s.series_name));
+                console.log('YoY series:', seriesWithNames.filter((s: { series_name: string }) => s.series_name.includes('YoY')));
                 setAvailableSeries(seriesWithNames);
 
                 // Auto-select Shiller-PE if available, otherwise first non-EPS series

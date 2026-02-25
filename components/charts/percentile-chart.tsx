@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useTheme } from '../theme-provider';
 
@@ -60,15 +61,16 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899', category: 'Equity Valuation' },
     { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e', category: 'Equity Valuation' },
     { value: 'eycape', label: 'EY CAPE', color: '#db2777', category: 'Equity Valuation' },
-    { value: 'eyp', label: 'Earnings Yield Premium', color: '#8b5cf6', category: 'Equity Valuation' },
-    { value: 'ey5yr', label: 'Earnings Yield 5yr', color: '#fb7185', category: 'Equity Valuation' },
-    { value: 'eyp5yr', label: 'EY Premium 5yr', color: '#a78bfa', category: 'Equity Valuation' },
-    { value: 'rey5yr', label: 'Real EY 5yr', color: '#0d9488', category: 'Equity Valuation' },
+    { value: 'ey5yr', label: 'EY-5yr', color: '#fb7185', category: 'Equity Valuation' },
+    // Equity Spreads
+    { value: 'eyp', label: 'EYP (CAPE)', color: '#8b5cf6', category: 'Equity Spreads' },
+    { value: 'eyp5yr', label: 'EYP-5yr', color: '#a78bfa', category: 'Equity Spreads' },
+    { value: 'rey5yr', label: 'Real EY-5yr', color: '#0d9488', category: 'Equity Spreads' },
 ];
 
 const METRIC_TOOLTIPS: Record<string, string> = {
-    'eyp': 'Earnings Yield Premium = (1 / Shiller P/E) - 3M Treasury Rate. Measures equity risk premium over cash.',
-    'eyp5yr': 'Earnings Yield Premium 5yr = (1 / P/E-5yr) - 3M Treasury Rate. Measures equity risk premium over cash using 5-year average earnings.',
+    'eyp': 'EYP (CAPE) = Earnings Yield Premium using CAPE. Calculated as (1/CAPE) - 3M Treasury Rate. Measures equity risk premium over cash.',
+    'eyp5yr': 'EYP-5yr = Earnings Yield Premium using 5-year P/E. Calculated as (1/P/E-5yr) - 3M Treasury Rate. Measures equity risk premium over cash using 5-year average earnings.',
     'eycape': 'Earnings Yield CAPE = 1 / Shiller P/E. The inverse of CAPE, representing expected earnings yield using inflation-adjusted 10-year average earnings.',
     'ey5yr': 'Earnings Yield 5yr = 1 / P/E-5yr. The inverse of P/E-5yr, representing expected earnings yield using 5-year average earnings.',
     'rey5yr': 'Real Earnings Yield 5yr = (1 / P/E-5yr) - CPI Inflation. Measures real return potential using 5-year average earnings.',
@@ -79,7 +81,24 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
     const [loading, setLoading] = useState(true);
     const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('percentile');
     const [selectedSeries, setSelectedSeries] = useState<string[]>(['cpi', 'fedfunds']);
+    const [isSeriesSelectionOpen, setIsSeriesSelectionOpen] = useState(false);
     const { theme } = useTheme();
+    const searchParams = useSearchParams();
+
+    // Initialize selected series from URL parameters
+    useEffect(() => {
+        const seriesParam = searchParams.get('series');
+        if (seriesParam) {
+            const seriesArray = seriesParam.split(',').filter(s =>
+                AVAILABLE_SERIES.some(series => series.value === s)
+            );
+            if (seriesArray.length > 0) {
+                setSelectedSeries(seriesArray);
+                // Auto-expand series selection when coming from a link
+                setIsSeriesSelectionOpen(true);
+            }
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -253,52 +272,91 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             : 'Shows year-over-year change in percentile rank (how fast the percentile is moving)'}
                 </p>
 
-                {/* Series Selection - 3 Column Layout */}
+                {/* Series Selection - Collapsible */}
                 <div className="border-t pt-4">
-                    <label className="text-sm font-medium mb-3 block">Select Series:</label>
-                    <div className="grid grid-cols-3 gap-6">
-                        {['Inflation & Policy', 'Bond Yields', 'Equity Valuation'].map(category => {
-                            const categorySeries = AVAILABLE_SERIES.filter(s => s.category === category);
-                            return (
-                                <div key={category} className="space-y-2">
-                                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pb-1">
-                                        {category}
-                                    </div>
-                                    <div className="space-y-2">
-                                        {categorySeries.map(series => {
-                                            const tooltip = METRIC_TOOLTIPS[series.value];
-                                            const checkbox = (
-                                                <label
-                                                    key={series.value}
-                                                    className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
-                                                >
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedSeries.includes(series.value)}
-                                                        onChange={() => handleSeriesToggle(series.value)}
-                                                        className="cursor-pointer"
-                                                    />
-                                                    <span className={`font-medium ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
-                                                        {series.label}
-                                                    </span>
-                                                </label>
-                                            );
+                    <button
+                        onClick={() => setIsSeriesSelectionOpen(!isSeriesSelectionOpen)}
+                        className="flex items-center justify-between w-full text-left text-sm font-medium mb-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                        <span>
+                            Select Series ({selectedSeries.length} selected)
+                            {!isSeriesSelectionOpen && <span className="text-xs text-muted-foreground ml-2">Click to expand</span>}
+                        </span>
+                        <svg
+                            className={`w-4 h-4 transition-transform ${isSeriesSelectionOpen ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
 
-                                            if (tooltip) {
-                                                return (
-                                                    <MetricTooltip key={series.value} content={tooltip}>
-                                                        {checkbox}
-                                                    </MetricTooltip>
+                    {/* Show selected series when collapsed */}
+                    {!isSeriesSelectionOpen && selectedSeries.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-2">
+                            {selectedSeries.map(seriesValue => {
+                                const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
+                                if (!series) return null;
+                                return (
+                                    <span
+                                        key={seriesValue}
+                                        className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border"
+                                        style={{ borderColor: series.color, color: series.color }}
+                                    >
+                                        {series.label}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {isSeriesSelectionOpen && (
+                        <div className="grid grid-cols-4 gap-6 animate-in slide-in-from-top-2 duration-200">
+                            {['Inflation & Policy', 'Bond Yields', 'Equity Valuation', 'Equity Spreads'].map(category => {
+                                const categorySeries = AVAILABLE_SERIES.filter(s => s.category === category);
+                                if (categorySeries.length === 0) return null;
+                                return (
+                                    <div key={category} className="space-y-2">
+                                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pb-1">
+                                            {category}
+                                        </div>
+                                        <div className="space-y-2">
+                                            {categorySeries.map(series => {
+                                                const tooltip = METRIC_TOOLTIPS[series.value];
+                                                const checkbox = (
+                                                    <label
+                                                        key={series.value}
+                                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedSeries.includes(series.value)}
+                                                            onChange={() => handleSeriesToggle(series.value)}
+                                                            className="cursor-pointer"
+                                                        />
+                                                        <span className={`font-medium ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
+                                                            {series.label}
+                                                        </span>
+                                                    </label>
                                                 );
-                                            }
 
-                                            return checkbox;
-                                        })}
+                                                if (tooltip) {
+                                                    return (
+                                                        <MetricTooltip key={series.value} content={tooltip}>
+                                                            {checkbox}
+                                                        </MetricTooltip>
+                                                    );
+                                                }
+
+                                                return checkbox;
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -400,6 +458,13 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             })}
                         </div>
                     )}
+                </div>
+
+                {/* Explanatory Notes */}
+                <div className="mt-4 pt-4 border-t text-xs text-muted-foreground space-y-1">
+                    <p><strong>Note:</strong> EYP = Earnings Yield Premium = Earnings Yield - 3M Treasury Rate</p>
+                    <p>• EYP (CAPE) uses earnings yield from CAPE (1/CAPE - 3M)</p>
+                    <p>• EYP-5yr uses earnings yield from P/E-5yr (1/P/E-5yr - 3M)</p>
                 </div>
             </div>
         </div >

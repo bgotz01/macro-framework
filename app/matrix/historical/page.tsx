@@ -24,50 +24,53 @@ async function getLatestValue(assetClass: string, seriesName: string): Promise<{
     }
 }
 
-async function getLatestPercentile(assetClass: string, seriesName: string): Promise<{ value: number | null; percentile: number | null }> {
+async function getLatestPercentile(assetClass: string, seriesName: string): Promise<{ value: number | null; percentile: number | null; date: string | null }> {
     try {
         const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
         const db = new Database(dbPath, { readonly: true, timeout: 10000 });
 
         const query = `
-            SELECT value, percentile_rank
+            SELECT value, percentile_rank, date
             FROM percentile_analysis
             WHERE asset_class = ? AND series_name = ?
             ORDER BY date DESC
             LIMIT 1
         `;
 
-        const result = db.prepare(query).get(assetClass, seriesName) as { value: number; percentile_rank: number } | undefined;
+        const result = db.prepare(query).get(assetClass, seriesName) as { value: number; percentile_rank: number; date: string } | undefined;
         db.close();
 
         if (result) {
-            return { value: result.value, percentile: result.percentile_rank };
+            return { value: result.value, percentile: result.percentile_rank, date: result.date };
         }
-        return { value: null, percentile: null };
+        return { value: null, percentile: null, date: null };
     } catch (error) {
         console.error(`Error fetching percentile for ${assetClass}/${seriesName}:`, error);
-        return { value: null, percentile: null };
+        return { value: null, percentile: null, date: null };
     }
 }
 
 export default async function HistoricalMatrixPage() {
     // Fetch all data server-side
-    const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds] = await Promise.all([
+    const [cpi, tenYear, twoYear, threeMonth, shillerPE, fedFunds, pe5yr, earningsYield5yr] = await Promise.all([
         getLatestValue('economic', 'CPI'),
         getLatestValue('bonds', 'US/TNX'),
         getLatestValue('bonds', 'US/US-2yr'),
         getLatestValue('bonds', 'US/IRX'),
         getLatestValue('valuations', 'Shiller-PE'),
         getLatestValue('economic', 'US/FEDFUNDS'),
+        getLatestValue('valuations', 'PE-5yr'),
+        getLatestValue('valuations', 'Earnings-Yield-5yr'),
     ]);
 
     // Fetch percentile data
-    const [cpiPerc, tenYearPerc, twoYearPerc, shillerPEPerc, fedFundsPerc] = await Promise.all([
+    const [cpiPerc, tenYearPerc, twoYearPerc, shillerPEPerc, fedFundsPerc, pe5yrPerc] = await Promise.all([
         getLatestPercentile('economic', 'CPI'),
         getLatestPercentile('bonds', 'US/TNX-Monthly'),
         getLatestPercentile('bonds', 'US/US-2yr-Monthly'),
         getLatestPercentile('valuations', 'Shiller-PE'),
         getLatestPercentile('economic', 'US/FEDFUNDS'),
+        getLatestPercentile('valuations', 'PE-5yr'),
     ]);
 
     // Get derived percentiles
@@ -75,6 +78,12 @@ export default async function HistoricalMatrixPage() {
     const yieldCurvePerc = await getLatestPercentile('derived', 'Yield-Curve');
     const eypPerc = await getLatestPercentile('derived', 'Earnings-Yield-Premium');
     const reyPerc = await getLatestPercentile('derived', 'Real-Earnings-Yield');
+    const eyp5yrPerc = await getLatestPercentile('derived', 'Earnings-Yield-Premium-5yr');
+    const rey5yrPerc = await getLatestPercentile('derived', 'Real-Earnings-Yield-5yr');
+
+    // Calculate Real Yield value (for display)
+    const realYieldValue = tenYear.value !== null && cpi.value !== null ? tenYear.value - cpi.value : null;
+    const realYieldDate = tenYear.date && cpi.date ? (tenYear.date > cpi.date ? cpi.date : tenYear.date) : null;
 
     const initialValues = {
         inflation: cpi.value,
@@ -89,6 +98,28 @@ export default async function HistoricalMatrixPage() {
         realEarningsYield: shillerPE.value !== null && shillerPE.value > 0 && cpi.value !== null
             ? (100 / shillerPE.value) - cpi.value
             : null,
+        // 5-year metrics
+        equityPE5yr: pe5yr.value,
+        earningsYieldPremium5yr: earningsYield5yr.value !== null && threeMonth.value !== null
+            ? earningsYield5yr.value - threeMonth.value
+            : null,
+        realEarningsYield5yr: earningsYield5yr.value !== null && cpi.value !== null
+            ? earningsYield5yr.value - cpi.value
+            : null,
+    };
+
+    const initialDates = {
+        inflation: cpi.date,
+        bondYieldNominal: tenYear.date,
+        bondYieldReal: tenYear.date && cpi.date ? (tenYear.date > cpi.date ? cpi.date : tenYear.date) : null,
+        yieldCurve: tenYear.date && twoYear.date ? (tenYear.date > twoYear.date ? twoYear.date : tenYear.date) : null,
+        fedFunds: fedFunds.date,
+        equityPE: shillerPE.date,
+        earningsYieldPremium: shillerPE.date && threeMonth.date ? (shillerPE.date > threeMonth.date ? threeMonth.date : shillerPE.date) : null,
+        realEarningsYield: shillerPE.date && cpi.date ? (shillerPE.date > cpi.date ? cpi.date : shillerPE.date) : null,
+        equityPE5yr: pe5yr.date,
+        earningsYieldPremium5yr: earningsYield5yr.date && threeMonth.date ? (earningsYield5yr.date > threeMonth.date ? threeMonth.date : earningsYield5yr.date) : null,
+        realEarningsYield5yr: earningsYield5yr.date && cpi.date ? (earningsYield5yr.date > cpi.date ? cpi.date : earningsYield5yr.date) : null,
     };
 
     const initialPercentileValues = {
@@ -102,7 +133,7 @@ export default async function HistoricalMatrixPage() {
         },
         bondYieldReal: {
             percentile: realYieldPerc.percentile,
-            value: realYieldPerc.value
+            value: realYieldValue
         },
         yieldCurve: {
             percentile: yieldCurvePerc.percentile,
@@ -124,6 +155,33 @@ export default async function HistoricalMatrixPage() {
             percentile: reyPerc.percentile,
             value: reyPerc.value
         },
+        // 5-year metrics
+        equityPE5yr: {
+            percentile: pe5yrPerc.percentile,
+            value: pe5yrPerc.value
+        },
+        earningsYieldPremium5yr: {
+            percentile: eyp5yrPerc.percentile,
+            value: eyp5yrPerc.value
+        },
+        realEarningsYield5yr: {
+            percentile: rey5yrPerc.percentile,
+            value: rey5yrPerc.value
+        },
+    };
+
+    const initialPercentileDates = {
+        inflation: cpiPerc.date,
+        bondYieldNominal: tenYearPerc.date,
+        bondYieldReal: realYieldPerc.date,
+        yieldCurve: yieldCurvePerc.date,
+        fedFunds: fedFundsPerc.date,
+        equityPE: shillerPEPerc.date,
+        earningsYieldPremium: eypPerc.date,
+        realEarningsYield: reyPerc.date,
+        equityPE5yr: pe5yrPerc.date,
+        earningsYieldPremium5yr: eyp5yrPerc.date,
+        realEarningsYield5yr: rey5yrPerc.date,
     };
 
     return (
@@ -142,11 +200,11 @@ export default async function HistoricalMatrixPage() {
             </div>
 
             {/* Compact Regime Matrix */}
-            <CompactRegimeMatrix initialValues={initialValues} />
+            <CompactRegimeMatrix initialValues={initialValues} initialDates={initialDates} />
 
             {/* Compact Matrix Percentile */}
             <div className="mt-12">
-                <CompactMatrixPercentile initialValues={initialPercentileValues} />
+                <CompactMatrixPercentile initialValues={initialPercentileValues} initialDates={initialPercentileDates} />
             </div>
 
             {/* Insights */}

@@ -33,23 +33,14 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     real_yield as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.real_yield < c1.real_yield
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY real_yield) * 100 as percentile_rank,
+                    ROW_NUMBER() OVER (ORDER BY date) as row_num
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;
@@ -98,23 +89,13 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     yield_curve as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.yield_curve < c1.yield_curve
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY yield_curve) * 100 as percentile_rank
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;
@@ -161,23 +142,13 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     yield_curve_3m as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.yield_curve_3m < c1.yield_curve_3m
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY yield_curve_3m) * 100 as percentile_rank
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;
@@ -225,23 +196,13 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     eyp as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.eyp < c1.eyp
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY eyp) * 100 as percentile_rank
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;

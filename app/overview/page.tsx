@@ -25,37 +25,17 @@ export default function OverviewPage() {
                     </h2>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-6 rounded-xl border-2 border-primary/20 bg-card hover:border-primary/40 transition-colors">
-                        <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0">
-                                <span className="text-lg">📊</span>
-                            </div>
-                            <span className="text-base font-semibold text-card-foreground">Equity valuations in 99th percentile</span>
-                        </div>
+                    <div className="p-6 rounded-xl border border-border/50 bg-card hover:bg-accent/50 transition-all">
+                        <span className="text-lg font-medium text-card-foreground">Equity valuations in 99th percentile</span>
                     </div>
-                    <div className="p-6 rounded-xl border-2 border-primary/20 bg-card hover:border-primary/40 transition-colors">
-                        <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
-                                <span className="text-lg">🤖</span>
-                            </div>
-                            <span className="text-base font-semibold text-card-foreground">Marginal cost of intelligence is 0 (AI)</span>
-                        </div>
+                    <div className="p-6 rounded-xl border border-border/50 bg-card hover:bg-accent/50 transition-all">
+                        <span className="text-lg font-medium text-card-foreground">Marginal cost of intelligence is 0 (AI)</span>
                     </div>
-                    <div className="p-6 rounded-xl border-2 border-primary/20 bg-card hover:border-primary/40 transition-colors">
-                        <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center flex-shrink-0">
-                                <span className="text-lg">📈</span>
-                            </div>
-                            <span className="text-base font-semibold text-card-foreground">Stable bond market & inflation</span>
-                        </div>
+                    <div className="p-6 rounded-xl border border-border/50 bg-card hover:bg-accent/50 transition-all">
+                        <span className="text-lg font-medium text-card-foreground">Stable bond market & inflation</span>
                     </div>
-                    <div className="p-6 rounded-xl border-2 border-primary/20 bg-card hover:border-primary/40 transition-colors">
-                        <div className="flex items-center space-x-3">
-                            <div className="h-8 w-8 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
-                                <span className="text-lg">🌍</span>
-                            </div>
-                            <span className="text-base font-semibold text-card-foreground">Rising geopolitical tensions (war, tariffs)</span>
-                        </div>
+                    <div className="p-6 rounded-xl border border-border/50 bg-card hover:bg-accent/50 transition-all">
+                        <span className="text-lg font-medium text-card-foreground">Rising geopolitical tensions (war, tariffs)</span>
                     </div>
                 </div>
             </div>

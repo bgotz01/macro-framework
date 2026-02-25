@@ -1,3 +1,5 @@
+import { SynthesisCard } from "@/components/synthesis-card";
+
 export default function ParadigmPage() {
     return (
         <div className="max-w-4xl mx-auto">
@@ -20,6 +22,40 @@ export default function ParadigmPage() {
                     <p className="text-lg font-medium text-card-foreground">Spot the Signal.</p>
                     <p className="text-lg font-medium text-card-foreground">Anticipate the Swing.</p>
                     <p className="text-lg font-medium text-card-foreground">Write the Story.</p>
+                </div>
+            </div>
+
+            {/* Framework Origin */}
+            <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">
+                <h2 className="text-2xl font-bold text-card-foreground mb-6">The Synthesis</h2>
+                <div className="space-y-6 text-muted-foreground">
+                    <p>
+                        The OS Paradigm combines powerful approaches from leading macro investors:
+                    </p>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <SynthesisCard
+                            name="Bridgewater"
+                            focus="Historical Macro Study"
+                            description="Deep analysis of economic history, identifying patterns across decades and centuries. Understanding how debt cycles, policy responses, and structural forces shape long-term outcomes."
+                            href="/paradigm/bridgewater"
+                        />
+                        <SynthesisCard
+                            name="RenCap"
+                            focus="Structured Market Regimes"
+                            description="Clear classification of market environments based on growth and inflation dynamics. A systematic framework for positioning across different macro conditions."
+                            href="/paradigm/rencap"
+                        />
+                        <SynthesisCard
+                            name="Duquesne"
+                            focus="Asymmetric Macro Bets"
+                            description="Druckenmiller's approach to identifying inflection points where risk/reward is heavily skewed. Concentrated positions when conviction meets opportunity."
+                            href="/paradigm/duquesne"
+                        />
+                    </div>
+                    <p>
+                        The result is a practical operating system: historical context meets regime structure and asymmetric thinking,
+                        giving you the tools to read reality, anticipate transitions, and position accordingly.
+                    </p>
                 </div>
             </div>
 

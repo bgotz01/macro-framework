@@ -3,6 +3,7 @@ import TwelveYearOTable from '@/components/twelve-year-o-table';
 import TwelveYearSystemTable from '@/components/twelve-year-system-table';
 import TwelveYearSummary from '@/components/twelve-year-summary';
 import WhyTwelve from '@/components/12-year-cycle/why-twelve';
+import TwelveYearTechCycleTable from '@/components/twelve-year-cycle-tech';
 
 export default function TwelveYearCyclePage() {
     return (
@@ -21,6 +22,11 @@ export default function TwelveYearCyclePage() {
                 <div className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">Expanded Overview</h2>
                     <TwelveYearCycleTable />
+                </div>
+                {/* Expanded Tech Table */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">Expanded Tech Overview</h2>
+                    <TwelveYearTechCycleTable />
                 </div>
 
 

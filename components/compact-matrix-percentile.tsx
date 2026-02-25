@@ -32,16 +32,48 @@ interface PercentileValues {
     equityPE: { percentile: number | null; value: number | null };
     earningsYieldPremium: { percentile: number | null; value: number | null };
     realEarningsYield: { percentile: number | null; value: number | null };
+    // 5-year metrics
+    equityPE5yr: { percentile: number | null; value: number | null };
+    earningsYieldPremium5yr: { percentile: number | null; value: number | null };
+    realEarningsYield5yr: { percentile: number | null; value: number | null };
+}
+
+interface PercentileDates {
+    inflation: string | null;
+    bondYieldNominal: string | null;
+    bondYieldReal: string | null;
+    yieldCurve: string | null;
+    fedFunds: string | null;
+    equityPE: string | null;
+    earningsYieldPremium: string | null;
+    realEarningsYield: string | null;
+    equityPE5yr: string | null;
+    earningsYieldPremium5yr: string | null;
+    realEarningsYield5yr: string | null;
 }
 
 interface CompactMatrixPercentileProps {
     initialValues: PercentileValues;
+    initialDates?: PercentileDates;
 }
 
-export default function CompactMatrixPercentile({ initialValues }: CompactMatrixPercentileProps) {
+export default function CompactMatrixPercentile({ initialValues, initialDates }: CompactMatrixPercentileProps) {
     const [selectedYear, setSelectedYear] = useState<string>(() => new Date().getFullYear().toString());
     const [selectedMonth, setSelectedMonth] = useState<string>(() => String(new Date().getMonth() + 1).padStart(2, '0'));
     const [values, setValues] = useState<PercentileValues>(initialValues);
+    const [dates, setDates] = useState<PercentileDates>(initialDates || {
+        inflation: null,
+        bondYieldNominal: null,
+        bondYieldReal: null,
+        yieldCurve: null,
+        fedFunds: null,
+        equityPE: null,
+        earningsYieldPremium: null,
+        realEarningsYield: null,
+        equityPE5yr: null,
+        earningsYieldPremium5yr: null,
+        realEarningsYield5yr: null,
+    });
     const [loading, setLoading] = useState(false);
 
     // Generate year options (1960 to current year)
@@ -75,18 +107,28 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
 
         if (isCurrentMonth) {
             setValues(initialValues);
+            if (initialDates) {
+                setDates(initialDates);
+            }
             return;
         }
 
         async function fetchHistoricalPercentiles() {
             setLoading(true);
             try {
-                const targetDate = `${selectedYear}-${selectedMonth}`;
-
                 // Fetch percentile data for the selected date
                 const response = await fetch(`/api/percentile-year?year=${selectedYear}&month=${selectedMonth}`);
                 if (response.ok) {
                     const data = await response.json();
+
+                    // Calculate Real Yield percentile if we have both TNX and CPI
+                    const realYieldValue = data.tnx?.value !== null && data.cpi?.value !== null
+                        ? data.tnx.value - data.cpi.value
+                        : null;
+                    const realYieldDate = data.tnx?.dateStr && data.cpi?.dateStr
+                        ? (data.tnx.dateStr > data.cpi.dateStr ? data.cpi.dateStr : data.tnx.dateStr)
+                        : null;
+
                     setValues({
                         inflation: {
                             percentile: data.cpi?.percentileRank ?? null,
@@ -98,7 +140,7 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
                         },
                         bondYieldReal: {
                             percentile: data.realYield?.percentileRank ?? null,
-                            value: data.realYield?.value ?? null
+                            value: realYieldValue
                         },
                         yieldCurve: {
                             percentile: data.yieldCurve?.percentileRank ?? null,
@@ -120,6 +162,32 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
                             percentile: data.rey?.percentileRank ?? null,
                             value: data.rey?.value ?? null
                         },
+                        // 5-year metrics
+                        equityPE5yr: {
+                            percentile: data.pe5yr?.percentileRank ?? null,
+                            value: data.pe5yr?.value ?? null
+                        },
+                        earningsYieldPremium5yr: {
+                            percentile: data.eyp5yr?.percentileRank ?? null,
+                            value: data.eyp5yr?.value ?? null
+                        },
+                        realEarningsYield5yr: {
+                            percentile: data.rey5yr?.percentileRank ?? null,
+                            value: data.rey5yr?.value ?? null
+                        },
+                    });
+                    setDates({
+                        inflation: data.cpi?.dateStr ?? null,
+                        bondYieldNominal: data.tnx?.dateStr ?? null,
+                        bondYieldReal: realYieldDate,
+                        yieldCurve: data.yieldCurve?.dateStr ?? null,
+                        fedFunds: data.fedFunds?.dateStr ?? null,
+                        equityPE: data.shillerPE?.dateStr ?? null,
+                        earningsYieldPremium: data.eyp?.dateStr ?? null,
+                        realEarningsYield: data.rey?.dateStr ?? null,
+                        equityPE5yr: data.pe5yr?.dateStr ?? null,
+                        earningsYieldPremium5yr: data.eyp5yr?.dateStr ?? null,
+                        realEarningsYield5yr: data.rey5yr?.dateStr ?? null,
                     });
                 }
             } catch (error) {
@@ -130,7 +198,7 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
         }
 
         fetchHistoricalPercentiles();
-    }, [selectedYear, selectedMonth, initialValues]);
+    }, [selectedYear, selectedMonth, initialValues, initialDates]);
 
     const getPercentileColor = (percentile: number | null): string => {
         if (percentile === null) return 'border-gray-300 dark:border-gray-700';
@@ -140,12 +208,28 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
         return 'border-red-500 dark:border-red-400';
     };
 
+    const getPercentileColorReversed = (percentile: number | null): string => {
+        if (percentile === null) return 'border-gray-300 dark:border-gray-700';
+        if (percentile < 25) return 'border-red-500 dark:border-red-400';
+        if (percentile < 50) return 'border-yellow-500 dark:border-yellow-400';
+        if (percentile < 75) return 'border-blue-500 dark:border-blue-400';
+        return 'border-green-500 dark:border-green-400';
+    };
+
     const getPercentileTextColor = (percentile: number | null): string => {
         if (percentile === null) return 'text-gray-500 dark:text-gray-400';
         if (percentile < 25) return 'text-green-600 dark:text-green-400';
         if (percentile < 50) return 'text-blue-600 dark:text-blue-400';
         if (percentile < 75) return 'text-yellow-600 dark:text-yellow-400';
         return 'text-red-600 dark:text-red-400';
+    };
+
+    const getPercentileTextColorReversed = (percentile: number | null): string => {
+        if (percentile === null) return 'text-gray-500 dark:text-gray-400';
+        if (percentile < 25) return 'text-red-600 dark:text-red-400';
+        if (percentile < 50) return 'text-yellow-600 dark:text-yellow-400';
+        if (percentile < 75) return 'text-blue-600 dark:text-blue-400';
+        return 'text-green-600 dark:text-green-400';
     };
 
     const getPercentileLabel = (percentile: number | null): string => {
@@ -165,6 +249,12 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
         if (value === null) return 'N/A';
         if (format === 'number') return value.toFixed(1);
         return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+    };
+
+    const formatDate = (dateStr: string | null): string => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     };
 
     return (
@@ -213,41 +303,42 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
                         <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Rates</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.fedFunds.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Fed Funds</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Fed Funds</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.fedFunds.percentile)}`}>
                                     {formatPercentile(values.fedFunds.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.fedFunds && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.fedFunds)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.fedFunds.value)}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.fedFunds.percentile)}
                                 </div>
                             </div>
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.bondYieldNominal.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">10Y Yield</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">10Y Yield</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.bondYieldNominal.percentile)}`}>
                                     {formatPercentile(values.bondYieldNominal.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.bondYieldNominal && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.bondYieldNominal)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.bondYieldNominal.value)}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.bondYieldNominal.percentile)}
                                 </div>
                             </div>
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.yieldCurve.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Yield Curve (10Y-2Y)</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Yield Curve</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(10Y - 2Y)</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.yieldCurve.percentile)}`}>
                                     {formatPercentile(values.yieldCurve.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.yieldCurve && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.yieldCurve)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.yieldCurve.value)}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.yieldCurve.percentile)}
                                 </div>
                             </div>
                         </div>
@@ -258,91 +349,134 @@ export default function CompactMatrixPercentile({ initialValues }: CompactMatrix
                         <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Inflation & Real Rates</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.inflation.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">CPI</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">CPI</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.inflation.percentile)}`}>
                                     {formatPercentile(values.inflation.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.inflation && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.inflation)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.inflation.value)}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.inflation.percentile)}
                                 </div>
                             </div>
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.bondYieldReal.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Real Yield (10Y-CPI)</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real Yield</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(10Y - CPI)</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.bondYieldReal.percentile)}`}>
                                     {formatPercentile(values.bondYieldReal.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.bondYieldReal && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.bondYieldReal)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.bondYieldReal.value)}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.bondYieldReal.percentile)}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Third Row: All Equity */}
+                    {/* Third Row: Shiller P/E Equity */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation</h3>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation (Shiller P/E)</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.equityPE.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground">Shiller P/E</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Shiller P/E</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.equityPE.percentile)}`}>
                                     {formatPercentile(values.equityPE.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.equityPE && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.equityPE)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.equityPE.value, 'number')}</span>
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.equityPE.percentile)}
-                                </div>
                             </div>
 
-                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.earningsYieldPremium.percentile)} transition-all hover:shadow-md text-center`}>
-                                <MetricTooltip content="Earnings Yield Premium = (1 / Shiller P/E) - 3M Treasury Rate. Measures equity risk premium over cash.">
-                                    <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground cursor-help border-b border-dotted border-current inline-block">
-                                        EY Premium
-                                    </div>
-                                </MetricTooltip>
-                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.earningsYieldPremium.percentile)}`}>
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColorReversed(values.earningsYieldPremium.percentile)} transition-all hover:shadow-md text-center`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">EY Premium (Shiller)</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(1/PE - 3M)</div>
+                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColorReversed(values.earningsYieldPremium.percentile)}`}>
                                     {formatPercentile(values.earningsYieldPremium.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.earningsYieldPremium && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.earningsYieldPremium)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.earningsYieldPremium.value)}</span>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.earningsYieldPremium.percentile)}
                                 </div>
                             </div>
 
-                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.realEarningsYield.percentile)} transition-all hover:shadow-md text-center`}>
-                                <MetricTooltip content="Real Earnings Yield = (1 / Shiller P/E) - CPI Inflation. Measures real return potential of equities.">
-                                    <div className="text-xs font-semibold uppercase tracking-wide mb-2 text-muted-foreground cursor-help border-b border-dotted border-current inline-block">
-                                        Real EY
-                                    </div>
-                                </MetricTooltip>
-                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.realEarningsYield.percentile)}`}>
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColorReversed(values.realEarningsYield.percentile)} transition-all hover:shadow-md text-center`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real EY (Shiller)</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(1/PE - CPI)</div>
+                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColorReversed(values.realEarningsYield.percentile)}`}>
                                     {formatPercentile(values.realEarningsYield.percentile)}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
+                                {dates.realEarningsYield && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.realEarningsYield)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
                                     Value: <span className="font-semibold">{formatValue(values.realEarningsYield.value)}</span>
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                    {getPercentileLabel(values.realEarningsYield.percentile)}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Fourth Row: 5-Year P/E Equity */}
+                    <div>
+                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation (5-Year P/E)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.equityPE5yr.percentile)} transition-all hover:shadow-md text-center`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">P/E 5yr</div>
+                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.equityPE5yr.percentile)}`}>
+                                    {formatPercentile(values.equityPE5yr.percentile)}
+                                </div>
+                                {dates.equityPE5yr && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.equityPE5yr)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
+                                    Value: <span className="font-semibold">{formatValue(values.equityPE5yr.value, 'number')}</span>
+                                </div>
+                            </div>
+
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColorReversed(values.earningsYieldPremium5yr.percentile)} transition-all hover:shadow-md text-center`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">EY Premium (5yr)</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(1/PE5yr - 3M)</div>
+                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColorReversed(values.earningsYieldPremium5yr.percentile)}`}>
+                                    {formatPercentile(values.earningsYieldPremium5yr.percentile)}
+                                </div>
+                                {dates.earningsYieldPremium5yr && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.earningsYieldPremium5yr)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
+                                    Value: <span className="font-semibold">{formatValue(values.earningsYieldPremium5yr.value)}</span>
+                                </div>
+                            </div>
+
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColorReversed(values.realEarningsYield5yr.percentile)} transition-all hover:shadow-md text-center`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real EY (5yr)</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(EY5yr - CPI)</div>
+                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColorReversed(values.realEarningsYield5yr.percentile)}`}>
+                                    {formatPercentile(values.realEarningsYield5yr.percentile)}
+                                </div>
+                                {dates.realEarningsYield5yr && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.realEarningsYield5yr)}</div>
+                                )}
+                                <div className="text-sm text-muted-foreground">
+                                    Value: <span className="font-semibold">{formatValue(values.realEarningsYield5yr.value)}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             <div className="mt-4 text-xs text-muted-foreground text-center">
                 Select a date to view historical percentile rankings
             </div>
-        </div>
+        </div >
     );
 }

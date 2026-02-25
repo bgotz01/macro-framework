@@ -725,9 +725,9 @@ export default function EquitiesChart({
 
             {/* Latest Data Display */}
             {!loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
-                <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-3">
-                        📊 Latest Data
+                <div className="mt-6 p-4 rounded-lg bg-muted/50">
+                    <h4 className="text-sm font-semibold text-card-foreground mb-3">
+                        Latest Data
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {calculationMode === 'single' && data.length > 0 && (
@@ -735,7 +735,13 @@ export default function EquitiesChart({
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">Current Value</div>
                                     <div className="text-2xl font-bold text-card-foreground">
-                                        {formatTooltipValue(data[data.length - 1].Value, convertToUSD ? 'usd' : selectedUnits)}
+                                        {(() => {
+                                            // Find the data point with the most recent date
+                                            const latestDataPoint = data.reduce((latest, current) =>
+                                                current.date > latest.date ? current : latest
+                                            );
+                                            return formatTooltipValue(latestDataPoint.Value, convertToUSD ? 'usd' : selectedUnits);
+                                        })()}
                                     </div>
                                     {selectedCurrency && (
                                         <div className="text-xs text-muted-foreground mt-1">
@@ -746,11 +752,20 @@ export default function EquitiesChart({
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">As of</div>
                                     <div className="text-lg font-semibold text-card-foreground">
-                                        {new Date(data[data.length - 1].date).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
-                                        })}
+                                        {(() => {
+                                            // Find the most recent date in the data
+                                            const latestDate = data.reduce((latest, current) =>
+                                                current.date > latest ? current.date : latest, data[0].date
+                                            );
+                                            // Parse date as local date to avoid timezone issues
+                                            const [year, month, day] = latestDate.split('-').map(Number);
+                                            const localDate = new Date(year, month - 1, day);
+                                            return localDate.toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            });
+                                        })()}
                                     </div>
                                 </div>
                                 <div>
@@ -766,17 +781,32 @@ export default function EquitiesChart({
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
                                     <div className="text-2xl font-bold text-card-foreground">
-                                        {ratioData[ratioData.length - 1].Value.toFixed(4)}
+                                        {(() => {
+                                            // Find the data point with the most recent date
+                                            const latestDataPoint = ratioData.reduce((latest, current) =>
+                                                current.date > latest.date ? current : latest
+                                            );
+                                            return latestDataPoint.Value.toFixed(4);
+                                        })()}
                                     </div>
                                 </div>
                                 <div>
                                     <div className="text-xs text-muted-foreground mb-1">As of</div>
                                     <div className="text-lg font-semibold text-card-foreground">
-                                        {new Date(ratioData[ratioData.length - 1].date).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
-                                        })}
+                                        {(() => {
+                                            // Find the most recent date in the ratio data
+                                            const latestDate = ratioData.reduce((latest, current) =>
+                                                current.date > latest ? current.date : latest, ratioData[0].date
+                                            );
+                                            // Parse date as local date to avoid timezone issues
+                                            const [year, month, day] = latestDate.split('-').map(Number);
+                                            const localDate = new Date(year, month - 1, day);
+                                            return localDate.toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            });
+                                        })()}
                                     </div>
                                 </div>
                                 <div>

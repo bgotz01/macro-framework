@@ -5,10 +5,12 @@ import path from 'path';
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const yearParam = searchParams.get('year') || '';
+    const monthParam = searchParams.get('month') || '';
 
     // Handle "latest" parameter
     const isLatest = yearParam === 'latest';
     const year = isLatest ? null : parseInt(yearParam);
+    const month = monthParam ? parseInt(monthParam) : null;
 
     if (!isLatest && (!year || isNaN(year))) {
         return NextResponse.json({ error: 'Invalid year parameter' }, { status: 400 });
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
             { asset_class: 'derived', series_name: 'Real-Earnings-Yield-5yr', key: 'rey5yr' },
         ];
 
-        const result: any = { year: isLatest ? 'latest' : year };
+        const result: any = { year: isLatest ? 'latest' : year, month };
 
         for (const s of series) {
             let query: string;
@@ -60,6 +62,27 @@ export async function GET(request: NextRequest) {
                     LIMIT 1
                 `;
                 params = [s.asset_class, s.series_name];
+            } else if (month) {
+                // Get data for specific month and year
+                const monthStart = new Date(year!, month - 1, 1).getTime();
+                const monthEnd = new Date(year!, month, 0, 23, 59, 59).getTime();
+
+                query = `
+                    SELECT 
+                        asset_class,
+                        series_name,
+                        date,
+                        value,
+                        percentile_rank
+                    FROM percentile_analysis
+                    WHERE asset_class = ? 
+                      AND series_name = ?
+                      AND date >= ?
+                      AND date <= ?
+                    ORDER BY date DESC
+                    LIMIT 1
+                `;
+                params = [s.asset_class, s.series_name, monthStart, monthEnd];
             } else {
                 // Get year-end data for specific year
                 const yearStart = new Date(year!, 0, 1).getTime();

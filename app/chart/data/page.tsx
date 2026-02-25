@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import DataTable from '@/components/data-table';
+import FilterableDataTable from '@/components/filterable-data-table';
 import { Card } from '@/components/ui/card';
 
 interface SeriesInfo {
@@ -164,7 +164,7 @@ export default function DataPage() {
                 </Card>
 
                 {/* Data Table */}
-                <DataTable
+                <FilterableDataTable
                     assetClass={selectedAssetClass || undefined}
                     seriesName={selectedSeries || undefined}
                     columnName={selectedColumn || undefined}
