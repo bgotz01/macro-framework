@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import RealPercentileMatrix from './real-percentile-matrix';
-import RealValuesMatrix from './real-values-matrix';
 
 interface PercentileValues {
     cpi: number | null;
@@ -48,11 +47,7 @@ export default function RealMatrixWrapper({ initialPercentiles, initialValues }:
         <div className="space-y-6">
             <RealPercentileMatrix
                 initialValues={initialPercentiles}
-                sliderValue={sliderValue}
-                onSliderChange={setSliderValue}
-            />
-            <RealValuesMatrix
-                initialValues={initialValues}
+                initialMetricValues={initialValues}
                 sliderValue={sliderValue}
                 onSliderChange={setSliderValue}
             />

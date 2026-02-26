@@ -1,4 +1,5 @@
 import RealMatrixWrapper from '@/components/real-matrix-wrapper';
+import PercentileChart from '@/components/charts/percentile-chart';
 import Database from 'better-sqlite3';
 import path from 'path';
 
@@ -23,7 +24,7 @@ async function getLatestPercentiles() {
 
     for (const s of series) {
         const query = `
-            SELECT asset_class, series_name, date, value, percentile_rank
+            SELECT asset_class, series_name, date, value, percentile_rank, yoy_percentile_change
             FROM percentile_analysis
             WHERE asset_class = ? AND series_name = ?
             ORDER BY date DESC
@@ -36,10 +37,11 @@ async function getLatestPercentiles() {
             result[s.key] = {
                 percentile: row.percentile_rank,
                 value: row.value,
+                yoy: row.yoy_percentile_change,
                 date: new Date(row.date).toISOString().split('T')[0]
             };
         } else {
-            result[s.key] = { percentile: null, value: null, date: null };
+            result[s.key] = { percentile: null, value: null, yoy: null, date: null };
         }
     }
 
@@ -73,18 +75,23 @@ export default async function RealPercentileMatrixPage() {
                     eyp5yr: data.eyp5yr?.percentile || null,
                 }}
                 initialValues={{
-                    cpi: { value: data.cpi?.value || null, yoy: null },
-                    fedFunds: { value: data.fedFunds?.value || null, yoy: null },
-                    tnx: { value: data.tnx?.value || null, yoy: null },
-                    irx: { value: data.irx?.value || null, yoy: null },
-                    pe5yr: { value: data.pe5yr?.value || null, yoy: null },
-                    ey5yr: { value: data.ey5yr?.value || null, yoy: null },
-                    realYield: { value: data.realYield?.value || null, yoy: null },
-                    realYield3m: { value: data.realYield3m?.value || null, yoy: null },
-                    rey5yr: { value: data.rey5yr?.value || null, yoy: null },
-                    eyp5yr: { value: data.eyp5yr?.value || null, yoy: null },
+                    cpi: { value: data.cpi?.value || null, yoy: data.cpi?.yoy || null },
+                    fedFunds: { value: data.fedFunds?.value || null, yoy: data.fedFunds?.yoy || null },
+                    tnx: { value: data.tnx?.value || null, yoy: data.tnx?.yoy || null },
+                    irx: { value: data.irx?.value || null, yoy: data.irx?.yoy || null },
+                    pe5yr: { value: data.pe5yr?.value || null, yoy: data.pe5yr?.yoy || null },
+                    ey5yr: { value: data.ey5yr?.value || null, yoy: data.ey5yr?.yoy || null },
+                    realYield: { value: data.realYield?.value || null, yoy: data.realYield?.yoy || null },
+                    realYield3m: { value: data.realYield3m?.value || null, yoy: data.realYield3m?.yoy || null },
+                    rey5yr: { value: data.rey5yr?.value || null, yoy: data.rey5yr?.yoy || null },
+                    eyp5yr: { value: data.eyp5yr?.value || null, yoy: data.eyp5yr?.yoy || null },
                 }}
             />
+
+            {/* Historical Chart */}
+            <div className="mt-8">
+                <PercentileChart height={500} />
+            </div>
         </div>
     );
 }

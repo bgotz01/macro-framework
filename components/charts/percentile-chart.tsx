@@ -54,7 +54,7 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'tnx', label: '10Y Treasury', color: '#16a34a', category: 'Bond Yields' },
     { value: 'us2yr', label: '2Y Treasury', color: '#ca8a04', category: 'Bond Yields' },
     { value: 'irx', label: '3M Treasury', color: '#9333ea', category: 'Bond Yields' },
-    { value: 'realyield', label: 'Real 10Y (10Y-CPI)', color: '#06b6d4', category: 'Bond Yields' },
+    { value: 'realyield', label: 'Real 10Y (10Y-CPI)', color: '#06d469ff', category: 'Bond Yields' },
     { value: 'realyield3m', label: 'Real 3M (3M-CPI)', color: '#0891b2', category: 'Bond Yields' },
     { value: 'yieldcurve', label: 'Yield Curve (10Y-2Y)', color: '#f97316', category: 'Bond Yields' },
     { value: 'yieldcurve3m', label: 'Yield Curve (10Y-3M)', color: '#fb923c', category: 'Bond Yields' },

@@ -44,6 +44,7 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Historical', href: '/matrix/historical' },
                     { title: 'Decades', href: '/matrix/decades' },
                     { title: 'Percentile', href: '/matrix/percentile' },
+                    { title: 'Real', href: '/matrix/real' },
                 ],
             },
             {
