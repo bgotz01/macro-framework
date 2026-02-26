@@ -1,7 +1,7 @@
 //major-events/1970s-inflation/page.tsx
-import Timeline, { TimelineEvent } from '../../../components/timeline';
-import ChartFixed from '../../../components/charts/chart-fixed';
-import ScrollNav from '../../../components/scroll-nav';
+import Timeline, { TimelineEvent } from '@/components/timeline';
+import ChartFixed from '@/components/charts/chart-fixed';
+import ScrollNav from '@/components/scroll-nav';
 
 const pivotEvents: TimelineEvent[] = [
     {
@@ -228,20 +228,20 @@ export default function SeventiesInflationPage() {
                         FX Pressure
                     </p>
                     <div className="mt-3 pl-16 space-y-1">
-                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> DM per $ fell (USD weakened)</p>
-                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "USD credibility leak"</p>
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> USD per DM fell (USD weakened, DM strengthened)</p>
+                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "USD credibility leak — capital flowing to Germany"</p>
                     </div>
                 </div>
                 <ChartFixed
                     filePath="events/DMUSDMonthly.csv"
-                    title="DM/USD Exchange Rate (1971-1979)"
+                    title="USD/DM Exchange Rate (1971-1979)"
                     startDate="1971-01-01"
                     endDate="1979-12-31"
                     height={400}
                     colors={['#dc2626']}
                     xAxisKey="observation_date"
-                    yAxisKey="DMUSD"
-                    description="DM per $1 — higher = stronger USD, lower = weaker USD"
+                    yAxisKey="USDDM"
+                    description="USD per 1 DM — falling line shows USD weakening / DM strengthening"
                 />
             </div>
 
@@ -436,21 +436,21 @@ export default function SeventiesInflationPage() {
                         Dollar Strength Returns
                     </p>
                     <div className="mt-3 pl-16 space-y-1">
-                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> DM per $ rose (USD strengthened)</p>
-                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "Credibility restored - capital flows back to America"</p>
+                        <p className="text-sm text-muted-foreground"><strong>Observation:</strong> USD per DM rose (USD strengthened, DM weakened)</p>
+                        <p className="text-sm text-muted-foreground"><strong>Effect:</strong> "Credibility restored — capital flows back to America"</p>
                     </div>
                 </div>
                 <ChartFixed
                     filePath="events/DMUSDMonthly.csv"
-                    title="DM/USD Exchange Rate: The Dollar Recovery (1980-1990)"
+                    title="USD/DM Exchange Rate: The Dollar Recovery (1980-1990)"
                     startDate="1980-01-01"
                     endDate="1985-12-31"
                     height={400}
                     colors={['#16a34a']}
                     xAxisKey="observation_date"
-                    yAxisKey="DMUSD"
-                    yAxisDomain={[1.5, 3.5]}
-                    description="DM per $1 — higher = stronger USD, lower = weaker USD"
+                    yAxisKey="USDDM"
+                    yAxisDomain={[0.28, 0.67]}
+                    description="USD per 1 DM — rising line shows USD strengthening / DM weakening"
                 />
             </div>
 
