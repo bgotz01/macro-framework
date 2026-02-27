@@ -14,59 +14,59 @@ interface CycleData {
 const cycleData: CycleData[] = [
     {
         start: 1948,
-        theme: 'Institutional Reconstruction',
-        catalyst: 'Post-war rebuilding & Bretton Woods',
-        capitalBehavior: 'Capital allocated through states & banks',
-        dominantAssets: 'Infrastructure, manufacturing, housing',
-        hiddenRisk: 'Rigidity, dependence on fixed rules'
+        theme: 'Bretton Woods Reconstruction',
+        catalyst: 'Marshall Plan era + fixed FX / dollar-gold anchor',
+        capitalBehavior: 'State- and bank-directed rebuilding; capacity buildout',
+        dominantAssets: 'Infrastructure, industry, housing, fixed investment',
+        hiddenRisk: 'Brittle fixed-rule system; external imbalances'
     },
     {
         start: 1960,
-        theme: 'Institutional Capital & Brand Permanence',
-        catalyst: 'Rise of pensions, insurers, mutual funds',
-        capitalBehavior: 'Buy-and-hold, concentration in "quality"',
-        dominantAssets: 'Global brands, blue-chip equities (Nifty Fifty)',
-        hiddenRisk: 'Valuation fragility under inflation'
+        theme: 'Large-Cap Equity & Brand Dominance',
+        catalyst: 'Postwar prosperity + consumer confidence',
+        capitalBehavior: 'Buy-and-hold faith in dominant U.S. corporations',
+        dominantAssets: 'Large-cap U.S. equities, global brands (Nifty Fifty)',
+        hiddenRisk: 'Valuation complacency under inflation and rate shocks'
     },
     {
         start: 1972,
-        theme: 'Fiat Regime Price Discovery',
-        catalyst: 'End of gold convertibility',
-        capitalBehavior: 'Capital seeks inflation hedges',
-        dominantAssets: 'Commodities, real assets, FX',
-        hiddenRisk: 'Monetary instability, wage-price spirals'
+        theme: 'Free-Floating Fiat & Inflation Regime',
+        catalyst: 'Gold depeg → floating FX; oil/commodity shocks',
+        capitalBehavior: 'Inflation hedging; real-return focus; higher risk premia',
+        dominantAssets: 'Commodities, energy, real assets, FX; shorter-duration assets',
+        hiddenRisk: 'Wage–price spirals; policy whipsaw; volatility'
     },
     {
         start: 1984,
-        theme: 'Credit Expansion',
-        catalyst: 'Inflation defeated, rates fall',
-        capitalBehavior: 'Leverage replaces productivity',
-        dominantAssets: 'Bonds, real estate, financial assets',
-        hiddenRisk: 'Balance-sheet dependency'
+        theme: 'Disinflation + Financialization',
+        catalyst: 'Volcker disinflation → multi-decade rate decline',
+        capitalBehavior: 'Leverage and balance-sheet growth rewarded; securitization expands',
+        dominantAssets: 'Bonds, real estate, credit, financial equities',
+        hiddenRisk: 'Debt overhang; tail risk hidden by low vol / refinancing'
     },
     {
         start: 1996,
-        theme: 'Digital Infrastructure',
-        catalyst: 'Internet + enterprise software',
-        capitalBehavior: 'Scale & network effects rewarded',
-        dominantAssets: 'Tech equities, software platforms',
-        hiddenRisk: 'Winner-take-most concentration'
+        theme: 'Digitization & Globalized Scale',
+        catalyst: 'Commercial internet + enterprise software + global supply chains',
+        capitalBehavior: 'Winner-take-most scaling; intangible investment rises',
+        dominantAssets: 'Tech/software equities, platforms, long-duration growth',
+        hiddenRisk: 'Concentration + valuation fragility; offshoring dependency'
     },
     {
         start: 2008,
-        theme: 'Monetary Intervention',
-        catalyst: 'Financial crisis + QE',
-        capitalBehavior: 'Risk suppressed by policy',
-        dominantAssets: 'Equities, bonds (policy-backstopped)',
-        hiddenRisk: 'Moral hazard, price distortion'
+        theme: 'Policy-Backstopped Markets (QE Era)',
+        catalyst: 'GFC → QE, ZIRP/NIRP, crisis liquidity facilities',
+        capitalBehavior: 'Reach for yield; buy-the-dip reflex; volatility suppressed',
+        dominantAssets: 'Equities + duration (bonds) supported by policy',
+        hiddenRisk: 'Moral hazard; price discovery distortion; inequality / backlash'
     },
     {
         start: 2020,
-        theme: 'Digital Economy',
-        catalyst: 'Pandemic + fiscal-monetary fusion',
-        capitalBehavior: 'Capital flows to intangibles',
-        dominantAssets: 'Platforms, data, code, attention',
-        hiddenRisk: 'Trust erosion, social instability'
+        theme: 'Fiscal-Monetary Fusion & Digital Work',
+        catalyst: 'Pandemic shock → fiscal transfers + balance-sheet expansion',
+        capitalBehavior: 'Flows toward digital/AI and “intangible productivity”; barbell risk',
+        dominantAssets: 'Platforms, data/software, semis/AI stack; attention-based businesses',
+        hiddenRisk: 'Trust/legitimacy stress; inflation resurgence risk; fragmentation'
     }
 ];
 
@@ -98,11 +98,8 @@ export default function TwelveYearCycleTable() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {cycleData.map((cycle, idx) => (
-                            <tr
-                                key={cycle.start}
-                                className="hover:bg-muted/30 transition-colors"
-                            >
+                        {cycleData.map((cycle) => (
+                            <tr key={cycle.start} className="hover:bg-muted/30 transition-colors">
                                 <td className="px-3 py-2 text-sm text-foreground font-semibold whitespace-nowrap">
                                     {cycle.start}
                                 </td>

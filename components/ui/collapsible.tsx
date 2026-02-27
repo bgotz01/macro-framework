@@ -35,9 +35,9 @@ const CollapsibleTrigger = React.forwardRef<
         return React.cloneElement(children as React.ReactElement, {
             onClick: (e: React.MouseEvent) => {
                 context?.onOpenChange(!context.open)
-                    ; (children as React.ReactElement).props.onClick?.(e)
+                    ; ((children as React.ReactElement).props as any).onClick?.(e)
             }
-        })
+        } as any)
     }
 
     return (

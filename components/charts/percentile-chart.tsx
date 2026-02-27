@@ -51,9 +51,9 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'cpi', label: 'CPI Inflation', color: '#2563eb', category: 'Inflation & Policy' },
     { value: 'fedfunds', label: 'Fed Funds Rate', color: '#dc2626', category: 'Inflation & Policy' },
     // Bond Yields
-    { value: 'tnx', label: '10Y Treasury', color: '#16a34a', category: 'Bond Yields' },
-    { value: 'us2yr', label: '2Y Treasury', color: '#ca8a04', category: 'Bond Yields' },
-    { value: 'irx', label: '3M Treasury', color: '#9333ea', category: 'Bond Yields' },
+    { value: 'tnx', label: '10Y-Monthly', color: '#16a34a', category: 'Bond Yields' },
+    { value: 'us2yr', label: '2Y-Monthly', color: '#ca8a04', category: 'Bond Yields' },
+    { value: 'irx', label: '3M-Monthly', color: '#9333ea', category: 'Bond Yields' },
     { value: 'realyield', label: 'Real 10Y (10Y-CPI)', color: '#06d469ff', category: 'Bond Yields' },
     { value: 'realyield3m', label: 'Real 3M (3M-CPI)', color: '#0891b2', category: 'Bond Yields' },
     { value: 'yieldcurve', label: 'Yield Curve (10Y-2Y)', color: '#f97316', category: 'Bond Yields' },
@@ -64,7 +64,6 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'eycape', label: 'EY CAPE', color: '#db2777', category: 'Equity Valuation' },
     { value: 'ey5yr', label: 'EY-5yr', color: '#fb7185', category: 'Equity Valuation' },
     // Equity Spreads
-    { value: 'eyp', label: 'EYP (CAPE)', color: '#8b5cf6', category: 'Equity Spreads' },
     { value: 'eyp5yr', label: 'EYP-5yr', color: '#a78bfa', category: 'Equity Spreads' },
     { value: 'rey5yr', label: 'Real EY-5yr', color: '#0d9488', category: 'Equity Spreads' },
 ];
@@ -81,7 +80,7 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('percentile');
-    const [selectedSeries, setSelectedSeries] = useState<string[]>(['cpi', 'fedfunds']);
+    const [selectedSeries, setSelectedSeries] = useState<string[]>(['realyield']);
     const [isSeriesSelectionOpen, setIsSeriesSelectionOpen] = useState(true);
     const { theme } = useTheme();
     const searchParams = useSearchParams();
@@ -236,14 +235,15 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
         <div className="p-6 rounded-xl border bg-card">
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-2xl font-bold">Historical Percentile Chart</h2>
+                    <h2 className="text-2xl font-bold">Actual vs Percentile Chart</h2>
                     {filteredData.length > 0 && (
                         <div className="text-sm text-muted-foreground">
-                            Latest: {new Date(filteredData[filteredData.length - 1].dateTimestamp).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            })}
+                            Latest: {(() => {
+                                const dateStr = filteredData[filteredData.length - 1].date;
+                                const [year, month, day] = dateStr.split('-');
+                                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                return `${monthNames[parseInt(month) - 1]}-${day}-${year}`;
+                            })()}
                         </div>
                     )}
                 </div>
@@ -325,19 +325,39 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                                         <div className="space-y-2">
                                             {categorySeries.map(series => {
                                                 const tooltip = METRIC_TOOLTIPS[series.value];
+
+                                                // Find latest date for this series
+                                                const latestDataPoint = data.slice().reverse().find(point => {
+                                                    const valueKey = `${series.value}_value`;
+                                                    const value = point[valueKey as keyof ChartDataPoint];
+                                                    return value !== null && value !== undefined;
+                                                });
+
+                                                const latestDate = latestDataPoint ? (() => {
+                                                    const dateStr = latestDataPoint.date;
+                                                    const [year, month, day] = dateStr.split('-');
+                                                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                                    return `${monthNames[parseInt(month) - 1]}-${day}-${year}`;
+                                                })() : 'No data';
+
                                                 const checkbox = (
                                                     <label
                                                         key={series.value}
-                                                        className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
+                                                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
                                                     >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSeries.includes(series.value)}
-                                                            onChange={() => handleSeriesToggle(series.value)}
-                                                            className="cursor-pointer"
-                                                        />
-                                                        <span className={`font-medium ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
-                                                            {series.label}
+                                                        <div className="flex items-center gap-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedSeries.includes(series.value)}
+                                                                onChange={() => handleSeriesToggle(series.value)}
+                                                                className="cursor-pointer"
+                                                            />
+                                                            <span className={`font-medium ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
+                                                                {series.label}
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                                            {latestDate}
                                                         </span>
                                                     </label>
                                                 );

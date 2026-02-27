@@ -47,15 +47,15 @@ function createRealYieldPercentile() {
         console.log(`Found ${realYieldResults.length} data points\n`);
 
         // Delete existing
-        console.log('Deleting existing Real-Yield percentiles...');
-        const deleteResult = db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-Yield'`).run();
+        console.log('Deleting existing Real-10Y percentiles...');
+        const deleteResult = db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-10Y'`).run();
         console.log(`Deleted ${deleteResult.changes} existing records\n`);
 
         // Insert new data
         console.log('Inserting new percentiles...');
         const insertRealYield = db.prepare(`
             INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
-            VALUES (?, 'derived', 'Real-Yield', 'Value', ?, ?)
+            VALUES (?, 'derived', 'Real-10Y', 'Value', ?, ?)
         `);
 
         const insertManyRealYield = db.transaction((data: any[]) => {
@@ -75,7 +75,7 @@ function createRealYieldPercentile() {
                 ROUND(value, 2) as value,
                 ROUND(percentile_rank, 2) as percentile
             FROM percentile_analysis
-            WHERE series_name = 'Real-Yield'
+            WHERE series_name = 'Real-10Y'
             ORDER BY date DESC
             LIMIT 5
         `).all() as any[];

@@ -443,11 +443,7 @@ export default function EquitiesChart({
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => {
-                                if (selectedUnits === 'index' || selectedUnits === 'usd') {
-                                    return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
-                                } else {
-                                    return value.toFixed(2);
-                                }
+                                return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
                             }}
                         />
                         <Tooltip

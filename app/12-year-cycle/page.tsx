@@ -1,9 +1,9 @@
 import TwelveYearCycleTable from '@/components/twelve-year-cycle-table';
 import TwelveYearOTable from '@/components/twelve-year-o-table';
-import TwelveYearSystemTable from '@/components/twelve-year-system-table';
 import TwelveYearSummary from '@/components/twelve-year-summary';
-import WhyTwelve from '@/components/12-year-cycle/why-twelve';
 import TwelveYearTechCycleTable from '@/components/twelve-year-cycle-tech';
+import Macro12YearTimeline from '@/components/macro-12-year-timeline';
+import Tech12YearTimeline from '@/components/tech-12-year-timeline';
 
 export default function TwelveYearCyclePage() {
     return (
@@ -11,7 +11,17 @@ export default function TwelveYearCyclePage() {
             <h1 className="page-title text-4xl text-center font-bold mb-6">12-Year Macro Reconfiguration Cycles</h1>
 
             <div className="mb-12">
+                {/* Macro Timeline */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">Macro Timeline</h2>
+                    <Macro12YearTimeline />
+                </div>
 
+                {/* Tech Timeline */}
+                <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-4">Tech Timeline</h2>
+                    <Tech12YearTimeline />
+                </div>
 
                 {/* One-Line Summaries */}
                 <div className="mb-8">

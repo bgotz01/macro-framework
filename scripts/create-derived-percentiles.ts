@@ -49,12 +49,12 @@ function createDerivedPercentiles() {
         console.log(`  Found ${realYieldResults.length} data points`);
 
         // Delete existing
-        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-Yield'`).run();
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-10Y'`).run();
 
         // Insert
         const insertRealYield = db.prepare(`
             INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
-            VALUES (?, 'derived', 'Real-Yield', 'Value', ?, ?)
+            VALUES (?, 'derived', 'Real-10Y', 'Value', ?, ?)
         `);
 
         const insertManyRealYield = db.transaction((data: any[]) => {
@@ -106,12 +106,12 @@ function createDerivedPercentiles() {
         console.log(`  Found ${realYield3MResults.length} data points`);
 
         // Delete existing
-        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-Yield-3M'`).run();
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-3M'`).run();
 
         // Insert
         const insertRealYield3M = db.prepare(`
             INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
-            VALUES (?, 'derived', 'Real-Yield-3M', 'Value', ?, ?)
+            VALUES (?, 'derived', 'Real-3M', 'Value', ?, ?)
         `);
 
         const insertManyRealYield3M = db.transaction((data: any[]) => {
@@ -240,7 +240,8 @@ function createDerivedPercentiles() {
                     (100.0 / pa1.value) - pa2.value as eyp
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON pa1.date = pa2.date
+                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
+                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
                 WHERE pa1.asset_class = 'valuations'
                   AND pa1.series_name = 'Shiller-PE'
                   AND pa2.asset_class = 'bonds'
@@ -307,23 +308,13 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     eyp5yr as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.eyp5yr < c1.eyp5yr
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY eyp5yr) * 100 as percentile_rank
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;
@@ -372,23 +363,13 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     rey as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.rey < c1.rey
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY rey) * 100 as percentile_rank
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;
@@ -436,23 +417,13 @@ function createDerivedPercentiles() {
                 SELECT 
                     date,
                     rey5yr as value,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                          AND c2.rey5yr < c1.rey5yr
-                    ) as rank_below,
-                    (
-                        SELECT COUNT(*)
-                        FROM combined c2
-                        WHERE c2.date <= c1.date
-                    ) as total_count
-                FROM combined c1
+                    PERCENT_RANK() OVER (ORDER BY rey5yr) * 100 as percentile_rank
+                FROM combined
             )
             SELECT 
                 date,
                 value,
-                ROUND((CAST(rank_below AS REAL) / CAST(total_count AS REAL)) * 100, 2) as percentile_rank
+                ROUND(percentile_rank, 2) as percentile_rank
             FROM ranked
             ORDER BY date
         `;

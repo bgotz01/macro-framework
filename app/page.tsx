@@ -56,15 +56,15 @@ export default function Home() {
           </p>
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-accent mr-3"></span>
+              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
               O1: Swing
             </div>
             <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-accent mr-3"></span>
+              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
               O2: Signal
             </div>
             <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-accent mr-3"></span>
+              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
               O3: Story
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/framework"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-primary hover:bg-white/90 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-black hover:bg-white/90 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
             >
               Explore Framework
             </a>

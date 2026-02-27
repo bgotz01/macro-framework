@@ -3,7 +3,7 @@
 import PercentileChart from '@/components/charts/percentile-chart';
 import PercentileBars from '@/components/percentile-bars';
 import PercentileDataTable from '@/components/percentile-data-table';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 
 // Tooltip component for methodology
 function MethodologyTooltip({ children }: { children: React.ReactNode }) {
@@ -66,7 +66,9 @@ export default function PercentileAnalysisClient({ initialData, availableYears }
 
             {/* Historical Chart */}
             <div className="mb-8 mt-8">
-                <PercentileChart height={500} />
+                <Suspense fallback={<div className="h-[500px] flex items-center justify-center">Loading chart...</div>}>
+                    <PercentileChart height={500} />
+                </Suspense>
             </div>
 
             {/* Historical Data Table */}

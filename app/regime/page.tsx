@@ -1,208 +1,104 @@
-import MetricsList from '@/components/metrics-list';
+import RealMatrixWrapper from '@/components/regime/real-matrix-wrapper';
+import PercentileChart from '@/components/charts/percentile-chart';
+import Database from 'better-sqlite3';
+import path from 'path';
+import { Suspense } from 'react';
 
-const metrics = [
-    {
-        id: 'inflation',
-        title: '1. Inflation',
-        question: 'Is purchasing power stable or eroding?',
-        observableVia: [
-            'CPI (headline + core)',
-            'Direction matters more than level',
-        ],
-        stateEncoding: ['Falling', 'Stable', 'Rising'],
-        whyItBelongs: [
-            'Everyone understands inflation',
-            'It directly constrains policy',
-            'It defines real vs nominal returns',
-            'It is foundational to cost of capital',
-            'Non-negotiable',
-        ],
-    },
-    {
-        id: 'bond-yields',
-        title: '2. Bond Yields (Long Rates)',
-        question: 'What is the market-imposed cost of capital?',
-        observableVia: [
-            '10Y Treasury (or equivalent sovereign)',
-            'Real yields (optional secondary)',
-        ],
-        stateEncoding: [
-            'Falling / Stable / Rising',
-            'Low / Medium / High (relative to history)',
-        ],
-        whyItBelongs: [
-            'Sets discount rates',
-            'Drives equity duration',
-            'Governs leverage viability',
-            'This is the spine of the regime',
-        ],
-    },
-    {
-        id: 'policy-rate',
-        title: '3. Policy Rate (Fed Funds / Central Bank Rate)',
-        question: 'Is policy accommodative or restrictive?',
-        observableVia: [
-            'Target rate level',
-            'Direction of change',
-        ],
-        stateEncoding: [
-            'Cutting / Paused / Hiking',
-            'Restrictive vs Accommodative (relative to inflation)',
-        ],
-        whyItBelongs: [
-            'Explicit policy stance',
-            'Easy to explain',
-            'Anchors expectations',
-        ],
-        notes: 'Policy rate ≠ bond yields. That distinction is critical and intuitive.',
-    },
-    {
-        id: 'equity-valuation',
-        title: '4. Equity Valuation',
-        question: 'How much future is priced in?',
-        observableVia: [
-            'Index-level P/E',
-            'Earnings yield vs bond yield',
-            'Percentiles, not absolutes',
-        ],
-        stateEncoding: ['Cheap / Fair / Expensive (relative)'],
-        whyItBelongs: [
-            'Everyone understands valuation',
-            'It frames fragility vs resilience',
-            'It conditions future returns without predicting them',
-            'This is where "low cost of capital" becomes visible',
-        ],
-    },
-    {
-        id: 'equity-volatility',
-        title: '5. Equity Volatility (Realized, Rolling Std Dev)',
-        question: 'Are markets calm or stressed?',
-        observableVia: [
-            '63 / 126 / 252 day realized volatility',
-            'Percentiles',
-        ],
-        stateEncoding: ['Compressed / Normal / Elevated'],
-        whyItBelongs: [
-            'It reflects experienced stress',
-            'It activates correlation + liquidity risk',
-            'It matters for decision constraints, not returns',
-            'We already aligned on how to do this correctly',
-        ],
-    },
-    {
-        id: 'equity-revenue-growth',
-        title: '6. Equity Revenue Growth',
-        question: 'Is growth real, or financial?',
-        observableVia: [
-            'Aggregate index revenue growth',
-            'Direction + persistence',
-        ],
-        stateEncoding: ['Accelerating / Trend / Slowing'],
-        whyItBelongs: [
-            'Anchors markets to fundamentals',
-            'Distinguishes earnings-driven from multiple-driven markets',
-            'Very intuitive for advisors and clients',
-            'This is a huge differentiator vs price-only macro tools',
-        ],
-    },
-    {
-        id: 'gdp-growth',
-        title: '7. GDP Growth (Optional, Slow Anchor)',
-        question: 'What is the real economy doing?',
-        observableVia: [
-            'Real GDP growth (QoQ / YoY)',
-        ],
-        stateEncoding: ['Expanding / Trend / Contracting'],
-        whyItBelongs: [
-            'Familiar',
-            'Slow-moving',
-            'Lagging but stabilizing',
-        ],
-        notes: 'Use as context and confirmation, not a trigger.',
-    },
-    {
-        id: 'monetary-base',
-        title: '8. Monetary Base / Balance Sheet (Optional but Powerful)',
-        question: 'Is liquidity being added or removed systemically?',
-        observableVia: [
-            'Central bank balance sheet',
-            'Directional change',
-        ],
-        stateEncoding: ['Expanding / Flat / Contracting'],
-        whyItBelongs: [
-            'Explains valuation regimes',
-            'Explains correlation behavior',
-            'Explains asset inflation vs real growth',
-            'This is how you ground "liquidity regime" in something concrete',
-        ],
-    },
-    {
-        id: 'government-policy',
-        title: '9. Government Policy (Qualitative Override)',
-        question: 'Are there exogenous political shocks?',
-        observableVia: [
-            'Fiscal stimulus',
-            'Trade restrictions',
-            'Industrial policy',
-            'Regulatory intervention',
-            'Capital controls',
-            'Emergency measures',
-        ],
-        stateEncoding: [
-            'Binary or categorical flag',
-            'Time-stamped',
-            'Explicitly labeled as "override"',
-        ],
-        whyItBelongs: [
-            'Some regime shifts are political, not market-driven',
-            'Markets react after policy, not before',
-            'Pretending this is quantifiable is dishonest',
-            'This is where human judgment belongs',
-        ],
-        notes: 'This is not a metric. It is an exogenous shock layer.',
-    },
-];
+async function getLatestPercentiles() {
+    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
+    const db = new Database(dbPath, { readonly: true, timeout: 10000 });
 
-export default function RegimePage() {
+    const series = [
+        { asset_class: 'economic', series_name: 'CPI', key: 'cpi' },
+        { asset_class: 'economic', series_name: 'US/FEDFUNDS', key: 'fedFunds' },
+        { asset_class: 'bonds', series_name: 'US/TNX-Monthly', key: 'tnx' },
+        { asset_class: 'bonds', series_name: 'US/IRX-Monthly', key: 'irx' },
+        { asset_class: 'valuations', series_name: 'PE-5yr', key: 'pe5yr' },
+        { asset_class: 'valuations', series_name: 'Earnings-Yield-5yr', key: 'ey5yr' },
+        { asset_class: 'derived', series_name: 'Real-10Y', key: 'real10Y' },
+        { asset_class: 'derived', series_name: 'Real-3M', key: 'real3M' },
+        { asset_class: 'derived', series_name: 'Real-Earnings-Yield-5yr', key: 'rey5yr' },
+        { asset_class: 'derived', series_name: 'Earnings-Yield-Premium-5yr', key: 'eyp5yr' },
+        { asset_class: 'derived', series_name: 'Yield-Curve-10Y-3M', key: 'yieldCurve' },
+    ];
+
+    const result: any = {};
+
+    for (const s of series) {
+        const query = `
+            SELECT asset_class, series_name, date, value, percentile_rank, yoy_percentile_change
+            FROM percentile_analysis
+            WHERE asset_class = ? AND series_name = ?
+            ORDER BY date DESC
+            LIMIT 1
+        `;
+
+        const row = db.prepare(query).get(s.asset_class, s.series_name) as any;
+
+        if (row) {
+            result[s.key] = {
+                percentile: row.percentile_rank,
+                value: row.value,
+                yoy: row.yoy_percentile_change,
+                date: new Date(row.date).toISOString().split('T')[0]
+            };
+        } else {
+            result[s.key] = { percentile: null, value: null, yoy: null, date: null };
+        }
+    }
+
+    db.close();
+    return result;
+}
+
+export default async function RealPercentileMatrixPage() {
+    const data = await getLatestPercentiles();
+
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8">
-            {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Framework • Regime Metrics
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    Regime Framework Metrics
+        <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="text-center mb-8">
+                <h1 className="text-3xl font-light tracking-wider mb-1" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+                    CAPITAL PHYSICS
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    The foundational variables that define market regimes and constrain outcomes
+                <p className="text-sm font-light text-muted-foreground tracking-widest uppercase" style={{ letterSpacing: '0.2em' }}>
+                    Regime Detection
                 </p>
             </div>
 
-            {/* Introduction */}
-            <div className="mb-12 p-6 rounded-2xl bg-muted/30 border border-border/50">
-                <p className="text-foreground leading-relaxed mb-4">
-                    These metrics form the input layer of the regime framework. They are not predictions—they are constraints.
-                    Each metric answers a specific question about the current state of markets and policy.
-                </p>
-                <p className="text-muted-foreground text-sm">
-                    Click on any metric to expand and see the details: what it measures, how to observe it,
-                    how to encode its state, and why it belongs in the framework.
-                </p>
-            </div>
+            <RealMatrixWrapper
+                initialPercentiles={{
+                    cpi: data.cpi?.percentile || null,
+                    fedFunds: data.fedFunds?.percentile || null,
+                    tnx: data.tnx?.percentile || null,
+                    irx: data.irx?.percentile || null,
+                    pe5yr: data.pe5yr?.percentile || null,
+                    ey5yr: data.ey5yr?.percentile || null,
+                    real10Y: data.real10Y?.percentile || null,
+                    real3M: data.real3M?.percentile || null,
+                    rey5yr: data.rey5yr?.percentile || null,
+                    eyp5yr: data.eyp5yr?.percentile || null,
+                    yieldCurve: data.yieldCurve?.percentile || null,
+                }}
+                initialValues={{
+                    cpi: { value: data.cpi?.value || null, yoy: data.cpi?.yoy || null },
+                    fedFunds: { value: data.fedFunds?.value || null, yoy: data.fedFunds?.yoy || null },
+                    tnx: { value: data.tnx?.value || null, yoy: data.tnx?.yoy || null },
+                    irx: { value: data.irx?.value || null, yoy: data.irx?.yoy || null },
+                    pe5yr: { value: data.pe5yr?.value || null, yoy: data.pe5yr?.yoy || null },
+                    ey5yr: { value: data.ey5yr?.value || null, yoy: data.ey5yr?.yoy || null },
+                    real10Y: { value: data.real10Y?.value || null, yoy: data.real10Y?.yoy || null },
+                    real3M: { value: data.real3M?.value || null, yoy: data.real3M?.yoy || null },
+                    rey5yr: { value: data.rey5yr?.value || null, yoy: data.rey5yr?.yoy || null },
+                    eyp5yr: { value: data.eyp5yr?.value || null, yoy: data.eyp5yr?.yoy || null },
+                    yieldCurve: { value: data.yieldCurve?.value || null, yoy: data.yieldCurve?.yoy || null },
+                }}
+            />
 
-            {/* Metrics List */}
-            <MetricsList metrics={metrics} />
-
-            {/* Footer Note */}
-            <div className="mt-12 p-6 rounded-2xl bg-blue-50 dark:bg-blue-950 border-l-4 border-blue-500">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                    Key Principle
-                </h3>
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                    These are input variables (constraints and valuations), not output variables (prices).
-                    Bond yields are to bonds what P/E is to equities—they are valuation metrics, not the assets themselves.
-                </p>
+            {/* Historical Chart */}
+            <div className="mt-8">
+                <Suspense fallback={<div className="h-[500px] flex items-center justify-center">Loading chart...</div>}>
+                    <PercentileChart height={500} />
+                </Suspense>
             </div>
         </div>
     );

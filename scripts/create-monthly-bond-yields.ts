@@ -27,25 +27,35 @@ function createMonthlyAverages() {
         for (const series of BOND_SERIES) {
             console.log(`Processing ${series.seriesName}...`);
 
-            // Calculate monthly averages from daily data
+            // Calculate monthly averages from daily data using month-end dates
+            // Only include complete months (not the current partial month)
             const query = `
                 WITH monthly_data AS (
                     SELECT 
-                        strftime('%Y-%m-01', date/1000, 'unixepoch') as month_start,
+                        date(strftime('%Y-%m-01', date/1000, 'unixepoch'), '+1 month', '-1 day') as month_end,
                         AVG(value) as avg_value,
-                        COUNT(*) as data_points
+                        COUNT(*) as data_points,
+                        strftime('%Y-%m', date/1000, 'unixepoch') as year_month
                     FROM time_series
                     WHERE asset_class = 'bonds'
                       AND series_name = ?
                       AND column_name = 'Value'
                       AND value IS NOT NULL
-                    GROUP BY month_start
+                    GROUP BY strftime('%Y-%m', date/1000, 'unixepoch')
+                ),
+                filtered_data AS (
+                    SELECT 
+                        month_end,
+                        avg_value,
+                        data_points
+                    FROM monthly_data
+                    WHERE month_end < date('now', 'start of month')
                 )
                 SELECT 
-                    strftime('%s', month_start) * 1000 as date,
+                    strftime('%s', month_end) * 1000 as date,
                     avg_value,
                     data_points
-                FROM monthly_data
+                FROM filtered_data
                 ORDER BY date
             `;
 

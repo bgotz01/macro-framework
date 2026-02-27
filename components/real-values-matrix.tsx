@@ -9,7 +9,7 @@ interface MetricValues {
     irx: { value: number | null; yoy: number | null };
     pe5yr: { value: number | null; yoy: number | null };
     ey5yr: { value: number | null; yoy: number | null };
-    realYield: { value: number | null; yoy: number | null };
+    real10Y: { value: number | null; yoy: number | null };
     realYield3m: { value: number | null; yoy: number | null };
     rey5yr: { value: number | null; yoy: number | null };
     eyp5yr: { value: number | null; yoy: number | null };
@@ -84,7 +84,7 @@ export default function RealValuesMatrix({ initialValues, sliderValue, onSliderC
                         value: data.ey5yr?.value ?? null,
                         yoy: data.ey5yr?.yoyPercentileChange ?? null
                     },
-                    realYield: {
+                    real10Y: {
                         value: data.realYield?.value ?? null,
                         yoy: data.realYield?.yoyPercentileChange ?? null
                     },

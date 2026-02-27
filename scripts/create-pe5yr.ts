@@ -9,27 +9,34 @@ interface TimeSeriesRow {
     value: number;
 }
 
-console.log('Creating PE-5yr metric...\n');
+console.log('Creating PE-5yr metric (converting to month-end dates)...\n');
 
-// Get S&P 500 Price data
+// Get S&P 500 Price data and convert month-start to month-end
+// Include all available data (the month-start dates represent complete prior months)
 const priceData = db.prepare(`
-    SELECT date, value 
+    SELECT 
+        CAST(strftime('%s', date(date/1000, 'unixepoch'), '-1 day') AS INTEGER) * 1000 as date,
+        value 
     FROM time_series 
-    WHERE asset_class = 'valuations' AND series_name = 'SP500-Price'
+    WHERE asset_class = 'valuations' 
+      AND series_name = 'SP500-Price'
     ORDER BY date
 `).all() as TimeSeriesRow[];
 
-console.log(`Found ${priceData.length} S&P 500 Price records`);
+console.log(`Found ${priceData.length} S&P 500 Price records (converted to month-end)`);
 
-// Get SP500-EPS-5yr data
+// Get SP500-EPS-5yr data and convert month-start to month-end
 const epsData = db.prepare(`
-    SELECT date, value 
+    SELECT 
+        CAST(strftime('%s', date(date/1000, 'unixepoch'), '-1 day') AS INTEGER) * 1000 as date,
+        value 
     FROM time_series 
-    WHERE asset_class = 'valuations' AND series_name = 'SP500-EPS-5yr'
+    WHERE asset_class = 'valuations' 
+      AND series_name = 'SP500-EPS-5yr'
     ORDER BY date
 `).all() as TimeSeriesRow[];
 
-console.log(`Found ${epsData.length} SP500-EPS-5yr records`);
+console.log(`Found ${epsData.length} SP500-EPS-5yr records (converted to month-end)`);
 
 // Create a map for quick EPS lookup
 const epsMap = new Map<number, number>();

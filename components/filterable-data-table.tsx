@@ -53,6 +53,10 @@ export default function FilterableDataTable({
     });
 
     useEffect(() => {
+        setPage(1);
+    }, [assetClass, seriesName, columnName, startDate, endDate]);
+
+    useEffect(() => {
         fetchData();
     }, [assetClass, seriesName, columnName, startDate, endDate, page]);
 
@@ -78,9 +82,9 @@ export default function FilterableDataTable({
             const result: ApiResponse = await response.json();
             setData(result.data);
             setPagination(result.pagination);
+            setError(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
-            setData([]);
         } finally {
             setLoading(false);
         }
@@ -103,14 +107,6 @@ export default function FilterableDataTable({
         { key: 'geography', label: 'Geography', align: 'left' as const },
     ];
 
-    if (loading) {
-        return (
-            <Card className="p-8 text-center">
-                <p className="text-muted-foreground">Loading data...</p>
-            </Card>
-        );
-    }
-
     if (error) {
         return (
             <Card className="p-8 text-center">
@@ -119,7 +115,7 @@ export default function FilterableDataTable({
         );
     }
 
-    if (data.length === 0) {
+    if (!loading && data.length === 0) {
         return (
             <Card className="p-8 text-center">
                 <p className="text-muted-foreground">No data found. Try adjusting your filters.</p>
@@ -129,7 +125,14 @@ export default function FilterableDataTable({
 
     return (
         <div className="space-y-4">
-            <DataTable columns={columns} data={data} />
+            <div className="relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
+                        <p className="text-muted-foreground">Loading...</p>
+                    </div>
+                )}
+                <DataTable columns={columns} data={data} />
+            </div>
 
             {/* Pagination */}
             <div className="flex items-center justify-between">
@@ -141,7 +144,7 @@ export default function FilterableDataTable({
                 <div className="flex gap-2">
                     <button
                         onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
+                        disabled={page === 1 || loading}
                         className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Previous
@@ -151,7 +154,7 @@ export default function FilterableDataTable({
                     </span>
                     <button
                         onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                        disabled={page === pagination.totalPages}
+                        disabled={page === pagination.totalPages || loading}
                         className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Next

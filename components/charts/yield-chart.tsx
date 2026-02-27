@@ -350,6 +350,7 @@ export default function YieldChart({
                             stroke={CHART_COLORS[0]}
                             strokeWidth={2}
                             dot={false}
+                            connectNulls={true}
                             name={calculationMode === 'spread'
                                 ? `${availableSeries.find(s => s.series_name === series1)?.display_name || series1} - ${availableSeries.find(s => s.series_name === series2)?.display_name || series2}`
                                 : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries

@@ -46,12 +46,12 @@ function createRealYield3MPercentile() {
         console.log(`Found ${results.length} data points`);
 
         // Delete existing
-        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-Yield-3M'`).run();
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'Real-3M'`).run();
 
         // Insert
         const insertStmt = db.prepare(`
             INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
-            VALUES (?, 'derived', 'Real-Yield-3M', 'Value', ?, ?)
+            VALUES (?, 'derived', 'Real-3M', 'Value', ?, ?)
         `);
 
         const insertMany = db.transaction((data: any[]) => {

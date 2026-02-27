@@ -48,7 +48,7 @@ const sidebarData: SidebarCategory[] = [
                 ],
             },
             {
-                title: 'Regime',
+                title: 'Regime Detector',
                 href: '/regime',
             },
             {
