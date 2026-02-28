@@ -1,8 +1,8 @@
 'use client';
 
-import RegimeTrackerSection from './regime-tracker-section';
-import RegimeDetector from './regime-detector';
-import RegimeFlags from './regime-flags';
+import SignalTrackerSection from './signal-tracker-section';
+import SignalDetector from './signal-detector';
+import SignalFlags from './signal-flags';
 import PercentileMetricsSection from './percentile-metrics-section';
 import TimelineSlider from './regime-timeline-slider';
 import { usePercentileData } from './use-percentile-data';
@@ -55,22 +55,22 @@ export default function RealRegimeMatrix({ initialValues, initialMetricValues, s
 
             {/* Regime Detector */}
             <div className="p-4 rounded-lg border border-border/50 bg-card shadow-lg">
-                <RegimeDetector
+                <SignalDetector
                     metricValues={metricValues}
                 />
             </div>
 
             {/* Regime Flags */}
-            <RegimeFlags selectedDate={debouncedDateString} />
+            <SignalFlags selectedDate={debouncedDateString} />
 
             {/* Market Regime Trackers */}
             <div className="p-4 rounded-lg border border-border/50 bg-card shadow-lg space-y-4">
-                <RegimeTrackerSection
+                <SignalTrackerSection
                     title="Real Metrics"
                     metricValues={metricValues}
                     type="real-metrics"
                 />
-                <RegimeTrackerSection
+                <SignalTrackerSection
                     title="Market Spreads"
                     metricValues={metricValues}
                     type="market-spreads"

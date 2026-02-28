@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import RegimeModelModal from './regime-model-modal';
+import SignalModelModal from './signal-model-modal';
 import type { MetricValue } from './types';
 
 interface RegimeDetectorProps {
@@ -11,7 +11,7 @@ interface RegimeDetectorProps {
     };
 }
 
-export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
+export default function SignalDetector({ metricValues }: RegimeDetectorProps) {
     const [showDetails, setShowDetails] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
@@ -58,50 +58,50 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
             };
         }
 
-        // 2️⃣ Equities Adverse Regime
-        if (realEY !== null && realEY < 0) {
+        // 2️⃣ Equity Value Breakdown (most severe equity warning)
+        if (realEY !== null && realEY < -2) {
             // Determine rotation based on bond yield
             if (real10Y !== null && real10Y > 0) {
                 return {
                     mapping: {
-                        emoji: '🔻',
-                        name: 'Equities Adverse',
+                        emoji: '🔴',
+                        name: 'Equity Value Breakdown',
                         category: 'Equities',
-                        trigger: 'Real EY < 0%',
-                        colorClass: 'bg-red-500/10 border-red-500 text-red-700 dark:text-red-400',
+                        trigger: 'Real EY < -2%',
+                        colorClass: 'bg-red-600/20 border-red-600 text-red-800 dark:text-red-300',
                         details: [
-                            'Equities fail to clear inflation',
-                            'Equity risk is underpaid',
-                            'Long-term equity returns structurally weak',
-                            'Capital should prefer defensive assets'
+                            'Equity earnings materially lag inflation',
+                            'Equity valuations are fundamentally unsound',
+                            'Markets depend entirely on liquidity or speculation',
+                            'High probability of regime reset'
                         ]
                     },
                     rotation: {
                         emoji: '',
-                        name: 'Bonds',
-                        description: 'Fixed income provides real return',
+                        name: 'EXIT Equities',
+                        description: 'Aggressive exit from equity exposure',
                         colorClass: 'bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400',
                         details: [
+                            'Major red-flag environment',
                             'Bonds offer positive real yield',
-                            'Lower risk than equities',
-                            'Preserve capital in real terms',
-                            'Duration provides stability'
+                            'Preserve capital aggressively',
+                            'Wait for regime reset'
                         ]
                     }
                 };
             } else {
                 return {
                     mapping: {
-                        emoji: '🔻',
-                        name: 'Equities Adverse',
+                        emoji: '🔴',
+                        name: 'Equity Value Breakdown',
                         category: 'Equities',
-                        trigger: 'Real EY < 0%',
-                        colorClass: 'bg-red-500/10 border-red-500 text-red-700 dark:text-red-400',
+                        trigger: 'Real EY < -2%',
+                        colorClass: 'bg-red-600/20 border-red-600 text-red-800 dark:text-red-300',
                         details: [
-                            'Equities fail to clear inflation',
-                            'Equity risk is underpaid',
-                            'Long-term equity returns structurally weak',
-                            'Capital should prefer defensive assets'
+                            'Equity earnings materially lag inflation',
+                            'Equity valuations are fundamentally unsound',
+                            'Markets depend entirely on liquidity or speculation',
+                            'High probability of regime reset'
                         ]
                     },
                     rotation: {
@@ -113,19 +113,113 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
                             'Both equities and bonds fail in real terms',
                             'Real assets preserve purchasing power',
                             'Gold acts as monetary alternative',
-                            'Commodities benefit from inflation'
+                            'Major red-flag environment'
                         ]
                     }
                 };
             }
         }
 
-        // 3️⃣ Growth vs Equity Danger Fork (only if no System Stress and Equities not Adverse)
+        // 3️⃣ Equity Sell Zone
+        if (realEY !== null && realEY < -1) {
+            // Determine rotation based on bond yield
+            if (real10Y !== null && real10Y > 0) {
+                return {
+                    mapping: {
+                        emoji: '🔴',
+                        name: 'Equity Sell Zone',
+                        category: 'Equities',
+                        trigger: 'Real EY < -1%',
+                        colorClass: 'bg-red-500/10 border-red-500 text-red-700 dark:text-red-400',
+                        details: [
+                            'Equity earnings fail to beat inflation',
+                            'Equity ownership relies on multiple expansion',
+                            'Long-term real returns structurally weak',
+                            'Drawdown risk elevated'
+                        ]
+                    },
+                    rotation: {
+                        emoji: '',
+                        name: 'SELL / Underweight Equities',
+                        description: 'Rotate to bonds',
+                        colorClass: 'bg-blue-500/10 border-blue-500 text-blue-700 dark:text-blue-400',
+                        details: [
+                            'Hard economic break, not timing call',
+                            'Bonds offer positive real yield',
+                            'Lower risk than equities',
+                            'Preserve capital in real terms'
+                        ]
+                    }
+                };
+            } else {
+                return {
+                    mapping: {
+                        emoji: '🔴',
+                        name: 'Equity Sell Zone',
+                        category: 'Equities',
+                        trigger: 'Real EY < -1%',
+                        colorClass: 'bg-red-500/10 border-red-500 text-red-700 dark:text-red-400',
+                        details: [
+                            'Equity earnings fail to beat inflation',
+                            'Equity ownership relies on multiple expansion',
+                            'Long-term real returns structurally weak',
+                            'Drawdown risk elevated'
+                        ]
+                    },
+                    rotation: {
+                        emoji: '',
+                        name: 'Gold / Real Assets',
+                        description: 'Commodities, real estate, inflation hedges',
+                        colorClass: 'bg-amber-500/10 border-amber-500 text-amber-700 dark:text-amber-400',
+                        details: [
+                            'Both equities and bonds fail in real terms',
+                            'Real assets preserve purchasing power',
+                            'Gold acts as monetary alternative',
+                            'Hard economic break, not timing call'
+                        ]
+                    }
+                };
+            }
+        }
+
+        // 4️⃣ Equity Risk Warning
+        if (realEY !== null && realEY < 0.5) {
+            return {
+                mapping: {
+                    emoji: '🟠',
+                    name: 'Equity Risk Warning',
+                    category: 'Equities',
+                    trigger: 'Real EY < +0.5%',
+                    colorClass: 'bg-orange-500/10 border-orange-500 text-orange-700 dark:text-orange-400',
+                    details: [
+                        'Equity earnings barely clear inflation',
+                        'Valuation cushion is thin',
+                        'Equities sensitive to liquidity, rates, narrative',
+                        'Forward returns increasingly path-dependent'
+                    ]
+                },
+                rotation: {
+                    emoji: '',
+                    name: 'Reduce Equity Aggressiveness',
+                    description: 'Tighten risk / early warning',
+                    colorClass: 'bg-orange-500/10 border-orange-500 text-orange-700 dark:text-orange-400',
+                    details: [
+                        'Not a sell — early warning signal',
+                        'Reduce position sizes',
+                        'Tighten stop losses',
+                        'Monitor for deterioration'
+                    ]
+                }
+            };
+        }
+
+        // 5️⃣ Growth vs Equity Danger Fork (only if no System Stress and Equities not Adverse)
+
         // This requires: Real 10Y ≥ 0 AND Real EY ≥ 0
         if (real10Y !== null && real10Y >= 0 && realEY !== null && realEY >= 0) {
             // Check if EYP < -1%
             if (eyp !== null && eyp < -1) {
-                // 3a) Equity Danger Regime: EYP < -1% AND Yield Curve < 0%
+                // 5a) Equity Danger Regime: EYP < -1% AND Yield Curve < 0%
                 if (yieldCurve !== null && yieldCurve < 0) {
                     // Determine rotation based on bond yield
                     if (real10Y > 0) {
@@ -187,7 +281,7 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
                     }
                 }
 
-                // 3b) Growth Regime: EYP < -1% AND Yield Curve > 0%
+                // 5b) Growth Regime: EYP < -1% AND Yield Curve > 0%
                 if (yieldCurve !== null && yieldCurve > 0) {
                     return {
                         mapping: {
@@ -219,7 +313,7 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
                 }
             }
 
-            // 4️⃣ Equity Value Window
+            // 6️⃣ Equity Value Window
             // Check Extreme Value first (≥5.0%)
             if (realEY >= 5.0) {
                 return {
@@ -290,7 +384,7 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
                 name: 'Normal',
                 category: 'System',
                 trigger: 'All metrics healthy',
-                colorClass: 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400',
+                colorClass: 'bg-blue-500/10 border-blue-400 text-blue-700 dark:text-blue-400',
                 details: [
                     'Financial system functioning normally',
                     'Risk-free rate provides real return',
@@ -302,7 +396,7 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
                 emoji: '',
                 name: 'Balanced',
                 description: 'Standard asset allocation',
-                colorClass: 'bg-green-500/10 border-green-500 text-green-700 dark:text-green-400',
+                colorClass: 'bg-blue-500/10 border-blue-400 text-blue-700 dark:text-blue-400',
                 details: [
                     'Diversified portfolio appropriate',
                     'Risk assets can be held',
@@ -318,7 +412,7 @@ export default function RegimeDetector({ metricValues }: RegimeDetectorProps) {
 
     return (
         <>
-            <RegimeModelModal isOpen={showModal} onClose={() => setShowModal(false)} />
+            <SignalModelModal isOpen={showModal} onClose={() => setShowModal(false)} />
 
             <div className={`p-4 rounded-lg bg-muted/30 border border-border/50 transition-all duration-300 ${isExtremeValue ? 'ring-2 ring-green-500 shadow-lg shadow-green-500/20' : ''}`}>
                 <div className="mb-3 flex items-center justify-between">

@@ -52,6 +52,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime',
             },
             {
+                title: 'Signals',
+                href: '/signals',
+            },
+            {
                 title: 'Chart',
                 href: '/chart',
                 children: [

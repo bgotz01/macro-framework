@@ -3,7 +3,7 @@ import RegimeTracker from '../regime-tracker';
 import RegimeTooltipButton from '../regime-tooltip-button';
 import type { MetricValue } from './types';
 
-interface RegimeTrackerSectionProps {
+interface SignalTrackerSectionProps {
     title: string;
     metricValues: {
         real3M?: MetricValue;
@@ -16,7 +16,7 @@ interface RegimeTrackerSectionProps {
     type: 'real-metrics' | 'market-spreads';
 }
 
-export default function RegimeTrackerSection({ title, metricValues, type }: RegimeTrackerSectionProps) {
+export default function SignalTrackerSection({ title, metricValues, type }: SignalTrackerSectionProps) {
     // Status functions for each tracker
     const getCashStatus = (value: number | null) => {
         if (value === null) return {

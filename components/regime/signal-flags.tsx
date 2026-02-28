@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
-interface RegimeFlagsProps {
+interface SignalFlagsProps {
     selectedDate: string; // Format: YYYY-MM-DD
 }
 
-export default function RegimeFlags({ selectedDate }: RegimeFlagsProps) {
+export default function SignalFlags({ selectedDate }: SignalFlagsProps) {
     const [yieldCurveInversionDate, setYieldCurveInversionDate] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -103,7 +103,7 @@ export default function RegimeFlags({ selectedDate }: RegimeFlagsProps) {
                                 />
                             </div>
                             <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                                <span>Inversion</span>
+                                <span>Yield Curve Inversion</span>
                                 <span>24 months</span>
                             </div>
                         </div>

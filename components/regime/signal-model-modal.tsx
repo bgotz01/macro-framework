@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
-interface RegimeModelModalProps {
+interface SignalModelModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-type TabId = 'overview' | 'system-stress' | 'equities-adverse' | 'equity-danger' | 'growth-regime' | 'equity-value' | 'normal';
+type TabId = 'overview' | 'system-stress' | 'equity-breakdown' | 'equity-sell' | 'equity-warning' | 'equity-danger' | 'growth-regime' | 'equity-value' | 'normal' | 'equities-adverse';
 
 interface TabData {
     id: TabId;
@@ -21,7 +21,7 @@ interface RotationOption {
     note?: string;
 }
 
-interface RegimeTabContent {
+interface SignalTabContent {
     emoji: string;
     title: string;
     titleColor: string;
@@ -47,14 +47,16 @@ interface RegimeTabContent {
 const TABS: TabData[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'system-stress', label: '1️⃣ System Stress' },
-    { id: 'equities-adverse', label: '2️⃣ Equities Adverse' },
-    { id: 'equity-danger', label: '3️⃣ Equity Danger' },
-    { id: 'growth-regime', label: '4️⃣ Growth Regime' },
-    { id: 'equity-value', label: '5️⃣ Equity Value' },
-    { id: 'normal', label: '6️⃣ Normal' },
+    { id: 'equity-breakdown', label: '2️⃣ Equity Breakdown' },
+    { id: 'equity-sell', label: '3️⃣ Equity Sell' },
+    { id: 'equity-warning', label: '4️⃣ Equity Warning' },
+    { id: 'equity-danger', label: '5️⃣ Equity Danger' },
+    { id: 'growth-regime', label: '6️⃣ Growth Regime' },
+    { id: 'equity-value', label: '7️⃣ Equity Value' },
+    { id: 'normal', label: '8️⃣ Normal' },
 ];
 
-const REGIME_CONTENT: Record<Exclude<TabId, 'overview'>, RegimeTabContent> = {
+const REGIME_CONTENT: Record<Exclude<TabId, 'overview'>, SignalTabContent> = {
     'system-stress': {
         emoji: '⚠️',
         title: 'System Stress Regime',
@@ -89,6 +91,104 @@ const REGIME_CONTENT: Record<Exclude<TabId, 'overview'>, RegimeTabContent> = {
             '2021-2022 inflation surge (real assets protected capital)',
         ],
         insight: 'When the risk-free rate fails to provide real returns, the entire financial system\'s pricing mechanism breaks down. No financial asset can be reliably valued.',
+    },
+    'equity-breakdown': {
+        emoji: '🔴',
+        title: 'Equity Value Breakdown',
+        titleColor: 'text-red-800 dark:text-red-300',
+        subtitle: 'Most severe equity warning',
+        category: {
+            name: '🟥 Risk-Off / Defensive',
+            color: 'text-red-600 dark:text-red-400',
+            description: 'Equity valuations fundamentally unsound → EXIT aggressively',
+        },
+        trigger: 'Real EY < -2%',
+        meaning: [
+            'Equity earnings materially lag inflation',
+            'Equity valuations are fundamentally unsound',
+            'Markets depend entirely on liquidity or speculation',
+            'High probability of regime reset',
+        ],
+        rotations: [
+            {
+                condition: 'If Real 10Y > 0%:',
+                title: '💰 EXIT to Bonds',
+                description: 'Aggressive exit from equity exposure. Bonds offer positive real yield.',
+                note: 'Major red-flag environment - preserve capital aggressively',
+            },
+            {
+                condition: 'If Real 10Y ≤ 0%:',
+                title: '🏆 EXIT to Gold / Real Assets',
+                description: 'Both equities and bonds fail in real terms',
+                note: 'Major red-flag environment - wait for regime reset',
+            },
+        ],
+        examples: [],
+        insight: '',
+    },
+    'equity-sell': {
+        emoji: '🔴',
+        title: 'Equity Sell Zone',
+        titleColor: 'text-red-700 dark:text-red-400',
+        subtitle: 'Hard sell signal - not a timing call',
+        category: {
+            name: '🟥 Risk-Off / Defensive',
+            color: 'text-red-600 dark:text-red-400',
+            description: 'Equity economics broken → SELL / underweight',
+        },
+        trigger: 'Real EY < -1%',
+        meaning: [
+            'Equity earnings fail to beat inflation',
+            'Equity ownership relies on multiple expansion',
+            'Long-term real returns structurally weak',
+            'Drawdown risk elevated',
+        ],
+        rotations: [
+            {
+                condition: 'If Real 10Y > 0%:',
+                title: '💰 Rotate to Bonds',
+                description: 'Bonds offer positive real yield with lower risk than equities',
+                note: 'Hard economic break, not timing call',
+            },
+            {
+                condition: 'If Real 10Y ≤ 0%:',
+                title: '🏆 Rotate to Gold / Real Assets',
+                description: 'Both equities and bonds fail in real terms',
+                note: 'Hard economic break, not timing call',
+            },
+        ],
+        examples: [],
+        insight: '',
+    },
+    'equity-warning': {
+        emoji: '🟠',
+        title: 'Equity Risk Warning',
+        titleColor: 'text-orange-700 dark:text-orange-400',
+        subtitle: 'Early warning signal - not a sell',
+        category: {
+            name: '🟧 Caution / Reduce Risk',
+            color: 'text-orange-600 dark:text-orange-400',
+            description: 'Valuation cushion thin → Reduce aggressiveness',
+        },
+        trigger: 'Real EY < +0.5%',
+        meaning: [
+            'Equity earnings barely clear inflation',
+            'Valuation cushion is thin',
+            'Equities sensitive to liquidity, rates, narrative',
+            'Forward returns increasingly path-dependent',
+        ],
+        rotation: {
+            title: 'Reduce Equity Aggressiveness',
+            description: 'Tighten risk / early warning',
+            bullets: [
+                'Not a sell — early warning signal',
+                'Reduce position sizes',
+                'Tighten stop losses',
+                'Monitor for deterioration',
+            ],
+        },
+        examples: [],
+        insight: 'This is a yellow flag, not a red flag. Equities can still work, but the margin of safety is compressed.',
     },
     'equities-adverse': {
         emoji: '🔻',
@@ -281,7 +381,7 @@ function TabButton({ tab, isActive, onClick }: { tab: TabData; isActive: boolean
     );
 }
 
-function RegimeTab({ content }: { content: RegimeTabContent }) {
+function SignalTab({ content }: { content: SignalTabContent }) {
     return (
         <div className="space-y-6">
             <div className="bg-muted/50 border border-border rounded-lg p-4">
@@ -395,7 +495,7 @@ function RegimeTab({ content }: { content: RegimeTabContent }) {
     );
 }
 
-export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalProps) {
+export default function SignalModelModal({ isOpen, onClose }: SignalModelModalProps) {
     const [activeTab, setActiveTab] = useState<TabId>('overview');
 
     if (!isOpen) return null;
@@ -433,7 +533,7 @@ export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalPr
                         <div className="px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 flex items-center bg-muted/20 border-r border-border/50">
                             🟥 Risk-Off
                         </div>
-                        {TABS.slice(1, 4).map((tab) => (
+                        {TABS.slice(1, 6).map((tab) => (
                             <TabButton
                                 key={tab.id}
                                 tab={tab}
@@ -448,7 +548,7 @@ export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalPr
                         <div className="px-3 py-2 text-xs font-semibold text-green-600 dark:text-green-400 flex items-center bg-muted/20 border-r border-border/50">
                             🟩 Risk-On
                         </div>
-                        {TABS.slice(4, 7).map((tab) => (
+                        {TABS.slice(6, 9).map((tab) => (
                             <TabButton
                                 key={tab.id}
                                 tab={tab}
@@ -485,17 +585,37 @@ export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalPr
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="font-bold text-red-600 dark:text-red-400">2.</span>
+                                        <span className="font-bold text-red-800 dark:text-red-300">2.</span>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-semibold">Equities Adverse</span>
+                                                <span className="font-semibold">Equity Value Breakdown</span>
                                                 <span className="text-xs text-red-600 dark:text-red-400">🟥 Risk-Off</span>
                                             </div>
-                                            <span className="text-muted-foreground text-xs">Real EY &lt; 0% → Bonds or gold</span>
+                                            <span className="text-muted-foreground text-xs">Real EY &lt; -2% → EXIT equities aggressively</span>
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="font-bold text-purple-600 dark:text-purple-400">3.</span>
+                                        <span className="font-bold text-red-600 dark:text-red-400">3.</span>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold">Equity Sell Zone</span>
+                                                <span className="text-xs text-red-600 dark:text-red-400">🟥 Risk-Off</span>
+                                            </div>
+                                            <span className="text-muted-foreground text-xs">Real EY &lt; -1% → SELL / underweight equities</span>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="font-bold text-orange-600 dark:text-orange-400">4.</span>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold">Equity Risk Warning</span>
+                                                <span className="text-xs text-orange-600 dark:text-orange-400">🟧 Caution</span>
+                                            </div>
+                                            <span className="text-muted-foreground text-xs">Real EY &lt; +0.5% → Reduce aggressiveness</span>
+                                        </div>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="font-bold text-purple-600 dark:text-purple-400">5.</span>
                                         <div>
                                             <span className="font-semibold">Growth vs Equity Danger Fork</span>
                                             <div className="text-muted-foreground text-xs mt-1 space-y-1">
@@ -511,7 +631,7 @@ export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalPr
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="font-bold text-green-600 dark:text-green-400">4.</span>
+                                        <span className="font-bold text-green-600 dark:text-green-400">6.</span>
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-semibold">Equity Value Window</span>
@@ -530,7 +650,7 @@ export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalPr
                                         </div>
                                     </li>
                                     <li className="flex items-start gap-2">
-                                        <span className="font-bold text-green-600 dark:text-green-400">5.</span>
+                                        <span className="font-bold text-green-600 dark:text-green-400">7.</span>
                                         <div>
                                             <div className="flex items-center gap-2">
                                                 <span className="font-semibold">Normal</span>
@@ -588,7 +708,7 @@ export default function RegimeModelModal({ isOpen, onClose }: RegimeModelModalPr
                             </div>
                         </div>
                     ) : (
-                        <RegimeTab content={REGIME_CONTENT[activeTab]} />
+                        <SignalTab content={REGIME_CONTENT[activeTab]} />
                     )}
                 </div>
 

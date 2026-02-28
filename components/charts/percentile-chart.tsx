@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useTheme } from '../theme-provider';
+import SeriesDataTable from './series-data-table';
 
 // Tooltip component for metric explanations
 function MetricTooltip({ children, content }: { children: React.ReactNode; content: string }) {
@@ -28,6 +29,7 @@ function MetricTooltip({ children, content }: { children: React.ReactNode; conte
 
 interface PercentileChartProps {
     height?: number;
+    initialSeries?: string[];
 }
 
 interface ChartDataPoint {
@@ -37,6 +39,7 @@ interface ChartDataPoint {
     cpi_percentile: number;
     fedfunds_value: number;
     fedfunds_percentile: number;
+    [key: string]: number | string | null | undefined;
 }
 
 interface SeriesOption {
@@ -76,12 +79,32 @@ const METRIC_TOOLTIPS: Record<string, string> = {
     'rey5yr': 'Real Earnings Yield 5yr = (1 / P/E-5yr) - CPI Inflation. Measures real return potential using 5-year average earnings.',
 };
 
-export default function PercentileChart({ height = 500 }: PercentileChartProps) {
+const DATE_PRESETS: Array<
+    | { label: string; value: string }
+    | { label: string; value: string; start: string; end: string }
+> = [
+        { label: 'All Time', value: 'all' },
+        { label: '1960s', value: '1960s', start: '1960-01-01', end: '1969-12-31' },
+        { label: '1970s', value: '1970s', start: '1970-01-01', end: '1979-12-31' },
+        { label: '1980s', value: '1980s', start: '1980-01-01', end: '1989-12-31' },
+        { label: '1990s', value: '1990s', start: '1990-01-01', end: '1999-12-31' },
+        { label: '2000s', value: '2000s', start: '2000-01-01', end: '2009-12-31' },
+        { label: '2010s', value: '2010s', start: '2010-01-01', end: '2019-12-31' },
+        { label: '2020s', value: '2020s', start: '2020-01-01', end: '2029-12-31' },
+        { label: 'Last 5Y', value: '5y' },
+        { label: 'Last 10Y', value: '10y' },
+        { label: 'Custom', value: 'custom' },
+    ];
+
+export default function PercentileChart({ height = 500, initialSeries }: PercentileChartProps) {
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
-    const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('percentile');
-    const [selectedSeries, setSelectedSeries] = useState<string[]>(['realyield']);
+    const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('value');
+    const [selectedSeries, setSelectedSeries] = useState<string[]>(initialSeries || ['realyield']);
     const [isSeriesSelectionOpen, setIsSeriesSelectionOpen] = useState(true);
+    const [datePreset, setDatePreset] = useState<string>('all');
+    const [customStartDate, setCustomStartDate] = useState<string>('');
+    const [customEndDate, setCustomEndDate] = useState<string>('');
     const { theme } = useTheme();
     const searchParams = useSearchParams();
 
@@ -118,6 +141,50 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
         loadData();
     }, []);
 
+    // Apply date filtering
+    const getFilteredData = () => {
+        if (data.length === 0) return [];
+
+        let filtered = [...data];
+
+        if (datePreset === 'all') {
+            return filtered;
+        }
+
+        let startDate: string | null = null;
+        let endDate: string | null = null;
+
+        if (datePreset === 'custom') {
+            startDate = customStartDate;
+            endDate = customEndDate;
+        } else if (datePreset === '5y') {
+            const now = new Date();
+            const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+            startDate = fiveYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '10y') {
+            const now = new Date();
+            const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+            startDate = tenYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else {
+            const preset = DATE_PRESETS.find(p => p.value === datePreset);
+            if (preset && 'start' in preset && preset.start && preset.end) {
+                startDate = preset.start;
+                endDate = preset.end;
+            }
+        }
+
+        if (startDate) {
+            filtered = filtered.filter(d => d.date >= startDate!);
+        }
+        if (endDate) {
+            filtered = filtered.filter(d => d.date <= endDate!);
+        }
+
+        return filtered;
+    };
+
     const handleSeriesToggle = (seriesValue: string) => {
         setSelectedSeries(prev => {
             if (prev.includes(seriesValue)) {
@@ -138,8 +205,9 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
         );
     }
 
-    // Filter data based on selected series to show only relevant date range
-    const filteredData = data.filter(point => {
+    // Filter data based on selected series and date range
+    const dateFilteredData = getFilteredData();
+    const filteredData = dateFilteredData.filter(point => {
         // Check if any selected series has data at this point
         return selectedSeries.some(seriesValue => {
             const valueKey = `${seriesValue}_value`;
@@ -273,6 +341,50 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                             : 'Shows year-over-year change in percentile rank (how fast the percentile is moving)'}
                 </p>
 
+                {/* Date Range Filter */}
+                <div className="mb-4 space-y-3">
+                    <label className="block text-sm font-medium">
+                        Date Range
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                        {DATE_PRESETS.map(preset => (
+                            <button
+                                key={preset.value}
+                                onClick={() => setDatePreset(preset.value)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {datePreset === 'custom' && (
+                        <div className="flex gap-3 mt-3">
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border-2 border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-background text-foreground border-2 border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Series Selection - Collapsible */}
                 <div className="border-t pt-4">
                     <button
@@ -337,7 +449,7 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                                                     const dateStr = latestDataPoint.date;
                                                     const [year, month, day] = dateStr.split('-');
                                                     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                                    return `${monthNames[parseInt(month) - 1]}-${day}-${year}`;
+                                                    return `${monthNames[parseInt(month) - 1]}-${year.slice(-2)}`;
                                                 })() : 'No data';
 
                                                 const checkbox = (
@@ -488,6 +600,19 @@ export default function PercentileChart({ height = 500 }: PercentileChartProps) 
                     <p>• EYP-5yr uses earnings yield from P/E-5yr (1/P/E-5yr - 3M)</p>
                 </div>
             </div>
+
+            {/* Series Data Table */}
+            <SeriesDataTable
+                data={filteredData}
+                selectedSeries={selectedSeries}
+                seriesLabels={Object.fromEntries(
+                    AVAILABLE_SERIES.map(s => [s.value, s.label])
+                )}
+                seriesColors={Object.fromEntries(
+                    AVAILABLE_SERIES.map(s => [s.value, s.color])
+                )}
+                metric={metric}
+            />
         </div >
     );
 }

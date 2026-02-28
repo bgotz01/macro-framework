@@ -79,6 +79,51 @@ type Section = {
 
 const SECTIONS: Section[] = [
     {
+        id: 'ai-role',
+        title: 'AI Role',
+        subtitle: 'AI maintains the structure.',
+        status: 'live',
+        icon: Sparkles,
+        purpose: [],
+        answers: [],
+        blocks: [
+            {
+                label: 'Key insight',
+                items: [
+                    'AI is bad at stock picking and trading',
+                    'AI becomes useful once the structure is fixed',
+                ],
+            },
+            {
+                label: 'Each agent',
+                items: [
+                    'Has a narrow scope',
+                    'Shares a common state',
+                    'Cannot override structure',
+                ],
+            },
+            {
+                label: 'AI responsibilities',
+                items: [
+                    'State tracking: remembering prior regimes and transitions',
+                    'Decision logs: why something was allowed or disallowed',
+                    'Consistency checks: ensuring decisions align with the current regime',
+                    'Summarization: compressing complex context into human-readable insights',
+                    'Interface: translating structure into usable guidance (not advice)',
+                ],
+            },
+            {
+                label: 'How AI Agents Map to Your Existing Modules',
+                items: [
+                    'Regime Agent: Maintains current macro state, transitions, confidence',
+                    'Transmission Agent: Tracks how shocks propagate under the current regime',
+                    'Archetype Agent: Evaluates company behavior relative to regime constraints',
+                    'Cycle Agent (research): Maintains long-horizon phase context',
+                ],
+            },
+        ],
+    },
+    {
         id: 'regimes',
         title: 'US Macro Regime Detector',
         subtitle: 'Live engine that labels the capital environment using low-dimensional, observable variables.',
@@ -206,8 +251,8 @@ function BulletList({ items }: { items: string[] }) {
     return (
         <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
             {items.map((t) => (
-                <li key={t} className="flex gap-2">
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                <li key={t} className="flex gap-2 items-center">
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                     <span>{t}</span>
                 </li>
             ))}
@@ -310,16 +355,20 @@ export default function OutlinePage() {
 
                             {isExpanded && (
                                 <CardContent className="space-y-6">
-                                    <div className="grid gap-6 md:grid-cols-2">
-                                        <div>
-                                            <h3 className="text-sm font-medium">Purpose</h3>
-                                            <BulletList items={s.purpose} />
+                                    {s.purpose.length > 0 && (
+                                        <div className="grid gap-6 md:grid-cols-2">
+                                            <div>
+                                                <h3 className="text-sm font-medium">Purpose</h3>
+                                                <BulletList items={s.purpose} />
+                                            </div>
+                                            {s.answers.length > 0 && (
+                                                <div>
+                                                    <h3 className="text-sm font-medium">What this answers</h3>
+                                                    <BulletList items={s.answers} />
+                                                </div>
+                                            )}
                                         </div>
-                                        <div>
-                                            <h3 className="text-sm font-medium">What this answers</h3>
-                                            <BulletList items={s.answers} />
-                                        </div>
-                                    </div>
+                                    )}
 
                                     {s.blocks?.length ? (
                                         <div className="grid gap-4 md:grid-cols-2">
@@ -328,8 +377,8 @@ export default function OutlinePage() {
                                                     <div className="text-sm font-medium">{b.label}</div>
                                                     <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                                                         {b.items.map((it) => (
-                                                            <li key={it} className="flex gap-2">
-                                                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                                            <li key={it} className="flex gap-2 items-center">
+                                                                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                                                 <span>{it}</span>
                                                             </li>
                                                         ))}
@@ -379,16 +428,16 @@ export default function OutlinePage() {
                                 <div className="rounded-2xl border bg-muted/20 p-4">
                                     <div className="text-sm font-medium">Capital Physics</div>
                                     <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                                        <li className="flex gap-2">
-                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                        <li className="flex gap-2 items-center">
+                                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                             <span>Capital responds to constraints.</span>
                                         </li>
-                                        <li className="flex gap-2">
-                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                        <li className="flex gap-2 items-center">
+                                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                             <span>Regimes define the rules of the game.</span>
                                         </li>
-                                        <li className="flex gap-2">
-                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                        <li className="flex gap-2 items-center">
+                                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                             <span>Behavior determines outcomes.</span>
                                         </li>
                                     </ul>
@@ -397,16 +446,16 @@ export default function OutlinePage() {
                                 <div className="rounded-2xl border bg-background p-4">
                                     <div className="text-sm font-medium">Design principles</div>
                                     <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                                        <li className="flex gap-2">
-                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                        <li className="flex gap-2 items-center">
+                                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                             <span>Structured thinking only (separate signal vs. research).</span>
                                         </li>
-                                        <li className="flex gap-2">
-                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                        <li className="flex gap-2 items-center">
+                                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                             <span>Multiple timescales, one framework.</span>
                                         </li>
-                                        <li className="flex gap-2">
-                                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
+                                        <li className="flex gap-2 items-center">
+                                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/50" />
                                             <span>Macro-first internationally (liquidity + clean expression via FX/indexes).</span>
                                         </li>
                                     </ul>
