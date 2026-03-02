@@ -28,6 +28,10 @@ export default function PeriodComparison() {
     const [similarityScore, setSimilarityScore] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [showPercentiles, setShowPercentiles] = useState(true);
+    const [yoyWeight, setYoyWeight] = useState(10);
+    const [selectedMetrics, setSelectedMetrics] = useState<Set<string>>(
+        new Set(['cpi', 'tnx', 'realYield', 'yieldCurve', 'treasury3M', 'pe5yr', 'eyp5yr', 'rey5yr'])
+    );
 
     // Fetch latest period data on mount
     useState(() => {
@@ -85,6 +89,47 @@ export default function PeriodComparison() {
         }
         fetchLatest();
     });
+
+    // Recalculate similarity when yoyWeight or selectedMetrics change
+    useState(() => {
+        if (values && latestValues) {
+            const score = calculateSimilarity(latestValues, values, yoyWeight, selectedMetrics);
+            setSimilarityScore(score);
+        }
+    });
+
+    const toggleMetric = (metric: string) => {
+        const newMetrics = new Set(selectedMetrics);
+        if (newMetrics.has(metric)) {
+            if (newMetrics.size === 1) return;
+            newMetrics.delete(metric);
+        } else {
+            newMetrics.add(metric);
+        }
+        setSelectedMetrics(newMetrics);
+    };
+
+    const metricLabels: Record<string, string> = {
+        cpi: 'CPI',
+        tnx: '10Y',
+        realYield: 'Real 10Y',
+        yieldCurve: 'Curve',
+        treasury3M: '3M',
+        pe5yr: 'P/E 5yr',
+        eyp5yr: 'EYP 5yr',
+        rey5yr: 'Real EY'
+    };
+
+    const metricCategories = {
+        nominal: {
+            label: 'Nominal',
+            metrics: ['cpi', 'treasury3M', 'tnx', 'pe5yr']
+        },
+        relative: {
+            label: 'Relative',
+            metrics: ['realYield', 'yieldCurve', 'eyp5yr', 'rey5yr']
+        }
+    };
 
     function adjustMonth(delta: number) {
         if (!selectedYear || !selectedMonth) return;
@@ -169,7 +214,7 @@ export default function PeriodComparison() {
 
             // Calculate similarity score if we have latest data
             if (latestValues) {
-                const score = calculateSimilarity(latestValues, fetchedValues);
+                const score = calculateSimilarity(latestValues, fetchedValues, yoyWeight, selectedMetrics);
                 setSimilarityScore(score);
             }
         } catch (err) {
@@ -181,26 +226,57 @@ export default function PeriodComparison() {
         }
     }
 
-    function calculateSimilarity(latest: PercentileValues, selected: PercentileValues): number | null {
+    function calculateSimilarity(latest: PercentileValues, selected: PercentileValues, yoyWeightPercent: number, metricsToUse: Set<string>): number | null {
         const metrics: (keyof PercentileValues)[] = ['cpi', 'tnx', 'realYield', 'yieldCurve', 'treasury3M', 'pe5yr', 'eyp5yr', 'rey5yr'];
 
-        let sumSquares = 0;
-        let count = 0;
+        let sumSquaresPercentile = 0;
+        let sumSquaresYoy = 0;
+        let countPercentile = 0;
+        let countYoy = 0;
 
+        // Calculate distance for percentile values
         for (const metric of metrics) {
+            if (!metricsToUse.has(metric)) continue;
+
             const valA = latest[metric].percentile;
             const valB = selected[metric].percentile;
 
             if (valA !== null && valB !== null) {
-                sumSquares += Math.pow(valA - valB, 2);
-                count++;
+                sumSquaresPercentile += Math.pow(valA - valB, 2);
+                countPercentile++;
             }
         }
 
-        if (count < 5) return null;
+        // Calculate distance for YoY changes
+        for (const metric of metrics) {
+            if (!metricsToUse.has(metric)) continue;
 
-        const distance = Math.sqrt(sumSquares / count);
-        return 100 - distance;
+            const yoyA = latest[metric].yoyChange;
+            const yoyB = selected[metric].yoyChange;
+
+            if (yoyA !== null && yoyB !== null && yoyA !== undefined && yoyB !== undefined) {
+                sumSquaresYoy += Math.pow(yoyA - yoyB, 2);
+                countYoy++;
+            }
+        }
+
+        if (countPercentile < 3) return null;
+
+        // Calculate weighted distance
+        const percentileWeight = (100 - yoyWeightPercent) / 100;
+        const yoyWeightDecimal = yoyWeightPercent / 100;
+
+        const percentileDistance = Math.sqrt(sumSquaresPercentile / countPercentile);
+
+        // Only include YoY if we have at least 2 metrics with YoY data
+        if (countYoy >= 2) {
+            const yoyDistance = Math.sqrt(sumSquaresYoy / countYoy);
+            const distance = (percentileWeight * percentileDistance) + (yoyWeightDecimal * yoyDistance);
+            return 100 - distance;
+        }
+
+        // If not enough YoY data, just use percentile distance
+        return 100 - percentileDistance;
     }
 
     function getScoreColor(score: number | null): string {
@@ -273,16 +349,59 @@ export default function PeriodComparison() {
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                     <h2 className="text-2xl font-bold">Historical Period Lookup</h2>
-                    <button
-                        onClick={() => setShowPercentiles(!showPercentiles)}
-                        className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium transition-colors"
-                    >
-                        {showPercentiles ? 'Show Values' : 'Show Percentiles'}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="yoy-weight" className="text-xs font-medium text-muted-foreground">
+                                YoY Weight:
+                            </label>
+                            <input
+                                id="yoy-weight"
+                                type="range"
+                                min="0"
+                                max="20"
+                                value={yoyWeight}
+                                onChange={(e) => setYoyWeight(Number(e.target.value))}
+                                className="w-24 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-xs font-medium w-8">{yoyWeight}%</span>
+                        </div>
+                        <button
+                            onClick={() => setShowPercentiles(!showPercentiles)}
+                            className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium transition-colors"
+                        >
+                            {showPercentiles ? 'Show Values' : 'Show Percentiles'}
+                        </button>
+                    </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                     Select a date to view {showPercentiles ? 'percentile rankings' : 'actual values'} for that period
+                    {yoyWeight > 0 && ` (${100 - yoyWeight}% levels, ${yoyWeight}% momentum)`}
                 </p>
+
+                {/* Metric Selection */}
+                <div className="p-3 rounded-lg bg-muted/30">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                        {Object.entries(metricCategories).map(([categoryKey, category]) => (
+                            category.metrics.map((key) => (
+                                <label
+                                    key={key}
+                                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background border cursor-pointer hover:border-primary transition-colors text-xs"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedMetrics.has(key)}
+                                        onChange={() => toggleMetric(key)}
+                                        className="cursor-pointer"
+                                    />
+                                    <span>{metricLabels[key]}</span>
+                                </label>
+                            ))
+                        ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground pt-1 border-t border-border">
+                        {selectedMetrics.size} metrics selected
+                    </div>
+                </div>
             </div>
 
             {/* Date Selection */}
@@ -363,125 +482,157 @@ export default function PeriodComparison() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.cpi.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">CPI</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.cpi.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('cpi')}
+                    <div className="space-y-4">
+                        {/* Nominal Metrics */}
+                        <div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                                Nominal
                             </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.cpi.value, 'cpi')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.cpi.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.cpi.yoyChange)}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('cpi') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.cpi.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excluded)</span>}
                                     </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.cpi.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('cpi')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.cpi.value, 'cpi')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.cpi.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.cpi.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('treasury3M') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.treasury3M.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        3M {!selectedMetrics.has('treasury3M') && <span className="text-[10px]">(excluded)</span>}
+                                    </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.treasury3M.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('treasury3M')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.treasury3M.value, 'treasury3M')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.treasury3M.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.treasury3M.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('tnx') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.tnx.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        10Y {!selectedMetrics.has('tnx') && <span className="text-[10px]">(excluded)</span>}
+                                    </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.tnx.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('tnx')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.tnx.value, 'tnx')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.tnx.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.tnx.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('pe5yr') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.pe5yr.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        P/E 5yr {!selectedMetrics.has('pe5yr') && <span className="text-[10px]">(excluded)</span>}
+                                    </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.pe5yr.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('pe5yr')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.pe5yr.value, 'pe5yr')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.pe5yr.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.pe5yr.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.tnx.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">10Y</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.tnx.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('tnx')}
+                        {/* Relative Metrics */}
+                        <div>
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                                Relative
                             </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.tnx.value, 'tnx')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.tnx.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.tnx.yoyChange)}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('realYield') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.realYield.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        Real 10Y {!selectedMetrics.has('realYield') && <span className="text-[10px]">(excluded)</span>}
                                     </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.realYield.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('realYield')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.realYield.value, 'realYield')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.realYield.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.realYield.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.realYield.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real 10Y</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.realYield.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('realYield')}
-                            </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.realYield.value, 'realYield')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.realYield.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.realYield.yoyChange)}
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('yieldCurve') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.yieldCurve.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        Curve {!selectedMetrics.has('yieldCurve') && <span className="text-[10px]">(excluded)</span>}
                                     </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.yieldCurve.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('yieldCurve')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.yieldCurve.value, 'yieldCurve')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.yieldCurve.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.yieldCurve.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.yieldCurve.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Curve</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.yieldCurve.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('yieldCurve')}
-                            </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.yieldCurve.value, 'yieldCurve')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.yieldCurve.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.yieldCurve.yoyChange)}
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('eyp5yr') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.eyp5yr.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        EYP 5yr {!selectedMetrics.has('eyp5yr') && <span className="text-[10px]">(excluded)</span>}
                                     </div>
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.eyp5yr.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('eyp5yr')}
+                                    </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.eyp5yr.value, 'eyp5yr')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.eyp5yr.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.eyp5yr.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
 
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.treasury3M.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">3M</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.treasury3M.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('treasury3M')}
-                            </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.treasury3M.value, 'treasury3M')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.treasury3M.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.treasury3M.yoyChange)}
+                                <div className={`p-4 rounded-lg bg-card border-2 ${!selectedMetrics.has('rey5yr') ? 'opacity-40' : showPercentiles ? getPercentileColor(values.rey5yr.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
+                                    <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">
+                                        Real EY {!selectedMetrics.has('rey5yr') && <span className="text-[10px]">(excluded)</span>}
                                     </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.pe5yr.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">P/E 5yr</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.pe5yr.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('pe5yr')}
-                            </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.pe5yr.value, 'pe5yr')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.pe5yr.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.pe5yr.yoyChange)}
+                                    <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.rey5yr.percentile) : 'text-foreground'}`}>
+                                        {formatDisplayValue('rey5yr')}
                                     </div>
+                                    {showPercentiles && (
+                                        <div className="text-xs mt-1">
+                                            <div className="text-muted-foreground">Actual: {formatValue(values.rey5yr.value, 'rey5yr')}</div>
+                                            <div className={`font-medium ${getYoyColor(values.rey5yr.yoyChange)}`}>
+                                                YoY: {formatYoyChange(values.rey5yr.yoyChange)}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.eyp5yr.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">EYP 5yr</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.eyp5yr.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('eyp5yr')}
                             </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.eyp5yr.value, 'eyp5yr')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.eyp5yr.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.eyp5yr.yoyChange)}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className={`p-4 rounded-lg bg-card border-2 ${showPercentiles ? getPercentileColor(values.rey5yr.percentile) : 'border-gray-300 dark:border-gray-700'}`}>
-                            <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real EY</div>
-                            <div className={`text-2xl font-bold ${showPercentiles ? getPercentileTextColor(values.rey5yr.percentile) : 'text-foreground'}`}>
-                                {formatDisplayValue('rey5yr')}
-                            </div>
-                            {showPercentiles && (
-                                <div className="text-xs mt-1">
-                                    <div className="text-muted-foreground">Actual: {formatValue(values.rey5yr.value, 'rey5yr')}</div>
-                                    <div className={`font-medium ${getYoyColor(values.rey5yr.yoyChange)}`}>
-                                        YoY: {formatYoyChange(values.rey5yr.yoyChange)}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
