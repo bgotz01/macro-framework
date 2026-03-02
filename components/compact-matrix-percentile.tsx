@@ -28,7 +28,7 @@ interface PercentileValues {
     bondYieldNominal: { percentile: number | null; value: number | null };
     bondYieldReal: { percentile: number | null; value: number | null };
     yieldCurve: { percentile: number | null; value: number | null };
-    fedFunds: { percentile: number | null; value: number | null };
+    treasury3M: { percentile: number | null; value: number | null };
     equityPE: { percentile: number | null; value: number | null };
     earningsYieldPremium: { percentile: number | null; value: number | null };
     realEarningsYield: { percentile: number | null; value: number | null };
@@ -43,7 +43,7 @@ interface PercentileDates {
     bondYieldNominal: string | null;
     bondYieldReal: string | null;
     yieldCurve: string | null;
-    fedFunds: string | null;
+    treasury3M: string | null;
     equityPE: string | null;
     earningsYieldPremium: string | null;
     realEarningsYield: string | null;
@@ -58,7 +58,7 @@ interface CompactMatrixPercentileProps {
 }
 
 export default function CompactMatrixPercentile({ initialValues, initialDates }: CompactMatrixPercentileProps) {
-    const [selectedYear, setSelectedYear] = useState<string>(() => new Date().getFullYear().toString());
+    const [selectedYear, setSelectedYear] = useState<string>('latest');
     const [selectedMonth, setSelectedMonth] = useState<string>(() => String(new Date().getMonth() + 1).padStart(2, '0'));
     const [values, setValues] = useState<PercentileValues>(initialValues);
     const [dates, setDates] = useState<PercentileDates>(initialDates || {
@@ -66,7 +66,7 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
         bondYieldNominal: null,
         bondYieldReal: null,
         yieldCurve: null,
-        fedFunds: null,
+        treasury3M: null,
         equityPE: null,
         earningsYieldPremium: null,
         realEarningsYield: null,
@@ -76,9 +76,9 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
     });
     const [loading, setLoading] = useState(false);
 
-    // Generate year options (1960 to current year)
+    // Generate year options (Latest + current year to 1960)
     const currentYear = new Date().getFullYear();
-    const yearOptions: string[] = [];
+    const yearOptions: string[] = ['latest'];
     for (let year = currentYear; year >= 1960; year--) {
         yearOptions.push(year.toString());
     }
@@ -100,6 +100,93 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
     ];
 
     useEffect(() => {
+        // If "latest" is selected, use the API's latest endpoint
+        if (selectedYear === 'latest') {
+            async function fetchLatestPercentiles() {
+                setLoading(true);
+                try {
+                    const response = await fetch(`/api/percentile-year?year=latest`);
+                    if (response.ok) {
+                        const data = await response.json();
+
+                        // Calculate Real 10Y percentile if we have both TNX and CPI
+                        const realYieldValue = data.tnx && data.tnx.value !== null && data.cpi && data.cpi.value !== null
+                            ? data.tnx.value - data.cpi.value
+                            : null;
+                        const realYieldDate = data.tnx?.dateStr && data.cpi?.dateStr
+                            ? (data.tnx.dateStr > data.cpi.dateStr ? data.cpi.dateStr : data.tnx.dateStr)
+                            : null;
+
+                        setValues({
+                            inflation: {
+                                percentile: data.cpi?.percentileRank ?? null,
+                                value: data.cpi?.value ?? null
+                            },
+                            bondYieldNominal: {
+                                percentile: data.tnx?.percentileRank ?? null,
+                                value: data.tnx?.value ?? null
+                            },
+                            bondYieldReal: {
+                                percentile: data.realYield?.percentileRank ?? null,
+                                value: realYieldValue
+                            },
+                            yieldCurve: {
+                                percentile: data.yieldCurve3M?.percentileRank ?? null,
+                                value: data.yieldCurve3M?.value ?? null
+                            },
+                            treasury3M: {
+                                percentile: data.irx?.percentileRank ?? null,
+                                value: data.irx?.value ?? null
+                            },
+                            equityPE: {
+                                percentile: data.shillerPE?.percentileRank ?? null,
+                                value: data.shillerPE?.value ?? null
+                            },
+                            earningsYieldPremium: {
+                                percentile: data.eyp?.percentileRank ?? null,
+                                value: data.eyp?.value ?? null
+                            },
+                            realEarningsYield: {
+                                percentile: data.rey?.percentileRank ?? null,
+                                value: data.rey?.value ?? null
+                            },
+                            equityPE5yr: {
+                                percentile: data.pe5yr?.percentileRank ?? null,
+                                value: data.pe5yr?.value ?? null
+                            },
+                            earningsYieldPremium5yr: {
+                                percentile: data.eyp5yr?.percentileRank ?? null,
+                                value: data.eyp5yr?.value ?? null
+                            },
+                            realEarningsYield5yr: {
+                                percentile: data.rey5yr?.percentileRank ?? null,
+                                value: data.rey5yr?.value ?? null
+                            },
+                        });
+                        setDates({
+                            inflation: data.cpi?.dateStr ?? null,
+                            bondYieldNominal: data.tnx?.dateStr ?? null,
+                            bondYieldReal: realYieldDate,
+                            yieldCurve: data.yieldCurve3M?.dateStr ?? null,
+                            treasury3M: data.irx?.dateStr ?? null,
+                            equityPE: data.shillerPE?.dateStr ?? null,
+                            earningsYieldPremium: data.eyp?.dateStr ?? null,
+                            realEarningsYield: data.rey?.dateStr ?? null,
+                            equityPE5yr: data.pe5yr?.dateStr ?? null,
+                            earningsYieldPremium5yr: data.eyp5yr?.dateStr ?? null,
+                            realEarningsYield5yr: data.rey5yr?.dateStr ?? null,
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error fetching latest percentiles:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+            fetchLatestPercentiles();
+            return;
+        }
+
         // Check if selected date is current month/year
         const now = new Date();
         const isCurrentMonth = selectedYear === now.getFullYear().toString() &&
@@ -121,8 +208,8 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                 if (response.ok) {
                     const data = await response.json();
 
-                    // Calculate Real Yield percentile if we have both TNX and CPI
-                    const realYieldValue = data.tnx?.value !== null && data.cpi?.value !== null
+                    // Calculate Real 10Y percentile if we have both TNX and CPI
+                    const realYieldValue = data.tnx && data.tnx.value !== null && data.cpi && data.cpi.value !== null
                         ? data.tnx.value - data.cpi.value
                         : null;
                     const realYieldDate = data.tnx?.dateStr && data.cpi?.dateStr
@@ -143,12 +230,12 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                             value: realYieldValue
                         },
                         yieldCurve: {
-                            percentile: data.yieldCurve?.percentileRank ?? null,
-                            value: data.yieldCurve?.value ?? null
+                            percentile: data.yieldCurve3M?.percentileRank ?? null,
+                            value: data.yieldCurve3M?.value ?? null
                         },
-                        fedFunds: {
-                            percentile: data.fedFunds?.percentileRank ?? null,
-                            value: data.fedFunds?.value ?? null
+                        treasury3M: {
+                            percentile: data.irx?.percentileRank ?? null,
+                            value: data.irx?.value ?? null
                         },
                         equityPE: {
                             percentile: data.shillerPE?.percentileRank ?? null,
@@ -180,8 +267,8 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                         inflation: data.cpi?.dateStr ?? null,
                         bondYieldNominal: data.tnx?.dateStr ?? null,
                         bondYieldReal: realYieldDate,
-                        yieldCurve: data.yieldCurve?.dateStr ?? null,
-                        fedFunds: data.fedFunds?.dateStr ?? null,
+                        yieldCurve: data.yieldCurve3M?.dateStr ?? null,
+                        treasury3M: data.irx?.dateStr ?? null,
                         equityPE: data.shillerPE?.dateStr ?? null,
                         earningsYieldPremium: data.eyp?.dateStr ?? null,
                         realEarningsYield: data.rey?.dateStr ?? null,
@@ -266,8 +353,8 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                     <select
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                        disabled={loading}
+                        className="px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={loading || selectedYear === 'latest'}
                     >
                         {monthOptions.map(option => (
                             <option key={option.value} value={option.value}>
@@ -283,7 +370,7 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                     >
                         {yearOptions.map(year => (
                             <option key={year} value={year}>
-                                {year}
+                                {year === 'latest' ? 'Latest' : year}
                             </option>
                         ))}
                     </select>
@@ -298,20 +385,20 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
 
             {!loading && (
                 <div className="space-y-6">
-                    {/* First Row: Fed Funds, 10yr Yield, Yield Curve */}
+                    {/* First Row: 3M, 10yr Yield, Yield Curve */}
                     <div>
                         <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Rates</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.fedFunds.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Fed Funds</div>
-                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.fedFunds.percentile)}`}>
-                                    {formatPercentile(values.fedFunds.percentile)}
+                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.treasury3M.percentile)} transition-all hover:shadow-md text-center`}>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">3M Yield</div>
+                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.treasury3M.percentile)}`}>
+                                    {formatPercentile(values.treasury3M.percentile)}
                                 </div>
-                                {dates.fedFunds && (
-                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.fedFunds)}</div>
+                                {dates.treasury3M && (
+                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.treasury3M)}</div>
                                 )}
                                 <div className="text-sm text-muted-foreground">
-                                    Value: <span className="font-semibold">{formatValue(values.fedFunds.value)}</span>
+                                    Value: <span className="font-semibold">{formatValue(values.treasury3M.value)}</span>
                                 </div>
                             </div>
 
@@ -330,7 +417,7 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.yieldCurve.percentile)} transition-all hover:shadow-md text-center`}>
                                 <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Yield Curve</div>
-                                <div className="text-[10px] text-muted-foreground/60 mb-1">(10Y - 2Y)</div>
+                                <div className="text-[10px] text-muted-foreground/60 mb-1">(10Y - 3M)</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.yieldCurve.percentile)}`}>
                                     {formatPercentile(values.yieldCurve.percentile)}
                                 </div>
@@ -362,7 +449,7 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                             </div>
 
                             <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.bondYieldReal.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real Yield</div>
+                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real 10Y</div>
                                 <div className="text-[10px] text-muted-foreground/60 mb-1">(10Y - CPI)</div>
                                 <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.bondYieldReal.percentile)}`}>
                                     {formatPercentile(values.bondYieldReal.percentile)}
@@ -377,54 +464,7 @@ export default function CompactMatrixPercentile({ initialValues, initialDates }:
                         </div>
                     </div>
 
-                    {/* Third Row: Shiller P/E Equity */}
-                    <div>
-                        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation (Shiller P/E)</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColor(values.equityPE.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Shiller P/E</div>
-                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColor(values.equityPE.percentile)}`}>
-                                    {formatPercentile(values.equityPE.percentile)}
-                                </div>
-                                {dates.equityPE && (
-                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.equityPE)}</div>
-                                )}
-                                <div className="text-sm text-muted-foreground">
-                                    Value: <span className="font-semibold">{formatValue(values.equityPE.value, 'number')}</span>
-                                </div>
-                            </div>
-
-                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColorReversed(values.earningsYieldPremium.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">EY Premium (Shiller)</div>
-                                <div className="text-[10px] text-muted-foreground/60 mb-1">(1/PE - 3M)</div>
-                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColorReversed(values.earningsYieldPremium.percentile)}`}>
-                                    {formatPercentile(values.earningsYieldPremium.percentile)}
-                                </div>
-                                {dates.earningsYieldPremium && (
-                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.earningsYieldPremium)}</div>
-                                )}
-                                <div className="text-sm text-muted-foreground">
-                                    Value: <span className="font-semibold">{formatValue(values.earningsYieldPremium.value)}</span>
-                                </div>
-                            </div>
-
-                            <div className={`p-6 rounded-xl bg-card border-2 ${getPercentileColorReversed(values.realEarningsYield.percentile)} transition-all hover:shadow-md text-center`}>
-                                <div className="text-xs font-semibold uppercase tracking-wide mb-1 text-muted-foreground">Real EY (Shiller)</div>
-                                <div className="text-[10px] text-muted-foreground/60 mb-1">(1/PE - CPI)</div>
-                                <div className={`text-3xl font-bold mb-1 ${getPercentileTextColorReversed(values.realEarningsYield.percentile)}`}>
-                                    {formatPercentile(values.realEarningsYield.percentile)}
-                                </div>
-                                {dates.realEarningsYield && (
-                                    <div className="text-[10px] text-muted-foreground/70 mb-2">{formatDate(dates.realEarningsYield)}</div>
-                                )}
-                                <div className="text-sm text-muted-foreground">
-                                    Value: <span className="font-semibold">{formatValue(values.realEarningsYield.value)}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Fourth Row: 5-Year P/E Equity */}
+                    {/* Third Row: 5-Year P/E Equity */}
                     <div>
                         <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Equity Valuation (5-Year P/E)</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

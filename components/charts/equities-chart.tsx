@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
 
@@ -27,10 +27,12 @@ interface SeriesInfo {
 }
 
 // Map currencies to FX series names
+// For pairs like EUR/USD and GBP/USD: multiply index by rate to get USD value
+// For pairs like USD/JPY and USD/CAD: divide index by rate to get USD value
 const CURRENCY_TO_FX_SERIES: { [key: string]: { assetClass: string; seriesName: string; inverted: boolean } } = {
     'GBP': { assetClass: 'fx', seriesName: 'GBPUSD', inverted: false },
     'EUR': { assetClass: 'fx', seriesName: 'EURUSD', inverted: false },
-    'JPY': { assetClass: 'fx', seriesName: 'USDJPY', inverted: true }, // USD/JPY needs to be inverted
+    'JPY': { assetClass: 'fx', seriesName: 'USDJPY', inverted: true },
     'TRY': { assetClass: 'fx', seriesName: 'USDTRY', inverted: true },
     'ARS': { assetClass: 'fx', seriesName: 'USDARS', inverted: true },
     'CAD': { assetClass: 'fx', seriesName: 'USDCAD', inverted: true },

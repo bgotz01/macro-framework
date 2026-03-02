@@ -64,18 +64,17 @@ export default async function HistoricalMatrixPage() {
     ]);
 
     // Fetch percentile data
-    const [cpiPerc, tenYearPerc, twoYearPerc, shillerPEPerc, fedFundsPerc, pe5yrPerc] = await Promise.all([
+    const [cpiPerc, tenYearPerc, threeMonthPerc, shillerPEPerc, pe5yrPerc] = await Promise.all([
         getLatestPercentile('economic', 'CPI'),
         getLatestPercentile('bonds', 'US/TNX-Monthly'),
-        getLatestPercentile('bonds', 'US/US-2yr-Monthly'),
+        getLatestPercentile('bonds', 'US/IRX-Monthly'),
         getLatestPercentile('valuations', 'Shiller-PE'),
-        getLatestPercentile('economic', 'US/FEDFUNDS'),
         getLatestPercentile('valuations', 'PE-5yr'),
     ]);
 
     // Get derived percentiles
-    const realYieldPerc = await getLatestPercentile('derived', 'Real-Yield');
-    const yieldCurvePerc = await getLatestPercentile('derived', 'Yield-Curve');
+    const realYieldPerc = await getLatestPercentile('derived', 'Real-10Y');
+    const yieldCurvePerc = await getLatestPercentile('derived', 'Yield-Curve-10Y-3M');
     const eypPerc = await getLatestPercentile('derived', 'Earnings-Yield-Premium');
     const reyPerc = await getLatestPercentile('derived', 'Real-Earnings-Yield');
     const eyp5yrPerc = await getLatestPercentile('derived', 'Earnings-Yield-Premium-5yr');
@@ -139,9 +138,9 @@ export default async function HistoricalMatrixPage() {
             percentile: yieldCurvePerc.percentile,
             value: yieldCurvePerc.value
         },
-        fedFunds: {
-            percentile: fedFundsPerc.percentile,
-            value: fedFundsPerc.value
+        treasury3M: {
+            percentile: threeMonthPerc.percentile,
+            value: threeMonthPerc.value
         },
         equityPE: {
             percentile: shillerPEPerc.percentile,
@@ -175,7 +174,7 @@ export default async function HistoricalMatrixPage() {
         bondYieldNominal: tenYearPerc.date,
         bondYieldReal: realYieldPerc.date,
         yieldCurve: yieldCurvePerc.date,
-        fedFunds: fedFundsPerc.date,
+        treasury3M: threeMonthPerc.date,
         equityPE: shillerPEPerc.date,
         earningsYieldPremium: eypPerc.date,
         realEarningsYield: reyPerc.date,

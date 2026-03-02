@@ -38,7 +38,7 @@ const METRICS: MetricConfig[] = [
     { key: 'pe5yr', label: 'P/E-5yr', shortLabel: 'P/E-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(1)}x` },
     { key: 'eyCAPE', label: 'Earnings Yield CAPE (1/CAPE)', shortLabel: 'EY CAPE', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
     { key: 'ey5yr', label: 'Earnings Yield 5yr (1/P/E-5yr)', shortLabel: 'EY-5yr', category: 'Equity Valuation', format: (v) => `${v.toFixed(2)}%` },
-    { key: 'eyp', label: 'EYP (CAPE)', shortLabel: 'EYP (CAPE)', category: 'Equity Spreads', format: (v) => `${v.toFixed(2)}%` },
+
     { key: 'eyp5yr', label: 'EYP-5yr', shortLabel: 'EYP-5yr', category: 'Equity Spreads', format: (v) => `${v.toFixed(2)}%` },
     { key: 'rey5yr', label: 'Real Earnings Yield 5yr (EY5yr-CPI)', shortLabel: 'Real EY-5yr', category: 'Equity Spreads', format: (v) => `${v.toFixed(2)}%` },
 ];
