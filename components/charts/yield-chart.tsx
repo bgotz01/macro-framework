@@ -107,16 +107,24 @@ export default function YieldChart({
                 const allSeries = [...bondsSeries, ...economicSeries, ...valuationsSeries];
                 setAvailableSeries(allSeries);
 
-                // Auto-select first series
-                if (allSeries.length > 0) {
-                    setSelectedSeries(allSeries[0].series_name);
-                    setSelectedAssetClass(allSeries[0].asset_class);
-                    setSeries1(allSeries[0].series_name);
-                    setAssetClass1(allSeries[0].asset_class);
+                // Auto-select 10Y Treasury as default, fallback to first series
+                const default10Y = allSeries.find(s => s.series_name === 'US/TNX-Monthly');
+                const defaultSeries = default10Y || allSeries[0];
 
-                    if (allSeries.length > 1) {
-                        setSeries2(allSeries[1].series_name);
-                        setAssetClass2(allSeries[1].asset_class);
+                if (defaultSeries) {
+                    setSelectedSeries(defaultSeries.series_name);
+                    setSelectedAssetClass(defaultSeries.asset_class);
+                    setSeries1(defaultSeries.series_name);
+                    setAssetClass1(defaultSeries.asset_class);
+
+                    // For series2, pick the next available series
+                    const series2Index = allSeries.indexOf(defaultSeries) + 1;
+                    if (series2Index < allSeries.length) {
+                        setSeries2(allSeries[series2Index].series_name);
+                        setAssetClass2(allSeries[series2Index].asset_class);
+                    } else if (allSeries.length > 1) {
+                        setSeries2(allSeries[0].series_name);
+                        setAssetClass2(allSeries[0].asset_class);
                     }
                 }
             } catch (err) {

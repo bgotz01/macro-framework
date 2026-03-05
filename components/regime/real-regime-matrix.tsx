@@ -2,7 +2,6 @@
 
 import SignalTrackerSection from './signal-tracker-section';
 import SignalDetector from './signal-detector';
-import SignalFlags from './signal-flags';
 import PercentileMetricsSection from './percentile-metrics-section';
 import TimelineSlider from './regime-timeline-slider';
 import { usePercentileData } from './use-percentile-data';
@@ -57,11 +56,9 @@ export default function RealRegimeMatrix({ initialValues, initialMetricValues, s
             <div className="p-4 rounded-lg border border-border/50 bg-card shadow-lg">
                 <SignalDetector
                     metricValues={metricValues}
+                    selectedDate={debouncedDateString}
                 />
             </div>
-
-            {/* Regime Flags */}
-            <SignalFlags selectedDate={debouncedDateString} />
 
             {/* Market Regime Trackers */}
             <div className="p-4 rounded-lg border border-border/50 bg-card shadow-lg space-y-4">

@@ -329,23 +329,21 @@ export default function SignalTrackerSection({ title, metricValues, type }: Sign
             </div>
             <div className="space-y-3">
                 {type === 'real-metrics' ? (
-                    <>
-                        <div className="grid grid-cols-2 gap-3">
-                            <RegimeTracker
-                                label="Cash: Capital Pressure"
-                                value={metricValues.real3M?.value ?? null}
-                                metricLabel="Real 3M"
-                                centerLabel={true}
-                                getStatus={getCashStatus}
-                            />
-                            <RegimeTracker
-                                label="Bonds: System Anchor"
-                                value={metricValues.real10Y?.value ?? null}
-                                metricLabel="Real 10Y"
-                                centerLabel={true}
-                                getStatus={getBondsStatus}
-                            />
-                        </div>
+                    <div className="grid grid-cols-3 gap-3">
+                        <RegimeTracker
+                            label="Cash: Capital Pressure"
+                            value={metricValues.real3M?.value ?? null}
+                            metricLabel="Real 3M"
+                            centerLabel={true}
+                            getStatus={getCashStatus}
+                        />
+                        <RegimeTracker
+                            label="Bonds: System Anchor"
+                            value={metricValues.real10Y?.value ?? null}
+                            metricLabel="Real 10Y"
+                            centerLabel={true}
+                            getStatus={getBondsStatus}
+                        />
                         <RegimeTracker
                             label="Equities: Real Earnings Yield"
                             value={metricValues.rey5yr?.value ?? null}
@@ -353,7 +351,7 @@ export default function SignalTrackerSection({ title, metricValues, type }: Sign
                             centerLabel={true}
                             getStatus={getEquitiesStatus}
                         />
-                    </>
+                    </div>
                 ) : (
                     <>
                         <div className="grid grid-cols-2 gap-3">

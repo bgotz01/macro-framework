@@ -19,9 +19,20 @@ interface DecadeData {
     bondYield: number | null;
     realYield: number | null;
     yieldCurve: number | null;
-    equityPE: number | null;
-    earningsYield: number | null;
+    equityPE5yr: number | null;
+    earningsYieldPremium5yr: number | null;
+    realEarningsYield5yr: number | null;
     fedFunds: number | null;
+    inflationPercentile: number | null;
+    bondYieldPercentile: number | null;
+    realYieldPercentile: number | null;
+    yieldCurvePercentile: number | null;
+    equityPE5yrPercentile: number | null;
+    earningsYieldPremium5yrPercentile: number | null;
+    realEarningsYield5yrPercentile: number | null;
+    fedFundsPercentile: number | null;
+    outlier1: { metric: string; value: number | null; percentile: number | null; distance: number } | null;
+    outlier2: { metric: string; value: number | null; percentile: number | null; distance: number } | null;
 }
 
 function getLevel(value: number | null, thresholds: { low: number; mid: number }): 'LOW' | 'MID' | 'HIGH' | '-' {
@@ -40,32 +51,115 @@ function getLevelColor(level: 'LOW' | 'MID' | 'HIGH' | '-'): string {
     }
 }
 
+function calculateOutliers(metrics: Array<{ metric: string; value: number | null; percentile: number | null }>): {
+    outlier1: { metric: string; value: number | null; percentile: number | null; distance: number } | null;
+    outlier2: { metric: string; value: number | null; percentile: number | null; distance: number } | null;
+} {
+    // Calculate distance from 50th percentile for each metric
+    const metricsWithDistance = metrics
+        .filter(m => m.percentile !== null)
+        .map(m => ({
+            ...m,
+            distance: Math.abs((m.percentile as number) - 50)
+        }))
+        .sort((a, b) => b.distance - a.distance);
+
+    return {
+        outlier1: metricsWithDistance[0] || null,
+        outlier2: metricsWithDistance[1] || null,
+    };
+}
+
 async function getValueAtDate(assetClass: string, seriesName: string, targetDate: string): Promise<number | null> {
     try {
         const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
         const db = new Database(dbPath, { readonly: true });
 
-        // Convert target date to timestamp
-        const targetTimestamp = new Date(targetDate).getTime();
+        let query: string;
+        let params: any[];
 
-        // Find the closest date within 45 days (for monthly data)
-        const query = `
-            SELECT value, date
-            FROM time_series
-            WHERE asset_class = ? 
-              AND series_name = ? 
-              AND column_name = 'Value'
-              AND ABS(date - ?) <= 45 * 24 * 60 * 60 * 1000
-            ORDER BY ABS(date - ?)
-            LIMIT 1
-        `;
+        if (targetDate === 'latest') {
+            // Get the most recent value
+            query = `
+                SELECT value, date
+                FROM time_series
+                WHERE asset_class = ? 
+                  AND series_name = ? 
+                  AND column_name = 'Value'
+                ORDER BY date DESC
+                LIMIT 1
+            `;
+            params = [assetClass, seriesName];
+        } else {
+            // Convert target date to timestamp
+            const targetTimestamp = new Date(targetDate).getTime();
 
-        const result = db.prepare(query).get(assetClass, seriesName, targetTimestamp, targetTimestamp) as { value: number } | undefined;
+            // Find the closest date within 45 days (for monthly data)
+            query = `
+                SELECT value, date
+                FROM time_series
+                WHERE asset_class = ? 
+                  AND series_name = ? 
+                  AND column_name = 'Value'
+                  AND ABS(date - ?) <= 45 * 24 * 60 * 60 * 1000
+                ORDER BY ABS(date - ?)
+                LIMIT 1
+            `;
+            params = [assetClass, seriesName, targetTimestamp, targetTimestamp];
+        }
+
+        const result = db.prepare(query).get(...params) as { value: number } | undefined;
         db.close();
 
         return result ? result.value : null;
     } catch (error) {
         console.error(`Error fetching ${assetClass}/${seriesName} at ${targetDate}:`, error);
+        return null;
+    }
+}
+
+async function getPercentileAtDate(assetClass: string, seriesName: string, targetDate: string): Promise<number | null> {
+    try {
+        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
+        const db = new Database(dbPath, { readonly: true });
+
+        let query: string;
+        let params: any[];
+
+        if (targetDate === 'latest') {
+            // Get the most recent percentile
+            query = `
+                SELECT percentile_rank, date
+                FROM percentile_analysis
+                WHERE asset_class = ? 
+                  AND series_name = ?
+                ORDER BY date DESC
+                LIMIT 1
+            `;
+            params = [assetClass, seriesName];
+        } else {
+            // Convert target date to timestamp
+            const targetTimestamp = new Date(targetDate).getTime();
+
+            // Find the closest date within 45 days (for monthly data)
+            query = `
+                SELECT percentile_rank, date
+                FROM percentile_analysis
+                WHERE asset_class = ? 
+                  AND series_name = ? 
+                  AND ABS(date - ?) <= 45 * 24 * 60 * 60 * 1000
+                ORDER BY ABS(date - ?)
+                LIMIT 1
+            `;
+            params = [assetClass, seriesName, targetTimestamp, targetTimestamp];
+        }
+
+        const result = db.prepare(query).get(...params) as { percentile_rank: number } | undefined;
+        db.close();
+
+        return result ? result.percentile_rank : null;
+    } catch (error) {
+        console.error(`Error fetching percentile for ${assetClass}/${seriesName} at ${targetDate}:`, error);
         return null;
     }
 }
@@ -84,24 +178,51 @@ async function getDecadeData(): Promise<DecadeData[]> {
         { decade: '2000s', date: '2009-12-31' },
         { decade: '2010s (mid)', date: '2014-12-31' },
         { decade: '2010s', date: '2019-12-31' },
-        { decade: '2020s (mid)', date: '2022-12-31' },
-        { decade: '2020s', date: '2024-12-31' }, // Most recent complete year
+        { decade: '2020s (mid)', date: '2024-12-31' },
+        { decade: 'Latest', date: 'latest' }, // Most recent data
     ];
 
     const data: DecadeData[] = [];
 
     for (const { decade, date } of decades) {
-        const [cpi, tenYear, twoYear, shillerPE, fedFunds] = await Promise.all([
+        const [cpi, tenYear, threeMonth, pe5yr, fedFunds, cpiPct, tenYearPct, threeMonthPct, pe5yrPct, fedFundsPct] = await Promise.all([
             getValueAtDate('economic', 'CPI', date),
             getValueAtDate('bonds', 'US/TNX', date),
-            getValueAtDate('bonds', 'US/US-2yr', date),
-            getValueAtDate('valuations', 'Shiller-PE', date),
+            getValueAtDate('bonds', 'US/IRX', date),
+            getValueAtDate('valuations', 'PE-5yr', date),
             getValueAtDate('economic', 'US/FEDFUNDS', date),
+            getPercentileAtDate('economic', 'CPI', date),
+            getPercentileAtDate('bonds', 'US/TNX-Monthly', date),
+            getPercentileAtDate('bonds', 'US/IRX-Monthly', date),
+            getPercentileAtDate('valuations', 'PE-5yr', date),
+            getPercentileAtDate('economic', 'US/FEDFUNDS', date),
         ]);
 
         const realYield = tenYear !== null && cpi !== null ? tenYear - cpi : null;
-        const yieldCurve = tenYear !== null && twoYear !== null ? tenYear - twoYear : null;
-        const earningsYield = shillerPE !== null && shillerPE > 0 ? (100 / shillerPE) : null;
+        const yieldCurve = tenYear !== null && threeMonth !== null ? tenYear - threeMonth : null;
+        const earningsYield5yr = pe5yr !== null && pe5yr > 0 ? (100 / pe5yr) : null;
+        const earningsYieldPremium5yr = earningsYield5yr !== null && threeMonth !== null ? earningsYield5yr - threeMonth : null;
+        const realEarningsYield5yr = earningsYield5yr !== null && cpi !== null ? earningsYield5yr - cpi : null;
+
+        // Fetch percentiles for derived metrics
+        const [realYieldPct, yieldCurvePct, eyp5yrPct, rey5yrPct] = await Promise.all([
+            getPercentileAtDate('derived', 'Real-10Y', date),
+            getPercentileAtDate('derived', 'Yield-Curve-10Y-3M', date),
+            getPercentileAtDate('derived', 'Earnings-Yield-Premium-5yr', date),
+            getPercentileAtDate('derived', 'Real-Earnings-Yield-5yr', date),
+        ]);
+
+        // Calculate outliers
+        const outliers = calculateOutliers([
+            { metric: 'Inflation', value: cpi, percentile: cpiPct },
+            { metric: 'Fed Funds', value: fedFunds, percentile: fedFundsPct },
+            { metric: '10Y Yield', value: tenYear, percentile: tenYearPct },
+            { metric: 'Real 10Y', value: realYield, percentile: realYieldPct },
+            { metric: 'Yield Curve', value: yieldCurve, percentile: yieldCurvePct },
+            { metric: 'P/E 5yr', value: pe5yr, percentile: pe5yrPct },
+            { metric: 'EYP 5yr', value: earningsYieldPremium5yr, percentile: eyp5yrPct },
+            { metric: 'Real EY 5yr', value: realEarningsYield5yr, percentile: rey5yrPct },
+        ]);
 
         data.push({
             decade,
@@ -110,9 +231,20 @@ async function getDecadeData(): Promise<DecadeData[]> {
             bondYield: tenYear,
             realYield,
             yieldCurve,
-            equityPE: shillerPE,
-            earningsYield,
+            equityPE5yr: pe5yr,
+            earningsYieldPremium5yr,
+            realEarningsYield5yr,
             fedFunds,
+            inflationPercentile: cpiPct,
+            bondYieldPercentile: tenYearPct,
+            realYieldPercentile: realYieldPct,
+            yieldCurvePercentile: yieldCurvePct,
+            equityPE5yrPercentile: pe5yrPct,
+            earningsYieldPremium5yrPercentile: eyp5yrPct,
+            realEarningsYield5yrPercentile: rey5yrPct,
+            fedFundsPercentile: fedFundsPct,
+            outlier1: outliers.outlier1,
+            outlier2: outliers.outlier2,
         });
     }
 
@@ -133,24 +265,51 @@ async function get12YearCycleData(): Promise<DecadeData[]> {
         { decade: '1996-2007', date: '2007-12-31' },
         { decade: '2008-2019 (mid)', date: '2013-12-31' },
         { decade: '2008-2019', date: '2019-12-31' },
-        { decade: '2020-2031 (mid)', date: '2025-12-31' },
-        { decade: '2020-2031', date: '2024-12-31' }, // Most recent complete year
+        { decade: '2020-2031 (mid)', date: '2024-12-31' },
+        { decade: 'Latest', date: 'latest' }, // Most recent data
     ];
 
     const data: DecadeData[] = [];
 
     for (const { decade, date } of cycles) {
-        const [cpi, tenYear, twoYear, shillerPE, fedFunds] = await Promise.all([
+        const [cpi, tenYear, threeMonth, pe5yr, fedFunds, cpiPct, tenYearPct, threeMonthPct, pe5yrPct, fedFundsPct] = await Promise.all([
             getValueAtDate('economic', 'CPI', date),
             getValueAtDate('bonds', 'US/TNX', date),
-            getValueAtDate('bonds', 'US/US-2yr', date),
-            getValueAtDate('valuations', 'Shiller-PE', date),
+            getValueAtDate('bonds', 'US/IRX', date),
+            getValueAtDate('valuations', 'PE-5yr', date),
             getValueAtDate('economic', 'US/FEDFUNDS', date),
+            getPercentileAtDate('economic', 'CPI', date),
+            getPercentileAtDate('bonds', 'US/TNX-Monthly', date),
+            getPercentileAtDate('bonds', 'US/IRX-Monthly', date),
+            getPercentileAtDate('valuations', 'PE-5yr', date),
+            getPercentileAtDate('economic', 'US/FEDFUNDS', date),
         ]);
 
         const realYield = tenYear !== null && cpi !== null ? tenYear - cpi : null;
-        const yieldCurve = tenYear !== null && twoYear !== null ? tenYear - twoYear : null;
-        const earningsYield = shillerPE !== null && shillerPE > 0 ? (100 / shillerPE) : null;
+        const yieldCurve = tenYear !== null && threeMonth !== null ? tenYear - threeMonth : null;
+        const earningsYield5yr = pe5yr !== null && pe5yr > 0 ? (100 / pe5yr) : null;
+        const earningsYieldPremium5yr = earningsYield5yr !== null && threeMonth !== null ? earningsYield5yr - threeMonth : null;
+        const realEarningsYield5yr = earningsYield5yr !== null && cpi !== null ? earningsYield5yr - cpi : null;
+
+        // Fetch percentiles for derived metrics
+        const [realYieldPct, yieldCurvePct, eyp5yrPct, rey5yrPct] = await Promise.all([
+            getPercentileAtDate('derived', 'Real-10Y', date),
+            getPercentileAtDate('derived', 'Yield-Curve-10Y-3M', date),
+            getPercentileAtDate('derived', 'Earnings-Yield-Premium-5yr', date),
+            getPercentileAtDate('derived', 'Real-Earnings-Yield-5yr', date),
+        ]);
+
+        // Calculate outliers
+        const outliers = calculateOutliers([
+            { metric: 'Inflation', value: cpi, percentile: cpiPct },
+            { metric: 'Fed Funds', value: fedFunds, percentile: fedFundsPct },
+            { metric: '10Y Yield', value: tenYear, percentile: tenYearPct },
+            { metric: 'Real 10Y', value: realYield, percentile: realYieldPct },
+            { metric: 'Yield Curve', value: yieldCurve, percentile: yieldCurvePct },
+            { metric: 'P/E 5yr', value: pe5yr, percentile: pe5yrPct },
+            { metric: 'EYP 5yr', value: earningsYieldPremium5yr, percentile: eyp5yrPct },
+            { metric: 'Real EY 5yr', value: realEarningsYield5yr, percentile: rey5yrPct },
+        ]);
 
         data.push({
             decade,
@@ -159,9 +318,20 @@ async function get12YearCycleData(): Promise<DecadeData[]> {
             bondYield: tenYear,
             realYield,
             yieldCurve,
-            equityPE: shillerPE,
-            earningsYield,
+            equityPE5yr: pe5yr,
+            earningsYieldPremium5yr,
+            realEarningsYield5yr,
             fedFunds,
+            inflationPercentile: cpiPct,
+            bondYieldPercentile: tenYearPct,
+            realYieldPercentile: realYieldPct,
+            yieldCurvePercentile: yieldCurvePct,
+            equityPE5yrPercentile: pe5yrPct,
+            earningsYieldPremium5yrPercentile: eyp5yrPct,
+            realEarningsYield5yrPercentile: rey5yrPct,
+            fedFundsPercentile: fedFundsPct,
+            outlier1: outliers.outlier1,
+            outlier2: outliers.outlier2,
         });
     }
 
@@ -208,7 +378,7 @@ export default async function DecadesPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="font-semibold mb-2">Real Yield</div>
+                        <div className="font-semibold mb-2">Real 10Y Yield</div>
                         <div className="space-y-1">
                             <div className={`px-2 py-1 rounded ${getLevelColor('LOW')}`}>LOW: &lt; 0%</div>
                             <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>MID: 0-2%</div>
@@ -224,7 +394,7 @@ export default async function DecadesPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="font-semibold mb-2">Yield Curve</div>
+                        <div className="font-semibold mb-2">Yield Curve (10Y - 3M)</div>
                         <div className="space-y-1">
                             <div className={`px-2 py-1 rounded ${getLevelColor('HIGH')}`}>INV: &lt; -0.5%</div>
                             <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>FLAT: -0.5 to 0.5%</div>
@@ -232,7 +402,7 @@ export default async function DecadesPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="font-semibold mb-2">Shiller P/E</div>
+                        <div className="font-semibold mb-2">P/E 5yr</div>
                         <div className="space-y-1">
                             <div className={`px-2 py-1 rounded ${getLevelColor('LOW')}`}>CHEAP: &lt; 15x</div>
                             <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>FAIR: 15-20x</div>
@@ -240,7 +410,15 @@ export default async function DecadesPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="font-semibold mb-2">Earnings Yield</div>
+                        <div className="font-semibold mb-2">EY Premium 5yr</div>
+                        <div className="space-y-1">
+                            <div className={`px-2 py-1 rounded ${getLevelColor('HIGH')}`}>HIGH: &gt; 6.67%</div>
+                            <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>MID: 5-6.67%</div>
+                            <div className={`px-2 py-1 rounded ${getLevelColor('LOW')}`}>LOW: &lt; 5%</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="font-semibold mb-2">Real EY 5yr</div>
                         <div className="space-y-1">
                             <div className={`px-2 py-1 rounded ${getLevelColor('HIGH')}`}>HIGH: &gt; 6.67%</div>
                             <div className={`px-2 py-1 rounded ${getLevelColor('MID')}`}>MID: 5-6.67%</div>
@@ -260,10 +438,13 @@ export default async function DecadesPage() {
                             <th className="border border-border p-4 text-center font-bold">Inflation</th>
                             <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                             <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
-                            <th className="border border-border p-4 text-center font-bold">Real Yield</th>
-                            <th className="border border-border p-4 text-center font-bold">Yield Curve</th>
-                            <th className="border border-border p-4 text-center font-bold">Shiller P/E</th>
-                            <th className="border border-border p-4 text-center font-bold">Earnings Yield</th>
+                            <th className="border border-border p-4 text-center font-bold">Real 10Y Yield</th>
+                            <th className="border border-border p-4 text-center font-bold">Yield Curve<br /><span className="text-xs font-normal">(10Y - 3M)</span></th>
+                            <th className="border border-border p-4 text-center font-bold">P/E 5yr</th>
+                            <th className="border border-border p-4 text-center font-bold">EY Premium 5yr<br /><span className="text-xs font-normal">(1/PE5yr - 3M)</span></th>
+                            <th className="border border-border p-4 text-center font-bold">Real EY 5yr<br /><span className="text-xs font-normal">(EY5yr - CPI)</span></th>
+                            <th className="border border-border p-4 text-center font-bold bg-purple-50 dark:bg-purple-950/30">Outlier 1</th>
+                            <th className="border border-border p-4 text-center font-bold bg-indigo-50 dark:bg-indigo-950/30">Outlier 2</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -273,13 +454,16 @@ export default async function DecadesPage() {
                             const realYieldLevel = getLevel(row.realYield, LEVELS.bondYieldsReal);
                             const fedFundsLevel = getLevel(row.fedFunds, LEVELS.fedFunds);
                             const yieldCurveLevel = getLevel(row.yieldCurve, LEVELS.yieldCurve);
-                            const equityPELevel = getLevel(row.equityPE, LEVELS.equityPE);
-                            const earningsYieldLevel = getLevel(row.earningsYield, LEVELS.earningsYield);
+                            const equityPE5yrLevel = getLevel(row.equityPE5yr, LEVELS.equityPE);
+                            const earningsYieldPremium5yrLevel = getLevel(row.earningsYieldPremium5yr, LEVELS.earningsYield);
+                            const realEarningsYield5yrLevel = getLevel(row.realEarningsYield5yr, LEVELS.earningsYield);
 
                             return (
-                                <tr key={row.decade} className="hover:bg-muted/30 transition-colors">
+                                <tr key={row.decade} className={`transition-colors ${row.decade === 'Latest' ? 'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 border-t-2 border-blue-300 dark:border-blue-700' : 'hover:bg-muted/30'}`}>
                                     <td className="border border-border p-4 font-bold text-lg">{row.decade}</td>
-                                    <td className="border border-border p-4 text-sm text-muted-foreground">{row.date.split('-')[0]}</td>
+                                    <td className="border border-border p-4 text-sm text-muted-foreground">
+                                        {row.date === 'latest' ? 'Current' : row.date.split('-')[0]}
+                                    </td>
                                     <td className="border border-border p-4">
                                         <div className="flex flex-col items-center gap-2">
                                             <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(inflationLevel)}`}>
@@ -287,6 +471,9 @@ export default async function DecadesPage() {
                                             </div>
                                             <div className="text-sm font-mono">
                                                 {row.inflation !== null ? `${row.inflation.toFixed(1)}%` : '-'}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.inflationPercentile !== null ? `Pct: ${row.inflationPercentile.toFixed(0)}%` : ''}
                                             </div>
                                         </div>
                                     </td>
@@ -298,6 +485,9 @@ export default async function DecadesPage() {
                                             <div className="text-sm font-mono">
                                                 {row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '-'}
                                             </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.fedFundsPercentile !== null ? `Pct: ${row.fedFundsPercentile.toFixed(0)}%` : ''}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="border border-border p-4">
@@ -307,6 +497,9 @@ export default async function DecadesPage() {
                                             </div>
                                             <div className="text-sm font-mono">
                                                 {row.bondYield !== null ? `${row.bondYield.toFixed(1)}%` : '-'}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.bondYieldPercentile !== null ? `Pct: ${row.bondYieldPercentile.toFixed(0)}%` : ''}
                                             </div>
                                         </div>
                                     </td>
@@ -318,6 +511,9 @@ export default async function DecadesPage() {
                                             <div className="text-sm font-mono">
                                                 {row.realYield !== null ? `${row.realYield.toFixed(1)}%` : '-'}
                                             </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.realYieldPercentile !== null ? `Pct: ${row.realYieldPercentile.toFixed(0)}%` : ''}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="border border-border p-4">
@@ -328,25 +524,77 @@ export default async function DecadesPage() {
                                             <div className="text-sm font-mono">
                                                 {row.yieldCurve !== null ? `${row.yieldCurve > 0 ? '+' : ''}${row.yieldCurve.toFixed(2)}%` : '-'}
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="border border-border p-4">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(equityPELevel)}`}>
-                                                {equityPELevel}
-                                            </div>
-                                            <div className="text-sm font-mono">
-                                                {row.equityPE !== null ? `${row.equityPE.toFixed(1)}x` : '-'}
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.yieldCurvePercentile !== null ? `Pct: ${row.yieldCurvePercentile.toFixed(0)}%` : ''}
                                             </div>
                                         </div>
                                     </td>
                                     <td className="border border-border p-4">
                                         <div className="flex flex-col items-center gap-2">
-                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldLevel)}`}>
-                                                {earningsYieldLevel}
+                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(equityPE5yrLevel)}`}>
+                                                {equityPE5yrLevel}
                                             </div>
                                             <div className="text-sm font-mono">
-                                                {row.earningsYield !== null ? `${row.earningsYield.toFixed(2)}%` : '-'}
+                                                {row.equityPE5yr !== null ? `${row.equityPE5yr.toFixed(1)}x` : '-'}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.equityPE5yrPercentile !== null ? `Pct: ${row.equityPE5yrPercentile.toFixed(0)}%` : ''}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="border border-border p-4">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldPremium5yrLevel)}`}>
+                                                {earningsYieldPremium5yrLevel}
+                                            </div>
+                                            <div className="text-sm font-mono">
+                                                {row.earningsYieldPremium5yr !== null ? `${row.earningsYieldPremium5yr.toFixed(2)}%` : '-'}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.earningsYieldPremium5yrPercentile !== null ? `Pct: ${row.earningsYieldPremium5yrPercentile.toFixed(0)}%` : ''}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="border border-border p-4">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(realEarningsYield5yrLevel)}`}>
+                                                {realEarningsYield5yrLevel}
+                                            </div>
+                                            <div className="text-sm font-mono">
+                                                {row.realEarningsYield5yr !== null ? `${row.realEarningsYield5yr.toFixed(2)}%` : '-'}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {row.realEarningsYield5yrPercentile !== null ? `Pct: ${row.realEarningsYield5yrPercentile.toFixed(0)}%` : ''}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="border border-border p-4 bg-purple-50 dark:bg-purple-950/30">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="text-xs font-bold text-purple-700 dark:text-purple-300">
+                                                {row.outlier1?.metric || '-'}
+                                            </div>
+                                            <div className="text-sm font-mono">
+                                                {row.outlier1 && row.outlier1.value !== null && row.outlier1.value !== undefined
+                                                    ? `${row.outlier1.value.toFixed(1)}${row.outlier1.metric.includes('P/E') ? 'x' : '%'}`
+                                                    : '-'}
+                                            </div>
+                                            <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">
+                                                {row.outlier1 && row.outlier1.percentile !== null ? `Pct: ${row.outlier1.percentile.toFixed(0)}%` : ''}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="border border-border p-4 bg-indigo-50 dark:bg-indigo-950/30">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                                {row.outlier2?.metric || '-'}
+                                            </div>
+                                            <div className="text-sm font-mono">
+                                                {row.outlier2 && row.outlier2.value !== null && row.outlier2.value !== undefined
+                                                    ? `${row.outlier2.value.toFixed(1)}${row.outlier2.metric.includes('P/E') ? 'x' : '%'}`
+                                                    : '-'}
+                                            </div>
+                                            <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                                {row.outlier2 && row.outlier2.percentile !== null ? `Pct: ${row.outlier2.percentile.toFixed(0)}%` : ''}
                                             </div>
                                         </div>
                                     </td>
@@ -403,10 +651,13 @@ export default async function DecadesPage() {
                                 <th className="border border-border p-4 text-center font-bold">Inflation</th>
                                 <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
                                 <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
-                                <th className="border border-border p-4 text-center font-bold">Real Yield</th>
-                                <th className="border border-border p-4 text-center font-bold">Yield Curve</th>
-                                <th className="border border-border p-4 text-center font-bold">Shiller P/E</th>
-                                <th className="border border-border p-4 text-center font-bold">Earnings Yield</th>
+                                <th className="border border-border p-4 text-center font-bold">Real 10Y Yield</th>
+                                <th className="border border-border p-4 text-center font-bold">Yield Curve<br /><span className="text-xs font-normal">(10Y - 3M)</span></th>
+                                <th className="border border-border p-4 text-center font-bold">P/E 5yr</th>
+                                <th className="border border-border p-4 text-center font-bold">EY Premium 5yr<br /><span className="text-xs font-normal">(1/PE5yr - 3M)</span></th>
+                                <th className="border border-border p-4 text-center font-bold">Real EY 5yr<br /><span className="text-xs font-normal">(EY5yr - CPI)</span></th>
+                                <th className="border border-border p-4 text-center font-bold bg-purple-50 dark:bg-purple-950/30">Outlier 1</th>
+                                <th className="border border-border p-4 text-center font-bold bg-indigo-50 dark:bg-indigo-950/30">Outlier 2</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -416,20 +667,26 @@ export default async function DecadesPage() {
                                 const realYieldLevel = getLevel(row.realYield, LEVELS.bondYieldsReal);
                                 const fedFundsLevel = getLevel(row.fedFunds, LEVELS.fedFunds);
                                 const yieldCurveLevel = getLevel(row.yieldCurve, LEVELS.yieldCurve);
-                                const equityPELevel = getLevel(row.equityPE, LEVELS.equityPE);
-                                const earningsYieldLevel = getLevel(row.earningsYield, LEVELS.earningsYield);
+                                const equityPE5yrLevel = getLevel(row.equityPE5yr, LEVELS.equityPE);
+                                const earningsYieldPremium5yrLevel = getLevel(row.earningsYieldPremium5yr, LEVELS.earningsYield);
+                                const realEarningsYield5yrLevel = getLevel(row.realEarningsYield5yr, LEVELS.earningsYield);
 
                                 return (
-                                    <tr key={row.decade} className="hover:bg-muted/30 transition-colors">
+                                    <tr key={row.decade} className={`transition-colors ${row.decade === 'Latest' ? 'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 border-t-2 border-blue-300 dark:border-blue-700' : 'hover:bg-muted/30'}`}>
                                         <td className="border border-border p-4 font-bold text-lg">{row.decade}</td>
-                                        <td className="border border-border p-4 text-sm text-muted-foreground">{row.date.split('-')[0]}</td>
+                                        <td className="border border-border p-4 text-sm text-muted-foreground">
+                                            {row.date === 'latest' ? 'Current' : row.date.split('-')[0]}
+                                        </td>
                                         <td className="border border-border p-4">
                                             <div className="flex flex-col items-center gap-2">
                                                 <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(inflationLevel)}`}>
                                                     {inflationLevel}
                                                 </div>
                                                 <div className="text-sm font-mono">
-                                                    {row.inflation !== null ? `${row.inflation.toFixed(1)}%` : '-'}
+                                                    {row.inflation !== null ? `Pct: ${row.inflation.toFixed(1)}%` : '-'}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.inflationPercentile !== null ? `Pct: ${row.inflationPercentile.toFixed(0)}%` : ''}
                                                 </div>
                                             </div>
                                         </td>
@@ -441,6 +698,9 @@ export default async function DecadesPage() {
                                                 <div className="text-sm font-mono">
                                                     {row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '-'}
                                                 </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.fedFundsPercentile !== null ? `Pct: ${row.fedFundsPercentile.toFixed(0)}%` : ''}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="border border-border p-4">
@@ -450,6 +710,9 @@ export default async function DecadesPage() {
                                                 </div>
                                                 <div className="text-sm font-mono">
                                                     {row.bondYield !== null ? `${row.bondYield.toFixed(1)}%` : '-'}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.bondYieldPercentile !== null ? `Pct: ${row.bondYieldPercentile.toFixed(0)}%` : ''}
                                                 </div>
                                             </div>
                                         </td>
@@ -461,6 +724,9 @@ export default async function DecadesPage() {
                                                 <div className="text-sm font-mono">
                                                     {row.realYield !== null ? `${row.realYield.toFixed(1)}%` : '-'}
                                                 </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.realYieldPercentile !== null ? `Pct: ${row.realYieldPercentile.toFixed(0)}%` : ''}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="border border-border p-4">
@@ -471,25 +737,77 @@ export default async function DecadesPage() {
                                                 <div className="text-sm font-mono">
                                                     {row.yieldCurve !== null ? `${row.yieldCurve > 0 ? '+' : ''}${row.yieldCurve.toFixed(2)}%` : '-'}
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="border border-border p-4">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(equityPELevel)}`}>
-                                                    {equityPELevel}
-                                                </div>
-                                                <div className="text-sm font-mono">
-                                                    {row.equityPE !== null ? `${row.equityPE.toFixed(1)}x` : '-'}
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.yieldCurvePercentile !== null ? `Pct: ${row.yieldCurvePercentile.toFixed(0)}%` : ''}
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="border border-border p-4">
                                             <div className="flex flex-col items-center gap-2">
-                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldLevel)}`}>
-                                                    {earningsYieldLevel}
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(equityPE5yrLevel)}`}>
+                                                    {equityPE5yrLevel}
                                                 </div>
                                                 <div className="text-sm font-mono">
-                                                    {row.earningsYield !== null ? `${row.earningsYield.toFixed(2)}%` : '-'}
+                                                    {row.equityPE5yr !== null ? `${row.equityPE5yr.toFixed(1)}x` : '-'}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.equityPE5yrPercentile !== null ? `Pct: ${row.equityPE5yrPercentile.toFixed(0)}%` : ''}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldPremium5yrLevel)}`}>
+                                                    {earningsYieldPremium5yrLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.earningsYieldPremium5yr !== null ? `${row.earningsYieldPremium5yr.toFixed(2)}%` : '-'}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.earningsYieldPremium5yrPercentile !== null ? `Pct: ${row.earningsYieldPremium5yrPercentile.toFixed(0)}%` : ''}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(realEarningsYield5yrLevel)}`}>
+                                                    {realEarningsYield5yrLevel}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.realEarningsYield5yr !== null ? `${row.realEarningsYield5yr.toFixed(2)}%` : '-'}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {row.realEarningsYield5yrPercentile !== null ? `Pct: ${row.realEarningsYield5yrPercentile.toFixed(0)}%` : ''}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4 bg-purple-50 dark:bg-purple-950/30">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="text-xs font-bold text-purple-700 dark:text-purple-300">
+                                                    {row.outlier1?.metric || '-'}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.outlier1 && row.outlier1.value !== null && row.outlier1.value !== undefined
+                                                        ? `${row.outlier1.value.toFixed(1)}${row.outlier1.metric.includes('P/E') ? 'x' : '%'}`
+                                                        : '-'}
+                                                </div>
+                                                <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">
+                                                    {row.outlier1 && row.outlier1.percentile !== null ? `Pct: ${row.outlier1.percentile.toFixed(0)}%` : ''}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="border border-border p-4 bg-indigo-50 dark:bg-indigo-950/30">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                                    {row.outlier2?.metric || '-'}
+                                                </div>
+                                                <div className="text-sm font-mono">
+                                                    {row.outlier2 && row.outlier2.value !== null && row.outlier2.value !== undefined
+                                                        ? `${row.outlier2.value.toFixed(1)}${row.outlier2.metric.includes('P/E') ? 'x' : '%'}`
+                                                        : '-'}
+                                                </div>
+                                                <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                                    {row.outlier2 && row.outlier2.percentile !== null ? `Pct: ${row.outlier2.percentile.toFixed(0)}%` : ''}
                                                 </div>
                                             </div>
                                         </td>

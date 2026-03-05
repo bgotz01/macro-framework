@@ -267,10 +267,13 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
 
                             if (value === null || value === undefined) return null;
 
+                            // Determine suffix: P/E ratios use 'x', everything else uses '%'
+                            const suffix = (seriesValue === 'shillerpe' || seriesValue === 'pe5yr') ? 'x' : '%';
+
                             return (
                                 <p key={seriesValue} className="text-sm">
                                     <span style={{ color: series?.color }}>{series?.label}:</span>{' '}
-                                    {value.toFixed(2)}{seriesValue.includes('pe') ? 'x' : '%'}
+                                    {value.toFixed(2)}{suffix}
                                 </p>
                             );
                         })}

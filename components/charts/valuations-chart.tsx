@@ -19,6 +19,23 @@ interface ChartDataPoint {
 
 const CHART_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
 
+const DATE_PRESETS: Array<
+    | { label: string; value: string }
+    | { label: string; value: string; start: string; end: string }
+> = [
+        { label: 'All Time', value: 'all' },
+        { label: '1960s', value: '1960s', start: '1960-01-01', end: '1969-12-31' },
+        { label: '1970s', value: '1970s', start: '1970-01-01', end: '1979-12-31' },
+        { label: '1980s', value: '1980s', start: '1980-01-01', end: '1989-12-31' },
+        { label: '1990s', value: '1990s', start: '1990-01-01', end: '1999-12-31' },
+        { label: '2000s', value: '2000s', start: '2000-01-01', end: '2009-12-31' },
+        { label: '2010s', value: '2010s', start: '2010-01-01', end: '2019-12-31' },
+        { label: '2020s', value: '2020s', start: '2020-01-01', end: '2029-12-31' },
+        { label: 'Last 5Y', value: '5y' },
+        { label: 'Last 10Y', value: '10y' },
+        { label: 'Custom', value: 'custom' },
+    ];
+
 export default function ValuationsChart({
     height = 500,
     className = ''
@@ -26,6 +43,10 @@ export default function ValuationsChart({
     const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
     const [data, setData] = useState<{ [key: string]: ChartDataPoint[] }>({});
+    const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
+    const [datePreset, setDatePreset] = useState<string>('all');
+    const [customStartDate, setCustomStartDate] = useState<string>('');
+    const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showRatio, setShowRatio] = useState(false);
@@ -119,6 +140,62 @@ export default function ValuationsChart({
 
         loadData();
     }, [selectedSeries, showRatio, ratioNumerator, ratioDenominator]);
+
+    // Filter data based on date range
+    useEffect(() => {
+        if (Object.keys(data).length === 0) {
+            setFilteredData([]);
+            return;
+        }
+
+        // Get all unique dates from all series
+        const allDates = new Set<string>();
+        Object.values(data).forEach(seriesData => {
+            seriesData.forEach(point => allDates.add(point.date));
+        });
+
+        let dates = Array.from(allDates).sort();
+
+        if (datePreset === 'all') {
+            setFilteredData([]);
+            return;
+        }
+
+        let startDate: string | null = null;
+        let endDate: string | null = null;
+
+        if (datePreset === 'custom') {
+            startDate = customStartDate;
+            endDate = customEndDate;
+        } else if (datePreset === '5y') {
+            const now = new Date();
+            const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+            startDate = fiveYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '10y') {
+            const now = new Date();
+            const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+            startDate = tenYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else {
+            const preset = DATE_PRESETS.find(p => p.value === datePreset);
+            if (preset && 'start' in preset && preset.start && preset.end) {
+                startDate = preset.start;
+                endDate = preset.end;
+            }
+        }
+
+        if (startDate) {
+            dates = dates.filter(d => d >= startDate!);
+        }
+        if (endDate) {
+            dates = dates.filter(d => d <= endDate!);
+        }
+
+        // Create filtered data points for the date range
+        const filtered = dates.map(date => ({ date }));
+        setFilteredData(filtered);
+    }, [data, datePreset, customStartDate, customEndDate]);
 
     // Toggle series selection
     const toggleSeries = (seriesName: string) => {
@@ -271,80 +348,101 @@ export default function ValuationsChart({
             return activeKeys.some(key => point[key] !== undefined && point[key] !== null);
         });
 
+        // Apply date range filter if not 'all'
+        if (datePreset !== 'all' && filteredData.length > 0) {
+            const filteredDates = new Set(filteredData.map(d => d.date));
+            chartData = chartData.filter(point => {
+                // Check if the point's date or its month key is in the filtered range
+                const monthKey = getMonthKey(point.date);
+                return Array.from(filteredDates).some(fd => getMonthKey(fd) === monthKey);
+            });
+        }
+
+        const noDataInRange = datePreset !== 'all' && chartData.length === 0;
+
         return (
-            <ResponsiveContainer width="100%" height={height}>
-                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                    <XAxis
-                        dataKey="date"
-                        stroke="#9ca3af"
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                        tickFormatter={(value) => {
-                            const date = new Date(value);
-                            return date.getFullYear().toString();
-                        }}
-                        ticks={generateYearlyTicks(chartData)}
-                    />
-                    <YAxis
-                        stroke="#9ca3af"
-                        tick={{ fill: '#9ca3af', fontSize: 12 }}
-                        domain={['auto', 'auto']}
-                    />
-                    <Tooltip
-                        contentStyle={{
-                            backgroundColor: '#1f2937',
-                            border: '1px solid #374151',
-                            borderRadius: '8px',
-                            color: '#f9fafb'
-                        }}
-                        labelStyle={{ color: '#9ca3af' }}
-                        formatter={(value: any, name: string | undefined) => {
-                            if (!name) return [formatTooltipValue(Number(value), undefined), ''];
-                            if (name === 'ratio') {
-                                const numSeries = availableSeries.find(s => s.series_name === ratioNumerator);
-                                const denSeries = availableSeries.find(s => s.series_name === ratioDenominator);
+            <>
+                {noDataInRange && (
+                    <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                        <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                            ⚠️ No data available for the selected date range. Showing all data instead.
+                        </p>
+                    </div>
+                )}
+                <ResponsiveContainer width="100%" height={height}>
+                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                        <XAxis
+                            dataKey="date"
+                            stroke="#9ca3af"
+                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tickFormatter={(value) => {
+                                const date = new Date(value);
+                                return date.getFullYear().toString();
+                            }}
+                            ticks={generateYearlyTicks(chartData)}
+                        />
+                        <YAxis
+                            stroke="#9ca3af"
+                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            domain={['auto', 'auto']}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#1f2937',
+                                border: '1px solid #374151',
+                                borderRadius: '8px',
+                                color: '#f9fafb'
+                            }}
+                            labelStyle={{ color: '#9ca3af' }}
+                            formatter={(value: any, name: string | undefined) => {
+                                if (!name) return [formatTooltipValue(Number(value), undefined), ''];
+                                if (name === 'ratio') {
+                                    const numSeries = availableSeries.find(s => s.series_name === ratioNumerator);
+                                    const denSeries = availableSeries.find(s => s.series_name === ratioDenominator);
+                                    return [
+                                        Number(value).toFixed(2),
+                                        `${numSeries?.display_name || ratioNumerator} / ${denSeries?.display_name || ratioDenominator}`
+                                    ];
+                                }
+                                const series = availableSeries.find(s => s.series_name === name);
                                 return [
-                                    Number(value).toFixed(2),
-                                    `${numSeries?.display_name || ratioNumerator} / ${denSeries?.display_name || ratioDenominator}`
+                                    formatTooltipValue(Number(value), series?.units),
+                                    series?.display_name || name
                                 ];
-                            }
-                            const series = availableSeries.find(s => s.series_name === name);
-                            return [
-                                formatTooltipValue(Number(value), series?.units),
-                                series?.display_name || name
-                            ];
-                        }}
-                    />
-                    <Legend wrapperStyle={{ color: '#9ca3af' }} />
-                    {selectedSeries.map((seriesName, index) => {
-                        const series = availableSeries.find(s => s.series_name === seriesName);
-                        return (
+                            }}
+                        />
+                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        {selectedSeries.map((seriesName, index) => {
+                            const series = availableSeries.find(s => s.series_name === seriesName);
+                            return (
+                                <Line
+                                    key={seriesName}
+                                    type="monotone"
+                                    dataKey={seriesName}
+                                    stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                                    strokeWidth={2}
+                                    dot={false}
+                                    connectNulls={true}
+                                    name={series?.display_name || seriesName}
+                                />
+                            );
+                        })}
+                        {showRatio && ratioNumerator && ratioDenominator && (
                             <Line
-                                key={seriesName}
+                                key="ratio"
                                 type="monotone"
-                                dataKey={seriesName}
-                                stroke={CHART_COLORS[index % CHART_COLORS.length]}
-                                strokeWidth={2}
+                                dataKey="ratio"
+                                stroke="#f59e0b"
+                                strokeWidth={3}
                                 dot={false}
                                 connectNulls={true}
-                                name={series?.display_name || seriesName}
+                                name="Ratio"
                             />
-                        );
-                    })}
-                    {showRatio && ratioNumerator && ratioDenominator && (
-                        <Line
-                            key="ratio"
-                            type="monotone"
-                            dataKey="ratio"
-                            stroke="#f59e0b"
-                            strokeWidth={3}
-                            dot={false}
-                            connectNulls={true}
-                            name="Ratio"
-                        />
-                    )}
-                </LineChart>
-            </ResponsiveContainer>
+                        )}
+                    </LineChart>
+                </ResponsiveContainer>
+            </>
         );
     };
 
@@ -547,6 +645,50 @@ export default function ValuationsChart({
                         </div>
                     </div>
                 )}
+
+                {/* Date Range Filter */}
+                <div className="space-y-3">
+                    <label className="block text-sm font-medium text-card-foreground">
+                        Date Range
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                        {DATE_PRESETS.map(preset => (
+                            <button
+                                key={preset.value}
+                                onClick={() => setDatePreset(preset.value)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {datePreset === 'custom' && (
+                        <div className="flex gap-3 mt-3">
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-xs text-muted-foreground mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Chart */}
