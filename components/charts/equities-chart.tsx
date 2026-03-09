@@ -12,6 +12,11 @@ interface EquitiesChartProps {
     className?: string;
     onSelectionChange?: (assetClass: string, series: string) => void;
     onDateRangeChange?: (startDate: string, endDate: string) => void;
+    initialAssetClass?: EquityAssetClass;
+    initialSeries?: string;
+    initialStartDate?: string;
+    initialEndDate?: string;
+    hideControls?: boolean;
 }
 
 interface ChartDataPoint {
@@ -68,18 +73,23 @@ export default function EquitiesChart({
     height = 400,
     className = '',
     onSelectionChange,
-    onDateRangeChange
+    onDateRangeChange,
+    initialAssetClass = 'equities',
+    initialSeries = '',
+    initialStartDate = '',
+    initialEndDate = '',
+    hideControls = false
 }: EquitiesChartProps) {
-    const [assetClass, setAssetClass] = useState<EquityAssetClass>('equities');
+    const [assetClass, setAssetClass] = useState<EquityAssetClass>(initialAssetClass);
     const [availableSeries, setAvailableSeries] = useState<SeriesInfo[]>([]);
-    const [selectedSeries, setSelectedSeries] = useState<string>('');
+    const [selectedSeries, setSelectedSeries] = useState<string>(initialSeries);
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [selectedCurrency, setSelectedCurrency] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
-    const [datePreset, setDatePreset] = useState<string>('10y');
-    const [customStartDate, setCustomStartDate] = useState<string>('');
-    const [customEndDate, setCustomEndDate] = useState<string>('');
+    const [datePreset, setDatePreset] = useState<string>(initialStartDate && initialEndDate ? 'custom' : '10y');
+    const [customStartDate, setCustomStartDate] = useState<string>(initialStartDate);
+    const [customEndDate, setCustomEndDate] = useState<string>(initialEndDate);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [convertToUSD, setConvertToUSD] = useState(false);
@@ -479,244 +489,246 @@ export default function EquitiesChart({
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Controls */}
-            <div className="mb-6 space-y-4">
-                {/* Mode Selector */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <label className="text-sm font-medium text-card-foreground">
-                        Chart Mode:
-                    </label>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setCalculationMode('single')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'single'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Single Series
-                        </button>
-                        <button
-                            onClick={() => setCalculationMode('ratio')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'ratio'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Ratio (S1 / S2)
-                        </button>
-                    </div>
-                </div>
-
-                {calculationMode === 'ratio' ? (
-                    /* Ratio Mode: Two Series Selectors with Asset Classes */
-                    <div className="space-y-4">
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-card-foreground mb-2">
-                                    Asset Class 1
-                                </label>
-                                <select
-                                    value={assetClass1}
-                                    onChange={(e) => {
-                                        setAssetClass1(e.target.value as EquityAssetClass);
-                                        setSeries1('');
-                                    }}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                >
-                                    {ASSET_CLASSES.map(ac => (
-                                        <option key={ac.value} value={ac.value}>
-                                            {ac.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-card-foreground mb-2">
-                                    Series 1
-                                </label>
-                                <select
-                                    value={series1}
-                                    onChange={(e) => setSeries1(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                    disabled={availableSeries1.length === 0}
-                                >
-                                    {availableSeries1.map(series => (
-                                        <option key={series.series_name} value={series.series_name}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-card-foreground mb-2">
-                                    Asset Class 2
-                                </label>
-                                <select
-                                    value={assetClass2}
-                                    onChange={(e) => {
-                                        setAssetClass2(e.target.value as EquityAssetClass);
-                                        setSeries2('');
-                                    }}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                >
-                                    {ASSET_CLASSES.map(ac => (
-                                        <option key={ac.value} value={ac.value}>
-                                            {ac.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-card-foreground mb-2">
-                                    Series 2
-                                </label>
-                                <select
-                                    value={series2}
-                                    onChange={(e) => setSeries2(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                    disabled={availableSeries2.length === 0}
-                                >
-                                    {availableSeries2.map(series => (
-                                        <option key={series.series_name} value={series.series_name}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    /* Single Series Mode: Asset Class and Series Selector */
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Asset Class
-                            </label>
-                            <select
-                                value={assetClass}
-                                onChange={(e) => setAssetClass(e.target.value as EquityAssetClass)}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                            >
-                                {ASSET_CLASSES.map(ac => (
-                                    <option key={ac.value} value={ac.value}>
-                                        {ac.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Time Series
-                            </label>
-                            <select
-                                value={selectedSeries}
-                                onChange={(e) => {
-                                    setSelectedSeries(e.target.value);
-                                    const series = availableSeries.find(s => s.series_name === e.target.value);
-                                    setSelectedUnits(series?.units);
-                                    setSelectedCurrency(series?.currency);
-                                    setConvertToUSD(false); // Reset conversion when changing series
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                disabled={availableSeries.length === 0}
-                            >
-                                {assetClass === 'equities' ? (
-                                    <>
-                                        <optgroup label="US Indices">
-                                            {availableSeries
-                                                .filter(s => s.series_name.startsWith('US/') || s.series_name === 'NDX' || s.series_name === 'DJI')
-                                                .map(series => (
-                                                    <option key={series.series_name} value={series.series_name}>
-                                                        {series.display_name}
-                                                    </option>
-                                                ))}
-                                        </optgroup>
-                                        <optgroup label="International Indices">
-                                            {availableSeries
-                                                .filter(s => !s.series_name.startsWith('US/') && s.series_name !== 'NDX' && s.series_name !== 'DJI')
-                                                .map(series => (
-                                                    <option key={series.series_name} value={series.series_name}>
-                                                        {series.display_name}
-                                                    </option>
-                                                ))}
-                                        </optgroup>
-                                    </>
-                                ) : (
-                                    availableSeries.map(series => (
-                                        <option key={series.series_name} value={series.series_name}>
-                                            {series.display_name}
-                                        </option>
-                                    ))
-                                )}
-                            </select>
-                        </div>
-                    </div>
-                )}
-
-                {/* USD Conversion Toggle (only for equities with non-USD currency) */}
-                {assetClass === 'equities' && selectedCurrency && selectedCurrency !== 'USD' && CURRENCY_TO_FX_SERIES[selectedCurrency] && (
+            {!hideControls && (
+                <div className="mb-6 space-y-4">
+                    {/* Mode Selector */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={convertToUSD}
-                                onChange={(e) => setConvertToUSD(e.target.checked)}
-                                className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
-                            />
-                            <span className="text-sm font-medium text-card-foreground">
-                                Convert to USD (currently in {selectedCurrency})
-                            </span>
+                        <label className="text-sm font-medium text-card-foreground">
+                            Chart Mode:
                         </label>
-                    </div>
-                )}
-
-                {/* Date Range Filter */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-card-foreground">
-                        Date Range
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                        {DATE_PRESETS.map(preset => (
+                        <div className="flex gap-2">
                             <button
-                                key={preset.value}
-                                onClick={() => setDatePreset(preset.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
+                                onClick={() => setCalculationMode('single')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'single'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
                             >
-                                {preset.label}
+                                Single Series
                             </button>
-                        ))}
+                            <button
+                                onClick={() => setCalculationMode('ratio')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'ratio'
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                            >
+                                Ratio (S1 / S2)
+                            </button>
+                        </div>
                     </div>
 
-                    {datePreset === 'custom' && (
-                        <div className="flex gap-3 mt-3">
-                            <div className="flex-1">
-                                <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
+                    {calculationMode === 'ratio' ? (
+                        /* Ratio Mode: Two Series Selectors with Asset Classes */
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-card-foreground mb-2">
+                                        Asset Class 1
+                                    </label>
+                                    <select
+                                        value={assetClass1}
+                                        onChange={(e) => {
+                                            setAssetClass1(e.target.value as EquityAssetClass);
+                                            setSeries1('');
+                                        }}
+                                        className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    >
+                                        {ASSET_CLASSES.map(ac => (
+                                            <option key={ac.value} value={ac.value}>
+                                                {ac.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-card-foreground mb-2">
+                                        Series 1
+                                    </label>
+                                    <select
+                                        value={series1}
+                                        onChange={(e) => setSeries1(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                        disabled={availableSeries1.length === 0}
+                                    >
+                                        {availableSeries1.map(series => (
+                                            <option key={series.series_name} value={series.series_name}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-card-foreground mb-2">
+                                        Asset Class 2
+                                    </label>
+                                    <select
+                                        value={assetClass2}
+                                        onChange={(e) => {
+                                            setAssetClass2(e.target.value as EquityAssetClass);
+                                            setSeries2('');
+                                        }}
+                                        className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    >
+                                        {ASSET_CLASSES.map(ac => (
+                                            <option key={ac.value} value={ac.value}>
+                                                {ac.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-card-foreground mb-2">
+                                        Series 2
+                                    </label>
+                                    <select
+                                        value={series2}
+                                        onChange={(e) => setSeries2(e.target.value)}
+                                        className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                        disabled={availableSeries2.length === 0}
+                                    >
+                                        {availableSeries2.map(series => (
+                                            <option key={series.series_name} value={series.series_name}>
+                                                {series.display_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Single Series Mode: Asset Class and Series Selector */
+                        <div className="flex gap-4">
                             <div className="flex-1">
-                                <label className="block text-xs text-muted-foreground mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Asset Class
+                                </label>
+                                <select
+                                    value={assetClass}
+                                    onChange={(e) => setAssetClass(e.target.value as EquityAssetClass)}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                    {ASSET_CLASSES.map(ac => (
+                                        <option key={ac.value} value={ac.value}>
+                                            {ac.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-card-foreground mb-2">
+                                    Time Series
+                                </label>
+                                <select
+                                    value={selectedSeries}
+                                    onChange={(e) => {
+                                        setSelectedSeries(e.target.value);
+                                        const series = availableSeries.find(s => s.series_name === e.target.value);
+                                        setSelectedUnits(series?.units);
+                                        setSelectedCurrency(series?.currency);
+                                        setConvertToUSD(false); // Reset conversion when changing series
+                                    }}
+                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    disabled={availableSeries.length === 0}
+                                >
+                                    {assetClass === 'equities' ? (
+                                        <>
+                                            <optgroup label="US Indices">
+                                                {availableSeries
+                                                    .filter(s => s.series_name.startsWith('US/') || s.series_name === 'NDX' || s.series_name === 'DJI')
+                                                    .map(series => (
+                                                        <option key={series.series_name} value={series.series_name}>
+                                                            {series.display_name}
+                                                        </option>
+                                                    ))}
+                                            </optgroup>
+                                            <optgroup label="International Indices">
+                                                {availableSeries
+                                                    .filter(s => !s.series_name.startsWith('US/') && s.series_name !== 'NDX' && s.series_name !== 'DJI')
+                                                    .map(series => (
+                                                        <option key={series.series_name} value={series.series_name}>
+                                                            {series.display_name}
+                                                        </option>
+                                                    ))}
+                                            </optgroup>
+                                        </>
+                                    ) : (
+                                        availableSeries.map(series => (
+                                            <option key={series.series_name} value={series.series_name}>
+                                                {series.display_name}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
                             </div>
                         </div>
                     )}
+
+                    {/* USD Conversion Toggle (only for equities with non-USD currency) */}
+                    {assetClass === 'equities' && selectedCurrency && selectedCurrency !== 'USD' && CURRENCY_TO_FX_SERIES[selectedCurrency] && (
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={convertToUSD}
+                                    onChange={(e) => setConvertToUSD(e.target.checked)}
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+                                />
+                                <span className="text-sm font-medium text-card-foreground">
+                                    Convert to USD (currently in {selectedCurrency})
+                                </span>
+                            </label>
+                        </div>
+                    )}
+
+                    {/* Date Range Filter */}
+                    <div className="space-y-3">
+                        <label className="block text-sm font-medium text-card-foreground">
+                            Date Range
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {DATE_PRESETS.map(preset => (
+                                <button
+                                    key={preset.value}
+                                    onClick={() => setDatePreset(preset.value)}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                        }`}
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {datePreset === 'custom' && (
+                            <div className="flex gap-3 mt-3">
+                                <div className="flex-1">
+                                    <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
+                                    <input
+                                        type="date"
+                                        value={customStartDate}
+                                        onChange={(e) => setCustomStartDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs text-muted-foreground mb-1">End Date</label>
+                                    <input
+                                        type="date"
+                                        value={customEndDate}
+                                        onChange={(e) => setCustomEndDate(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Chart */}
             {renderContent()}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import SignalHeader from '@/components/signals/signal-header';
 import SignalInsight from '@/components/signals/signal-insight';
 import SignalChart from '@/components/signals/signal-chart';
+import NegativeREYPerformance from '@/components/signals/negative-rey-performance';
 
 export default function RealEarningsYieldPage() {
     return (
@@ -138,6 +139,16 @@ export default function RealEarningsYieldPage() {
                             This is a graduated signal system. As Real EY deteriorates, the severity of the warning increases.
                             Each level represents a harder break in equity economics, requiring progressively more defensive positioning.
                         </p>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 className="text-2xl font-bold mb-4">Historical Performance After Negative REY</h2>
+                    <div className="bg-muted/30 border border-border rounded-lg p-4">
+                        <p className="text-sm mb-4">
+                            Explore how the S&P 500 performed over the 2 years following each instance when Real Earnings Yield went negative.
+                        </p>
+                        <NegativeREYPerformance />
                     </div>
                 </section>
             </div>

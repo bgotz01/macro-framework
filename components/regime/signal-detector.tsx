@@ -677,17 +677,6 @@ export default function SignalDetector({ metricValues, selectedDate }: RegimeDet
                                     {regime.rotation.description}
                                 </div>
                             </div>
-
-                            {/* Secondary Option */}
-                            {regime.rotation.secondary && (
-                                <div className="pt-2 border-t border-current/10">
-                                    <div className="text-center">
-                                        <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-1">Alternative</div>
-                                        <div className="text-sm font-bold leading-tight">{regime.rotation.secondary.name}</div>
-                                        <div className="text-xs opacity-70 mt-1.5 leading-snug">{regime.rotation.secondary.description}</div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
 
                         {/* Growth Equities Regime Indicator - positioned at bottom */}

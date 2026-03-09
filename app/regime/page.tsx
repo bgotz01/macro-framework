@@ -23,6 +23,7 @@ async function getLatestPercentiles() {
     ];
 
     const result: any = {};
+    let latestDate: string | null = null;
 
     for (const s of series) {
         const query = `
@@ -36,23 +37,29 @@ async function getLatestPercentiles() {
         const row = db.prepare(query).get(s.asset_class, s.series_name) as any;
 
         if (row) {
+            const rowDate = new Date(row.date).toISOString().split('T')[0];
             result[s.key] = {
                 percentile: row.percentile_rank,
                 value: row.value,
                 yoy: row.yoy_percentile_change,
-                date: new Date(row.date).toISOString().split('T')[0]
+                date: rowDate
             };
+
+            // Track the earliest of the latest dates (the date where ALL metrics have data)
+            if (!latestDate || rowDate < latestDate) {
+                latestDate = rowDate;
+            }
         } else {
             result[s.key] = { percentile: null, value: null, yoy: null, date: null };
         }
     }
 
     db.close();
-    return result;
+    return { data: result, latestDate };
 }
 
 export default async function RealPercentileMatrixPage() {
-    const data = await getLatestPercentiles();
+    const { data, latestDate } = await getLatestPercentiles();
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -66,6 +73,7 @@ export default async function RealPercentileMatrixPage() {
             </div>
 
             <RealMatrixWrapper
+                latestDataDate={latestDate || undefined}
                 initialPercentiles={{
                     cpi: data.cpi?.percentile || null,
                     fedFunds: data.fedFunds?.percentile || null,

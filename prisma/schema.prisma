@@ -1,0 +1,639 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CryptoAsset {
+  symbol                    String                      @id @db.VarChar(20)
+  name                      String                      @db.VarChar(100)
+  blockchain                String?                     @db.VarChar(50)
+  tokenType                 String?                     @db.VarChar(20)
+  contractAddress           String?                     @db.VarChar(100)
+  supply                    Decimal?                    @db.Decimal(30, 2)
+  maxSupply                 Decimal?                    @db.Decimal(30, 2)
+  totalSupply               Decimal?                    @db.Decimal(30, 2)
+  crypto_4hourly_divergence crypto_4hourly_divergence[]
+  crypto_hourly_divergence  crypto_hourly_divergence[]
+  crypto_hourly_prices      crypto_hourly_prices[]
+  crypto_price_divergence   crypto_price_divergence[]
+  crypto_prices             crypto_prices[]
+}
+
+model StockProfile {
+  symbol        String    @id @db.VarChar(10)
+  company       String?   @db.VarChar(255)
+  sector        String?   @db.VarChar(100)
+  industry      String?   @db.VarChar(100)
+  shares        BigInt?
+  impliedShares BigInt?
+  ipoDate       DateTime?
+  currency      String?   @db.VarChar(10)
+  yearEnd       String?   @db.VarChar(10)
+  description   String?
+}
+
+model annual_returns {
+  id         Int      @id @default(autoincrement())
+  symbol     String   @db.VarChar(10)
+  year       Int
+  return     Decimal  @db.Decimal(8, 4)
+  startDate  DateTime @db.Date
+  endDate    DateTime @db.Date
+  startPrice Decimal  @db.Decimal(12, 2)
+  endPrice   Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+
+  @@unique([symbol, year])
+  @@index([return])
+  @@index([symbol, year])
+  @@index([year])
+}
+
+model balance_sheet {
+  id            Int     @id @default(autoincrement())
+  symbol        String  @db.VarChar(10)
+  year          Int
+  assets        BigInt?
+  cash          BigInt?
+  currentAssets BigInt?
+  debt          BigInt?
+  netDebt       BigInt?
+  liabilities   BigInt?
+
+  @@unique([symbol, year])
+}
+
+model chart_entries {
+  id          Int       @id @default(autoincrement())
+  ticker      String    @db.VarChar(20)
+  filePath    String    @db.VarChar(500)
+  fileName    String    @db.VarChar(255)
+  patterns    String[]
+  category    String?   @db.VarChar(100)
+  timeframe   String?   @db.VarChar(20)
+  notes       String?
+  uploadDate  DateTime  @default(now())
+  fileSize    Int?
+  imageWidth  Int?
+  imageHeight Int?
+  chartDate   DateTime? @db.Date
+  marketCap   Decimal?  @db.Decimal(15, 2)
+  sector      String?   @db.VarChar(100)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  awsUrl      String?   @db.VarChar(500)
+
+  @@index([category])
+  @@index([patterns])
+  @@index([ticker])
+  @@index([uploadDate])
+}
+
+model chart_patterns {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  category    String   @db.VarChar(50)
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model crypto_4hourly_divergence {
+  id          Int         @id @default(autoincrement())
+  symbol      String      @db.VarChar(20)
+  openTime    DateTime
+  price50HMA  Float?
+  price100HMA Float?
+  price200HMA Float?
+  price500HMA Float?
+  ma_20       Decimal?    @db.Decimal(18, 8)
+  ma_50       Decimal?    @db.Decimal(18, 8)
+  ma_100      Decimal?    @db.Decimal(18, 8)
+  ma_200      Decimal?    @db.Decimal(18, 8)
+  ma_500      Decimal?    @db.Decimal(18, 8)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime
+  CryptoAsset CryptoAsset @relation(fields: [symbol], references: [symbol])
+
+  @@unique([symbol, openTime])
+  @@index([openTime])
+  @@index([symbol, openTime])
+}
+
+model crypto_hourly_divergence {
+  id          Int         @id @default(autoincrement())
+  symbol      String      @db.VarChar(20)
+  openTime    DateTime
+  price50HMA  Float?
+  price100HMA Float?
+  price200HMA Float?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime
+  ma_100      Decimal?    @db.Decimal(18, 8)
+  ma_20       Decimal?    @db.Decimal(18, 8)
+  ma_200      Decimal?    @db.Decimal(18, 8)
+  ma_50       Decimal?    @db.Decimal(18, 8)
+  ma_500      Decimal?    @db.Decimal(18, 8)
+  price500HMA Float?
+  CryptoAsset CryptoAsset @relation(fields: [symbol], references: [symbol])
+
+  @@unique([symbol, openTime])
+  @@index([openTime])
+  @@index([symbol, openTime])
+}
+
+model crypto_hourly_prices {
+  id                       Int         @id @default(autoincrement())
+  symbol                   String      @db.VarChar(20)
+  openTime                 DateTime
+  closeTime                DateTime
+  open                     Decimal     @db.Decimal(18, 8)
+  high                     Decimal     @db.Decimal(18, 8)
+  low                      Decimal     @db.Decimal(18, 8)
+  close                    Decimal     @db.Decimal(18, 8)
+  volume                   Decimal     @db.Decimal(30, 8)
+  quoteAssetVolume         Decimal     @db.Decimal(30, 8)
+  numberOfTrades           Int
+  takerBuyBaseAssetVolume  Decimal     @db.Decimal(30, 8)
+  takerBuyQuoteAssetVolume Decimal     @db.Decimal(30, 8)
+  CryptoAsset              CryptoAsset @relation(fields: [symbol], references: [symbol])
+
+  @@unique([symbol, openTime])
+  @@index([openTime])
+  @@index([symbol, openTime])
+}
+
+model crypto_price_divergence {
+  id             Int         @id @default(autoincrement())
+  symbol         String      @db.VarChar(20)
+  date           DateTime    @db.Date
+  dma_20         Float?
+  dma_50         Float?
+  dma_100        Float?
+  dma_200        Float?
+  dma_500        Float?
+  ma_20          Float?
+  ma_50          Float?
+  ma_100         Float?
+  ma_200         Float?
+  ma_500         Float?
+  slope_50       Float?
+  slope_100      Float?
+  slope_200      Float?
+  slope_500      Float?
+  daysAbove100MA Int?
+  daysAbove200MA Int?
+  daysAbove500MA Int?
+  rsi14          Float?
+  CryptoAsset    CryptoAsset @relation(fields: [symbol], references: [symbol])
+
+  @@unique([symbol, date])
+}
+
+model crypto_prices {
+  id          Int         @id @default(autoincrement())
+  symbol      String      @db.VarChar(20)
+  date        DateTime    @db.Date
+  open        Decimal?    @db.Decimal(18, 8)
+  high        Decimal?    @db.Decimal(18, 8)
+  low         Decimal?    @db.Decimal(18, 8)
+  close       Decimal?    @db.Decimal(18, 8)
+  volume      Decimal?    @db.Decimal(30, 2)
+  marketCap   Decimal?    @db.Decimal(30, 2)
+  CryptoAsset CryptoAsset @relation(fields: [symbol], references: [symbol])
+
+  @@unique([symbol, date])
+}
+
+model etf_holdings {
+  id          Int      @id @default(autoincrement())
+  etfSymbol   String   @db.VarChar(10)
+  symbol      String   @db.VarChar(10)
+  name        String   @db.VarChar(255)
+  weight      Decimal  @db.Decimal(8, 4)
+  shares      BigInt?
+  marketValue Decimal? @db.Decimal(15, 2)
+  asOfDate    DateTime @default(now()) @db.Date
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  etfs        etfs     @relation(fields: [etfSymbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([etfSymbol, symbol])
+  @@index([etfSymbol])
+  @@index([weight])
+}
+
+model etf_pairings {
+  id             String   @id
+  underlying     String   @db.VarChar(10)
+  underlyingName String?  @db.VarChar(255)
+  etfSymbol      String   @db.VarChar(10)
+  etfName        String?  @db.VarChar(255)
+  leverage       Decimal  @db.Decimal(5, 2)
+  category       String   @db.VarChar(50)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+
+  @@unique([underlying, etfSymbol])
+  @@index([category])
+  @@index([etfSymbol])
+  @@index([isActive])
+  @@index([underlying])
+}
+
+model etf_prices {
+  id     Int      @id @default(autoincrement())
+  symbol String   @db.VarChar(10)
+  date   DateTime @db.Date
+  open   Decimal? @db.Decimal(12, 2)
+  high   Decimal? @db.Decimal(12, 2)
+  low    Decimal? @db.Decimal(12, 2)
+  close  Decimal? @db.Decimal(12, 2)
+  volume BigInt?
+  nav    Decimal? @db.Decimal(12, 2)
+  etfs   etfs     @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
+
+  @@unique([symbol, date])
+  @@index([date])
+  @@index([symbol, date])
+}
+
+model etfs {
+  symbol          String         @id @db.VarChar(10)
+  name            String         @db.VarChar(255)
+  leverageRatio   Decimal?       @db.Decimal(4, 2)
+  components      String?
+  expenseRatio    Decimal?       @db.Decimal(5, 4)
+  inceptionDate   DateTime?      @db.Date
+  category        String?        @db.VarChar(100)
+  issuer          String?        @db.VarChar(100)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+  netAssets       Decimal?       @db.Decimal(15, 2)
+  underlyingIndex String?        @db.VarChar(50)
+  type            String         @default("ETF") @db.VarChar(20)
+  direction       String?        @db.VarChar(10)
+  notes           String?
+  etf_holdings    etf_holdings[]
+  etf_prices      etf_prices[]
+
+  @@index([category])
+  @@index([direction])
+  @@index([issuer])
+  @@index([type])
+}
+
+model historical_prices {
+  id     Int      @id @default(autoincrement())
+  symbol String   @db.VarChar(10)
+  date   DateTime @db.Date
+  open   Decimal? @db.Decimal(12, 2)
+  high   Decimal? @db.Decimal(12, 2)
+  low    Decimal? @db.Decimal(12, 2)
+  close  Decimal? @db.Decimal(12, 2)
+  volume BigInt?
+  gap    Decimal? @db.Decimal(5, 4)
+
+  @@unique([symbol, date])
+}
+
+model hourly_prices {
+  id        Int      @id @default(autoincrement())
+  symbol    String   @db.VarChar(10)
+  timestamp DateTime
+  open      Decimal  @db.Decimal(12, 2)
+  high      Decimal  @db.Decimal(12, 2)
+  low       Decimal  @db.Decimal(12, 2)
+  close     Decimal  @db.Decimal(12, 2)
+  volume    BigInt
+  assetType String?  @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  dma_100   Float?
+  dma_200   Float?
+  dma_50    Float?
+  dma_500   Float?
+  ma100     Decimal? @db.Decimal(18, 8)
+  ma200     Decimal? @db.Decimal(18, 8)
+  ma50      Decimal? @db.Decimal(18, 8)
+  ma500     Decimal? @db.Decimal(18, 8)
+
+  @@unique([symbol, timestamp])
+  @@index([assetType])
+  @@index([symbol, timestamp])
+  @@index([timestamp])
+}
+
+model income_statements {
+  id              Int     @id @default(autoincrement())
+  symbol          String  @db.VarChar(10)
+  year            Int
+  currency        String? @db.VarChar(10)
+  revenue         BigInt?
+  netIncome       BigInt?
+  ebitda          BigInt?
+  fcf             BigInt?
+  interestExpense BigInt?
+  interestIncome  BigInt?
+  netInterest     BigInt?
+  sga             BigInt?
+
+  @@unique([symbol, year])
+}
+
+model index_constituents {
+  id        Int      @id @default(autoincrement())
+  index     String   @db.VarChar(20)
+  ticker    String   @db.VarChar(10)
+  company   String   @db.VarChar(255)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@unique([index, ticker])
+  @@index([index])
+  @@index([ticker])
+}
+
+model insider_activity {
+  id          Int       @id @default(autoincrement())
+  symbol      String    @db.VarChar(10)
+  insider     String    @db.VarChar(100)
+  relation    String?   @db.VarChar(50)
+  transaction String?   @db.VarChar(50)
+  cost        Float?
+  shares      Int?
+  value       Float?
+  sharesTotal Int?
+  filingDate  DateTime?
+  tradeDate   DateTime  @db.Date
+
+  @@unique([symbol, tradeDate, transaction, shares, cost])
+  @@index([symbol])
+}
+
+model ma_streak {
+  id            Int      @id @default(autoincrement())
+  symbol        String   @db.VarChar(10)
+  date          DateTime @db.Date
+  streak_20_200 Int
+  streak_50_200 Int
+
+  @@unique([symbol, date])
+}
+
+model macro_data {
+  id           Int          @id @default(autoincrement())
+  seriesId     Int
+  date         DateTime     @db.Date
+  value        Decimal?     @db.Decimal(18, 8)
+  open         Decimal?     @db.Decimal(18, 8)
+  high         Decimal?     @db.Decimal(18, 8)
+  low          Decimal?     @db.Decimal(18, 8)
+  close        Decimal?     @db.Decimal(18, 8)
+  volume       BigInt?
+  daysAbove200 Int?
+  ma200        Decimal?     @db.Decimal(18, 8)
+  rsi14        Decimal?     @db.Decimal(5, 2)
+  dma_100      Float?
+  dma_200      Float?
+  dma_50       Float?
+  ma100        Decimal?     @db.Decimal(18, 8)
+  ma50         Decimal?     @db.Decimal(18, 8)
+  dma_500      Float?
+  ma500        Decimal?     @db.Decimal(18, 8)
+  macro_series macro_series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, date])
+  @@index([date])
+  @@index([seriesId, date])
+}
+
+model macro_series {
+  id                Int                 @id @default(autoincrement())
+  symbol            String              @unique @db.VarChar(20)
+  name              String              @db.VarChar(100)
+  category          String              @db.VarChar(20)
+  subcategory       String?             @db.VarChar(50)
+  country           String?             @db.VarChar(10)
+  currency          String?             @db.VarChar(10)
+  unit              String?             @db.VarChar(20)
+  description       String?
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  macro_data        macro_data[]
+  macro_weekly_data macro_weekly_data[]
+
+  @@index([category])
+  @@index([country])
+}
+
+model macro_weekly_data {
+  id            Int          @id @default(autoincrement())
+  seriesId      Int
+  weekEndDate   DateTime     @db.Date
+  value         Decimal?     @db.Decimal(18, 8)
+  open          Decimal?     @db.Decimal(18, 8)
+  high          Decimal?     @db.Decimal(18, 8)
+  low           Decimal?     @db.Decimal(18, 8)
+  close         Decimal?     @db.Decimal(18, 8)
+  volume        BigInt?
+  ma200         Decimal?     @db.Decimal(18, 8)
+  weeksAbove200 Int?
+  rsi14         Decimal?     @db.Decimal(5, 2)
+  dma_100       Float?
+  dma_200       Float?
+  dma_50        Float?
+  ma100         Decimal?     @db.Decimal(18, 8)
+  ma50          Decimal?     @db.Decimal(18, 8)
+  macro_series  macro_series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([seriesId, weekEndDate])
+  @@index([seriesId, weekEndDate])
+  @@index([weekEndDate])
+}
+
+model market_breadth {
+  id                 Int      @id @default(autoincrement())
+  date               DateTime @db.Date
+  index              String   @db.VarChar(20)
+  totalStocks        Int
+  above50DMA         Int
+  below50DMA         Int
+  above200DMA        Int
+  below200DMA        Int
+  percentAbove50DMA  Decimal  @db.Decimal(5, 2)
+  percentBelow50DMA  Decimal  @db.Decimal(5, 2)
+  percentAbove200DMA Decimal  @db.Decimal(5, 2)
+  percentBelow200DMA Decimal  @db.Decimal(5, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime
+
+  @@unique([date, index])
+  @@index([date])
+  @@index([index])
+}
+
+model price_divergence {
+  id              Int      @id @default(autoincrement())
+  symbol          String   @db.VarChar(10)
+  date            DateTime @db.Date
+  dma_20          Float?
+  dma_50          Float?
+  dma_100         Float?
+  dma_200         Float?
+  dma_500         Float?
+  ma_100          Float?
+  ma_20           Float?
+  ma_200          Float?
+  ma_50           Float?
+  ma_500          Float?
+  slope_100       Float?
+  slope_200       Float?
+  slope_50        Float?
+  slope_500       Float?
+  div_100_200     Float?
+  div_20_200      Float?
+  div_50_200      Float?
+  div_100_1000    Float?
+  div_200_1000    Float?
+  div_50_1000     Float?
+  dma_1000        Float?
+  ma_1000         Float?
+  slope_1000      Float?
+  daysAbove100MA  Int?
+  daysAbove200MA  Int?
+  daysAbove500MA  Int?
+  rsi14           Float?
+  daysAbove1000MA Int?
+
+  @@unique([symbol, date])
+}
+
+model price_highs {
+  id                   Int       @id @default(autoincrement())
+  symbol               String    @db.VarChar(10)
+  date                 DateTime  @db.Date
+  price                Decimal   @db.Decimal(12, 2)
+  high2Year            Decimal?  @db.Decimal(12, 2)
+  high5Year            Decimal?  @db.Decimal(12, 2)
+  highAllTime          Decimal?  @db.Decimal(12, 2)
+  dateHigh2Year        DateTime? @db.Date
+  dateHigh5Year        DateTime? @db.Date
+  dateHighAllTime      DateTime? @db.Date
+  isNew2YearHigh       Boolean   @default(false)
+  isNew5YearHigh       Boolean   @default(false)
+  isNewAllTimeHigh     Boolean   @default(false)
+  daysSincePrev2YrHigh Int?
+  daysSincePrevATH     Int?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime
+
+  @@unique([symbol, date])
+  @@index([date])
+  @@index([isNew2YearHigh])
+  @@index([isNew5YearHigh])
+  @@index([isNewAllTimeHigh])
+  @@index([symbol, date])
+}
+
+model quarterly_financials {
+  id               Int       @id @default(autoincrement())
+  symbol           String    @db.VarChar(10)
+  quarterEnd       DateTime  @db.Date
+  reportedDate     DateTime? @db.Date
+  revenue          Decimal?  @db.Decimal(15, 2)
+  netIncome        Decimal?  @db.Decimal(15, 2)
+  ebitda           Decimal?  @db.Decimal(15, 2)
+  grossProfit      Decimal?  @db.Decimal(15, 2)
+  operatingIncome  Decimal?  @db.Decimal(15, 2)
+  eps              Decimal?  @db.Decimal(10, 4)
+  epsGrowth        Decimal?  @db.Decimal(8, 4)
+  revenueGrowthYoY Decimal?  @db.Decimal(8, 4)
+  revenueGrowthQoQ Decimal?  @db.Decimal(8, 4)
+  grossMargin      Decimal?  @db.Decimal(8, 4)
+  operatingMargin  Decimal?  @db.Decimal(8, 4)
+  netMargin        Decimal?  @db.Decimal(8, 4)
+  fiscalYear       Int?
+  fiscalQuarter    Int?
+  currency         String?   @db.VarChar(10)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+
+  @@unique([symbol, quarterEnd])
+  @@index([quarterEnd])
+  @@index([symbol, quarterEnd])
+}
+
+model revenue_breakdown_metrics {
+  id                       Int                        @id @default(autoincrement())
+  symbol                   String                     @db.VarChar(10)
+  metricName               String                     @db.VarChar(100)
+  unit                     String?                    @db.VarChar(20)
+  description              String?
+  isActive                 Boolean                    @default(true)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime
+  revenue_breakdown_values revenue_breakdown_values[]
+
+  @@unique([symbol, metricName])
+  @@index([symbol])
+}
+
+model revenue_breakdown_values {
+  id                        Int                       @id @default(autoincrement())
+  metricId                  Int
+  year                      Int
+  value                     Decimal                   @db.Decimal(15, 2)
+  revenue_breakdown_metrics revenue_breakdown_metrics @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@unique([metricId, year])
+  @@index([metricId])
+}
+
+model stock_snapshot {
+  id        Int      @id @default(autoincrement())
+  symbol    String   @db.VarChar(10)
+  date      DateTime @db.Date
+  price     Decimal? @db.Decimal(12, 2)
+  marketCap BigInt?
+
+  @@unique([symbol, date])
+}
+
+model strategy_presets {
+  id          String   @id
+  name        String   @db.VarChar(100)
+  description String?
+  buySignals  Json
+  sellSignals Json
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+
+  @@index([name])
+}
+
+model trade_ideas {
+  id         Int      @id @default(autoincrement())
+  ticker     String   @db.VarChar(50)
+  direction  String   @db.VarChar(10)
+  entryLevel Decimal? @db.Decimal(12, 2)
+  reason1    String?
+  reason2    String?
+  reason3    String?
+  extraInfo  String?
+  position   Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+
+  @@index([isActive, position])
+}

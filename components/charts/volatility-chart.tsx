@@ -512,6 +512,15 @@ export default function VolatilityChart({
                                 ? 'Difference between volatility periods (percentage points)'
                                 : 'Annualized standard deviation (percentage)'}
                         </p>
+                        {volatilityData.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Latest data: {new Date(volatilityData[volatilityData.length - 1].date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                })}
+                            </p>
+                        )}
                     </div>
 
                     {/* Period Selector */}

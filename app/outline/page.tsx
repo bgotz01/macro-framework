@@ -143,22 +143,29 @@ const SECTIONS: Section[] = [
     },
     {
         id: 'transmission',
-        title: 'Macro Transmission Engine',
-        subtitle: 'Causal bridge from shocks → propagation → market & corporate outcomes.',
+        title: 'Policy & Tech Impact Engine',
+        subtitle: 'How new macro policies or tech innovations affect different markets and industries.',
         status: 'in-progress',
         icon: Network,
         purpose: [
-            'Model how a macro or policy shock propagates through the system.',
-            'Bridge regime detection to market and corporate outcomes (second-order effects).',
+            'Study how new macro policies (monetary, fiscal, regulatory) impact different markets and industries.',
+            'Analyze how tech innovations reshape competitive dynamics and valuations across sectors.',
         ],
-        answers: ['How does a regime change actually affect markets?', 'Where do second-order effects emerge?'],
+        answers: [
+            'Which markets benefit or suffer from a new policy shift?',
+            'How does a tech breakthrough change the landscape for different industries?',
+        ],
         blocks: [
             {
-                label: 'Conceptual flow',
-                items: ['Policy / Liquidity Shock', 'Rates & FX', 'Equity valuations', 'Corporate behavior', 'Asset outcomes'],
+                label: 'What we track',
+                items: [
+                    'Policy changes: Fed pivots, fiscal programs, regulatory shifts',
+                    'Tech innovations: AI adoption, energy transitions, platform shifts',
+                    'Market responses: sector rotation, valuation changes, capital flows',
+                ],
             },
         ],
-        note: 'Multi-month build. The goal is structured propagation, not correlation theater.',
+        note: 'Connecting policy and tech changes to observable market outcomes across industries.',
     },
     {
         id: 'global',

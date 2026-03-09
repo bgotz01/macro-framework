@@ -52,8 +52,20 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime',
             },
             {
+                title: 'Regime Context',
+                href: '/context',
+            },
+            {
                 title: 'Signals',
                 href: '/signals',
+            },
+            {
+                title: 'S&P 500',
+                href: '/sp500',
+                children: [
+                    { title: 'Stocks', href: '/sp500/stocks' },
+
+                ],
             },
             {
                 title: 'Chart',
@@ -65,13 +77,14 @@ const sidebarData: SidebarCategory[] = [
                 ],
             },
             {
-                title: 'Data',
-                href: '/data',
+                title: 'Markets',
+                href: '/markets',
                 children: [
-                    { title: 'Highlights', href: '/data/highlights' },
-                    { title: 'Annual Returns', href: '/data/annual-returns' },
-                    { title: 'S&P 500', href: '/data/sp500' },
-                    { title: 'Stocks', href: '/data/stocks' },
+                    { title: 'Highlights', href: '/markets/highlights' },
+                    { title: 'Annual Returns', href: '/markets/annual-returns' },
+
+                    { title: 'Stocks', href: '/markets/stocks' },
+                    { title: 'Crude Oil', href: '/markets/crude-oil' },
                 ],
             },
         ],

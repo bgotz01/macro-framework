@@ -212,6 +212,15 @@ export default function CyclicalReturns({
                 <div>
                     <h3 className="text-lg font-semibold text-card-foreground">Cyclical Returns</h3>
                     <p className="text-sm text-muted-foreground">Rolling returns over time (percentage)</p>
+                    {returnsData.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Latest data: {new Date(returnsData[returnsData.length - 1].date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            })}
+                        </p>
+                    )}
                 </div>
 
                 {/* Period Selector */}
