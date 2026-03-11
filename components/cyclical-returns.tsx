@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import HistoricalDataTable from './charts/historical-data-table';
 
 interface CyclicalReturnsProps {
     assetClass: string;
@@ -288,6 +289,49 @@ export default function CyclicalReturns({
                         );
                     })}
                 </div>
+            )}
+
+            {/* Historical Data Table */}
+            {filteredReturnsData.length > 0 && (
+                <HistoricalDataTable
+                    data={filteredReturnsData}
+                    seriesName={`${seriesName} - Cyclical Returns`}
+                    units="percent"
+                    columns={[
+                        {
+                            key: 'date',
+                            label: 'Date',
+                            align: 'left',
+                            format: (value: string) => {
+                                const [year, month, day] = value.split('-').map(Number);
+                                const date = new Date(year, month - 1, day);
+                                return date.toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                });
+                            }
+                        },
+                        {
+                            key: '2Y Return',
+                            label: '2-Year Return',
+                            align: 'right',
+                            format: (value: number) => value !== null && value !== undefined ? `${value.toFixed(2)}%` : 'N/A'
+                        },
+                        {
+                            key: '5Y Return',
+                            label: '5-Year Return',
+                            align: 'right',
+                            format: (value: number) => value !== null && value !== undefined ? `${value.toFixed(2)}%` : 'N/A'
+                        },
+                        {
+                            key: '10Y Return',
+                            label: '10-Year Return',
+                            align: 'right',
+                            format: (value: number) => value !== null && value !== undefined ? `${value.toFixed(2)}%` : 'N/A'
+                        }
+                    ]}
+                />
             )}
         </div>
     );

@@ -5,7 +5,6 @@ import { useState } from 'react';
 interface SeriesDataTableProps {
     data: Array<{
         date: string;
-        dateTimestamp: number;
         [key: string]: number | string | null | undefined;
     }>;
     selectedSeries: string[];
@@ -26,7 +25,7 @@ export default function SeriesDataTable({
     const [rowsPerPage, setRowsPerPage] = useState(25);
 
     // Sort data by date descending (most recent first)
-    const sortedData = [...data].sort((a, b) => b.dateTimestamp - a.dateTimestamp);
+    const sortedData = [...data].sort((a, b) => b.date.localeCompare(a.date));
 
     // Calculate pagination
     const totalPages = Math.ceil(sortedData.length / rowsPerPage);

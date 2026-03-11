@@ -59,13 +59,20 @@ const SERIES_TO_IMPORT: SeriesConfig[] = [
         displayName: 'Federal Debt Held by Foreign Investors',
         units: 'billions',
         convertToBillions: false
+    },
+    {
+        filename: 'US/M2SL.csv',
+        seriesName: 'M2SL',
+        displayName: 'M2 Money Supply',
+        units: 'billions',
+        convertToBillions: false
     }
 ];
 
-function parseCSV(filePath: string, convertToBillions: boolean): Array<{ date: number; value: number }> {
+function parseCSV(filePath: string, convertToBillions: boolean): Array<{ date: string; value: number }> {
     const content = fs.readFileSync(filePath, 'utf-8');
     const lines = content.trim().split('\n');
-    const data: Array<{ date: number; value: number }> = [];
+    const data: Array<{ date: string; value: number }> = [];
 
     // Skip header
     for (let i = 1; i < lines.length; i++) {
@@ -73,7 +80,7 @@ function parseCSV(filePath: string, convertToBillions: boolean): Array<{ date: n
         if (!line) continue;
 
         const [dateStr, valueStr] = line.split(',');
-        const date = new Date(dateStr).getTime();
+        const date = new Date(dateStr).toISOString().split('T')[0]; // Store as ISO string YYYY-MM-DD
         let value = parseFloat(valueStr);
 
         // Convert millions to billions if needed
@@ -81,7 +88,7 @@ function parseCSV(filePath: string, convertToBillions: boolean): Array<{ date: n
             value = value / 1000;
         }
 
-        if (!isNaN(date) && !isNaN(value)) {
+        if (date && !isNaN(value)) {
             data.push({ date, value });
         }
     }
@@ -108,33 +115,63 @@ async function importEconomicData() {
             const data = parseCSV(filePath, series.convertToBillions);
             console.log(`  Found ${data.length} data points`);
 
-            // Delete existing data for this series
-            db.prepare(`
-                DELETE FROM time_series 
+            // Get the latest date already in the database for this series
+            const latestRow = db.prepare(`
+                SELECT MAX(date) as max_date 
+                FROM time_series 
                 WHERE asset_class = 'economic' 
                   AND series_name = ?
-            `).run(series.seriesName);
+            `).get(series.seriesName) as { max_date: string | null };
 
-            // Insert new data
+            const latestDate = latestRow?.max_date || '1900-01-01';
+            console.log(`  Latest date in DB: ${latestDate}`);
+
+            // Filter to only new data points
+            const newData = data.filter(point => point.date > latestDate);
+
+            if (newData.length === 0) {
+                console.log(`  ✓ No new data to import`);
+                continue;
+            }
+
+            console.log(`  Found ${newData.length} new data points to import`);
+
+            // Insert new data only
             const insert = db.prepare(`
                 INSERT INTO time_series (asset_class, series_name, column_name, date, value)
                 VALUES ('economic', ?, 'Value', ?, ?)
             `);
 
-            const insertMany = db.transaction((seriesName: string, dataPoints: Array<{ date: number; value: number }>) => {
+            const insertMany = db.transaction((seriesName: string, dataPoints: Array<{ date: string; value: number }>) => {
                 for (const point of dataPoints) {
                     insert.run(seriesName, point.date, point.value);
                 }
             });
 
-            insertMany(series.seriesName, data);
-            console.log(`  ✅ Inserted ${data.length} points for ${series.seriesName}`);
+            insertMany(series.seriesName, newData);
+            console.log(`  ✅ Inserted ${newData.length} new points for ${series.seriesName}`);
 
             // Insert or update metadata
-            db.prepare(`
-                INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, units, last_updated)
-                VALUES ('economic', ?, ?, ?, ?)
-            `).run(series.seriesName, series.displayName, series.units, Date.now());
+            const existingMetadata = db.prepare(`
+                SELECT * FROM series_metadata 
+                WHERE asset_class = 'economic' 
+                  AND series_name = ?
+            `).get(series.seriesName);
+
+            if (!existingMetadata) {
+                db.prepare(`
+                    INSERT INTO series_metadata (asset_class, series_name, display_name, units, last_updated)
+                    VALUES ('economic', ?, ?, ?, ?)
+                `).run(series.seriesName, series.displayName, series.units, Date.now());
+                console.log(`  📝 Added metadata for ${series.seriesName}`);
+            } else {
+                db.prepare(`
+                    UPDATE series_metadata 
+                    SET last_updated = ?
+                    WHERE asset_class = 'economic' 
+                      AND series_name = ?
+                `).run(Date.now(), series.seriesName);
+            }
 
             if (series.convertToBillions) {
                 console.log(`  💰 Converted from millions to billions`);

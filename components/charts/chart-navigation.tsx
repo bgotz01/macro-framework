@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'volatility' | 'stocks' | 'percentile' | 'all';
+export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'volatility' | 'stocks' | 'percentile' | 'divergence' | 'all';
 
 interface ChartNavigationProps {
     onChartChange: (chartType: ChartType) => void;
@@ -54,6 +54,11 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; description: string 
         value: 'percentile',
         label: 'Percentile Analysis',
         description: 'Historical percentile rankings and trends'
+    },
+    {
+        value: 'divergence',
+        label: 'MA Divergence',
+        description: 'S&P 500 price divergence from moving averages'
     },
     {
         value: 'all',

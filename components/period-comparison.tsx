@@ -34,7 +34,7 @@ export default function PeriodComparison() {
     );
 
     // Fetch latest period data on mount
-    useState(() => {
+    useEffect(() => {
         async function fetchLatest() {
             try {
                 const response = await fetch('/api/percentile-year?year=latest');

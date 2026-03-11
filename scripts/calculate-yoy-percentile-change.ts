@@ -46,7 +46,7 @@ async function calculateYoYPercentileChange() {
             console.log(`Processing ${s.asset_class}/${s.series_name}...`);
 
             // Get all records for this series
-            type PercentileRecord = { id: number; date: number; percentile_rank: number };
+            type PercentileRecord = { id: number; date: string; percentile_rank: number };
 
             const records = db.prepare(`
                 SELECT id, date, percentile_rank
@@ -68,18 +68,44 @@ async function calculateYoYPercentileChange() {
                 for (let i = 0; i < recordsToProcess.length; i++) {
                     const current = recordsToProcess[i];
 
-                    // Find record approximately 12 months ago (365.25 days ± 15 days)
-                    const targetDate = current.date - (365.25 * 24 * 60 * 60 * 1000);
-                    const minDate = targetDate - (15 * 24 * 60 * 60 * 1000);
-                    const maxDate = targetDate + (15 * 24 * 60 * 60 * 1000);
+                    // Skip if date is not in YYYY-MM-DD format
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(current.date)) {
+                        continue;
+                    }
+
+                    // Calculate date 12 months ago
+                    const currentDate = new Date(current.date);
+
+                    // Skip if invalid date
+                    if (isNaN(currentDate.getTime())) {
+                        continue;
+                    }
+
+                    const targetDate = new Date(currentDate);
+                    targetDate.setFullYear(targetDate.getFullYear() - 1);
+
+                    // Format as YYYY-MM-DD
+                    const targetDateStr = targetDate.toISOString().split('T')[0];
+
+                    // Find record within ±15 days of target date
+                    const minDate = new Date(targetDate);
+                    minDate.setDate(minDate.getDate() - 15);
+                    const maxDate = new Date(targetDate);
+                    maxDate.setDate(maxDate.getDate() + 15);
+
+                    const minDateStr = minDate.toISOString().split('T')[0];
+                    const maxDateStr = maxDate.toISOString().split('T')[0];
 
                     // Find closest record within the range
                     let closestRecord = null;
                     let minDiff = Infinity;
 
                     for (const prev of recordsToProcess) {
-                        if (prev.date >= minDate && prev.date <= maxDate) {
-                            const diff = Math.abs(prev.date - targetDate);
+                        if (prev.date >= minDateStr && prev.date <= maxDateStr) {
+                            const prevDate = new Date(prev.date);
+                            if (isNaN(prevDate.getTime())) continue;
+
+                            const diff = Math.abs(prevDate.getTime() - targetDate.getTime());
                             if (diff < minDiff) {
                                 minDiff = diff;
                                 closestRecord = prev;
@@ -115,7 +141,7 @@ async function calculateYoYPercentileChange() {
         console.log('\n📊 Example YoY Changes (CPI, most recent):');
         const examples = db.prepare(`
             SELECT 
-                datetime(date/1000, 'unixepoch') as date,
+                date,
                 value,
                 percentile_rank,
                 yoy_percentile_change,
@@ -135,7 +161,7 @@ async function calculateYoYPercentileChange() {
         console.log('\n   Date         | Value | Percentile | YoY Change | Trend');
         console.log('   ' + '-'.repeat(70));
         for (const row of examples) {
-            const dateStr = row.date.split(' ')[0];
+            const dateStr = row.date;
             const value = row.value.toFixed(2).padStart(5);
             const percentile = row.percentile_rank.toFixed(1).padStart(5);
             const yoyChange = row.yoy_percentile_change.toFixed(1).padStart(6);

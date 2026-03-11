@@ -13,6 +13,7 @@ import ReturnsChart from '@/components/charts/returns-chart';
 import VolatilityChart from '@/components/charts/volatility-chart';
 import StockValuationChart from '@/components/charts/stock-valuation-chart';
 import PercentileChart from '@/components/charts/percentile-chart';
+import DivergenceChart from '@/components/charts/divergence-chart';
 
 function ChartPageContent() {
     const router = useRouter();
@@ -20,7 +21,7 @@ function ChartPageContent() {
     const chartParam = searchParams.get('type') as ChartType | null;
 
     const [currentChart, setCurrentChart] = useState<ChartType>(
-        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'volatility', 'stocks', 'percentile', 'all'].includes(chartParam)
+        chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'volatility', 'stocks', 'percentile', 'divergence', 'all'].includes(chartParam)
             ? chartParam
             : 'yields'
     );
@@ -33,7 +34,7 @@ function ChartPageContent() {
 
     // Sync state with URL changes (e.g., browser back/forward)
     useEffect(() => {
-        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'volatility', 'stocks', 'percentile', 'all'].includes(chartParam)) {
+        if (chartParam && ['yields', 'economics', 'equities', 'valuations', 'fx', 'returns', 'volatility', 'stocks', 'percentile', 'divergence', 'all'].includes(chartParam)) {
             setCurrentChart(chartParam);
         }
     }, [chartParam]);
@@ -58,6 +59,8 @@ function ChartPageContent() {
                 return <StockValuationChart height={500} />;
             case 'percentile':
                 return <PercentileChart height={500} />;
+            case 'divergence':
+                return <DivergenceChart height={500} />;
             case 'all':
                 return <DBChart height={500} />;
             default:

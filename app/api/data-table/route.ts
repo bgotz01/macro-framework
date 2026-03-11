@@ -68,15 +68,13 @@ export async function GET(request: NextRequest) {
         }
 
         if (params.startDate) {
-            const startTimestamp = new Date(params.startDate).getTime();
             query += ` AND ts.date >= ?`;
-            queryParams.push(startTimestamp);
+            queryParams.push(params.startDate);
         }
 
         if (params.endDate) {
-            const endTimestamp = new Date(params.endDate).getTime();
             query += ` AND ts.date <= ?`;
-            queryParams.push(endTimestamp);
+            queryParams.push(params.endDate);
         }
 
         // Get total count
@@ -93,8 +91,7 @@ export async function GET(request: NextRequest) {
 
         // Transform data
         const data = rows.map(row => ({
-            date: new Date(row.date).toISOString().split('T')[0],
-            timestamp: row.date,
+            date: row.date, // Already in ISO format
             assetClass: row.asset_class,
             seriesName: row.series_name,
             displayName: row.display_name,

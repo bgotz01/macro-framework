@@ -82,7 +82,38 @@ export default function CrudeOilPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="page-title text-3xl font-bold mb-6 dark:text-white">Chokepoints</h1>
+            <h1 className="page-title text-3xl font-bold mb-6 dark:text-white">Crude Oil</h1>
+
+            <div className="mb-12 p-6 rounded-xl border bg-card">
+                <h2 className="text-2xl font-bold mb-4">What the Petrodollar Actually Does</h2>
+
+                <p className="text-muted-foreground mb-4">
+                    The petrodollar system emerged after the 1970s oil crisis.
+                </p>
+
+                <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Key structure:</h3>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
+                        <li>Oil is priced globally in U.S. dollars</li>
+                        <li>Countries must hold dollars to buy oil</li>
+                        <li>Oil exporters accumulate huge USD reserves</li>
+                        <li>Those dollars get recycled into U.S. Treasuries and assets</li>
+                    </ul>
+                </div>
+
+                <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">This creates a constant loop:</h3>
+                    <p className="text-muted-foreground ml-4">
+                        Oil trade → Dollar demand → Treasury buying → Lower US borrowing costs
+                    </p>
+                </div>
+
+                <p className="text-muted-foreground italic">
+                    This is often called petrodollar recycling.
+                </p>
+            </div>
+
+            <h2 className="text-2xl font-bold mb-6 dark:text-white">Chokepoints</h2>
 
             <div className="mb-6">
                 <p className="text-gray-600 dark:text-gray-400">

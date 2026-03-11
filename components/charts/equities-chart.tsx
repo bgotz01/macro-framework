@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import HistoricalDataTable from './historical-data-table';
 
 export type EquityAssetClass = 'equities' | 'commodities' | 'crypto' | 'volatility';
 
@@ -831,6 +832,19 @@ export default function EquitiesChart({
                         )}
                     </div>
                 </div>
+            )}
+
+            {/* Historical Data Table */}
+            {!loading && !error && (calculationMode === 'single' ? filteredData.length > 0 : ratioData.length > 0) && (
+                <HistoricalDataTable
+                    data={calculationMode === 'single' ? filteredData : ratioData}
+                    seriesName={
+                        calculationMode === 'single'
+                            ? availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
+                            : `${availableSeries1.find(s => s.series_name === series1)?.display_name || series1} / ${availableSeries2.find(s => s.series_name === series2)?.display_name || series2}`
+                    }
+                    units={calculationMode === 'single' ? (convertToUSD ? 'usd' : selectedUnits) : 'ratio'}
+                />
             )}
         </div>
     );

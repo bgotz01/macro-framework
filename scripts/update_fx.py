@@ -13,7 +13,7 @@ import os
 import time
 
 # Configuration - for incremental updates only
-START_DATE = "2026-01-01"
+START_DATE = "2026-02-01"
 END_DATE = datetime.now().strftime("%Y-%m-%d")
 
 # FX tickers and their mappings

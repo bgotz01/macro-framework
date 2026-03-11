@@ -31,14 +31,8 @@ export class DataServiceNew {
 
         const data = dbService.loadSeries(assetClass, seriesName, columns);
 
-        // Convert timestamps to ISO date strings for charts
-        return {
-            ...data,
-            data: data.data.map(row => ({
-                ...row,
-                date: new Date(row.date).toISOString().split('T')[0]
-            }))
-        };
+        // Dates are already ISO strings in the database, no conversion needed
+        return data;
     }
 
     // Load multiple datasets

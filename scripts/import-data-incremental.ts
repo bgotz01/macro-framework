@@ -28,12 +28,14 @@ interface MetadataFile {
     };
 }
 
-function parseDate(dateStr: string): number {
+function parseDate(dateStr: string): string {
+    // Validate date format and return as ISO string
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) {
         throw new Error(`Invalid date: ${dateStr}`);
     }
-    return date.getTime();
+    // Return in YYYY-MM-DD format
+    return date.toISOString().split('T')[0];
 }
 
 function getAssetClasses(): string[] {
@@ -160,8 +162,8 @@ async function importDataIncremental() {
 
             try {
                 // Check existing data range for this series
-                const existingData = existingDataStmt.get(assetClass, seriesName) as { max_date?: number };
-                const maxExistingDate = existingData?.max_date || 0;
+                const existingData = existingDataStmt.get(assetClass, seriesName) as { max_date?: string };
+                const maxExistingDate = existingData?.max_date || '1900-01-01';
 
                 const csvContent = fs.readFileSync(filePath, 'utf-8');
                 const result = Papa.parse(csvContent, {
@@ -193,16 +195,16 @@ async function importDataIncremental() {
                     }
 
                     try {
-                        const timestamp = parseDate(String(dateStr));
+                        const isoDate = parseDate(String(dateStr));
 
                         // Skip dates that already exist in database
-                        if (timestamp <= maxExistingDate) {
+                        if (isoDate <= maxExistingDate) {
                             duplicateRows++;
                             continue;
                         }
 
                         rows.push({
-                            date: timestamp,
+                            date: isoDate,
                             asset_class: assetClass,
                             series_name: seriesName,
                             value: value

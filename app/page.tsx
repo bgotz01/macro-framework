@@ -1,3 +1,6 @@
+import RegimeParameters from '@/components/regime/regime-parameters';
+import { Suspense } from 'react';
+
 export default function Home() {
   return (
     <div className="max-w-6xl mx-auto">
@@ -6,12 +9,24 @@ export default function Home() {
         <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
           Economic Analysis Framework
         </div>
-        <h1 className="page-title text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
-          Power Law
+        <h1 className="text-5xl lg:text-6xl font-light tracking-wider mb-1 leading-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+          CAPITAL PHYSICS
         </h1>
-        <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+        <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-6" style={{ letterSpacing: '0.2em' }}>
+          Mechanics • Regimes • Flows
+        </p>
+        <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-12">
           A comprehensive framework for macro economic analysis, featuring the three laws of market behavior and historical event analysis.
         </p>
+
+
+      </div>
+
+      {/* Regime Parameters */}
+      <div className="mb-16">
+        <Suspense fallback={<div className="text-center py-12">Loading regime parameters...</div>}>
+          <RegimeParameters />
+        </Suspense>
       </div>
 
       {/* Feature Cards */}

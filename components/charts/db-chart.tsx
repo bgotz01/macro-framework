@@ -637,24 +637,37 @@ export default function DBChart({
                 </div>
 
                 {/* Info */}
-                {data.length > 0 && (
+                {(data.length > 0 || spreadData.length > 0) && (
                     <div className="flex items-center justify-between text-sm">
                         <p className="text-muted-foreground">
-                            {filteredData.length > 0 ? filteredData.length : data.length} data points
-                            {filteredData.length > 0 && filteredData.length !== data.length && (
-                                <span className="text-xs ml-1">of {data.length} total</span>
-                            )}
-                            {datePreset !== 'all' && filteredData.length === 0 && (
-                                <span className="text-xs ml-1 text-yellow-600 dark:text-yellow-400">
-                                    (no data in range)
-                                </span>
-                            )}
+                            {(() => {
+                                const sourceData = calculationMode !== 'none' ? spreadData : data;
+                                const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
+                                const displayData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
+                                return (
+                                    <>
+                                        {displayData.length} data points
+                                        {sourceFilteredData.length > 0 && sourceFilteredData.length !== sourceData.length && (
+                                            <span className="text-xs ml-1">of {sourceData.length} total</span>
+                                        )}
+                                        {datePreset !== 'all' && sourceFilteredData.length === 0 && (
+                                            <span className="text-xs ml-1 text-yellow-600 dark:text-yellow-400">
+                                                (no data in range)
+                                            </span>
+                                        )}
+                                    </>
+                                );
+                            })()}
                         </p>
                         <p className="text-muted-foreground">
-                            {filteredData.length > 0
-                                ? `${filteredData[0]?.date} to ${filteredData[filteredData.length - 1]?.date}`
-                                : `${data[0]?.date} to ${data[data.length - 1]?.date}`
-                            }
+                            {(() => {
+                                const sourceData = calculationMode !== 'none' ? spreadData : data;
+                                const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
+                                const displayData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
+                                return displayData.length > 0
+                                    ? `${displayData[0]?.date} to ${displayData[displayData.length - 1]?.date}`
+                                    : '';
+                            })()}
                         </p>
                     </div>
                 )}

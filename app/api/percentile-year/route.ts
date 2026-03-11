@@ -66,9 +66,8 @@ export async function GET(request: NextRequest) {
                 params = [s.asset_class, s.series_name];
             } else if (month) {
                 // Get data for specific month and year
-                const monthStart = new Date(Date.UTC(year!, month - 1, 1)).getTime();
-                // Calculate the last day of the month correctly (day 0 of next month = last day of current month)
-                const monthEnd = new Date(Date.UTC(year!, month, 0, 23, 59, 59, 999)).getTime();
+                const monthStart = `${year}-${String(month).padStart(2, '0')}-01`;
+                const monthEnd = `${year}-${String(month).padStart(2, '0')}-31`; // SQLite will handle invalid dates
 
                 query = `
                     SELECT 
@@ -88,10 +87,9 @@ export async function GET(request: NextRequest) {
                 `;
                 params = [s.asset_class, s.series_name, monthStart, monthEnd];
             } else {
-                // Get year-end data for specific year
-                const yearStart = new Date(year!, 0, 1).getTime();
-                const yearEnd = new Date(year!, 11, 31, 23, 59, 59).getTime();
-                const q4Start = new Date(year!, 9, 1).getTime();
+                // Get year-end data for specific year (Q4 onwards)
+                const q4Start = `${year}-10-01`;
+                const yearEnd = `${year}-12-31`;
 
                 query = `
                     SELECT 
@@ -118,8 +116,7 @@ export async function GET(request: NextRequest) {
                 result[s.key] = {
                     assetClass: row.asset_class,
                     seriesName: row.series_name,
-                    date: row.date,
-                    dateStr: new Date(row.date).toISOString().split('T')[0],
+                    date: row.date, // Already in ISO format
                     value: row.value,
                     percentileRank: row.percentile_rank,
                     yoyPercentileChange: row.yoy_percentile_change

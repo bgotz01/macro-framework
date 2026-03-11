@@ -4,7 +4,7 @@ import { join } from 'path';
 const DB_PATH = join(process.cwd(), 'data', 'macro-data.db');
 
 interface DataPoint {
-    date: number;
+    date: string;  // ISO date string
     value: number;
 }
 
@@ -31,8 +31,8 @@ function calculateRollingStdDev(values: number[], window: number): number | null
 /**
  * Calculate daily returns from price series
  */
-function calculateDailyReturns(prices: DataPoint[]): Map<number, number> {
-    const returns = new Map<number, number>();
+function calculateDailyReturns(prices: DataPoint[]): Map<string, number> {
+    const returns = new Map<string, number>();
 
     for (let i = 1; i < prices.length; i++) {
         const prevPrice = prices[i - 1].value;
@@ -88,7 +88,7 @@ async function addVolatilityMetrics() {
             console.log(`  Calculated ${dailyReturns.size} daily returns`);
 
             // Calculate rolling volatilities
-            const returnsArray = Array.from(dailyReturns.entries()).sort((a, b) => a[0] - b[0]);
+            const returnsArray = Array.from(dailyReturns.entries()).sort((a, b) => a[0].localeCompare(b[0]));
             let insertCount = 0;
 
             const insertStmt = db.prepare(`

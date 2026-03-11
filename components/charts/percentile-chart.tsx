@@ -34,7 +34,6 @@ interface PercentileChartProps {
 
 interface ChartDataPoint {
     date: string;
-    dateTimestamp: number;
     cpi_value: number;
     cpi_percentile: number;
     fedfunds_value: number;
@@ -223,8 +222,8 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
     // Generate yearly ticks from filtered data
     const yearlyTicks = filteredData
         .filter((_, index) => {
-            const year = new Date(filteredData[index].dateTimestamp).getFullYear();
-            const prevYear = index > 0 ? new Date(filteredData[index - 1].dateTimestamp).getFullYear() : null;
+            const year = parseInt(filteredData[index].date.split('-')[0]);
+            const prevYear = index > 0 ? parseInt(filteredData[index - 1].date.split('-')[0]) : null;
             return year !== prevYear && year % 5 === 0;
         })
         .map(d => d.date);
@@ -233,7 +232,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
         if (!active || !payload || !payload.length) return null;
 
         const data = payload[0].payload;
-        const date = new Date(data.dateTimestamp).toLocaleDateString('en-US', {
+        const date = new Date(data.date).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short'
         });
@@ -606,7 +605,10 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
 
             {/* Series Data Table */}
             <SeriesDataTable
-                data={filteredData}
+                data={filteredData as Array<{
+                    date: string;
+                    [key: string]: number | string | null | undefined;
+                }>}
                 selectedSeries={selectedSeries}
                 seriesLabels={Object.fromEntries(
                     AVAILABLE_SERIES.map(s => [s.value, s.label])

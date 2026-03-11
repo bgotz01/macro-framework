@@ -8,7 +8,8 @@ interface StockDataTableProps {
 
 interface StockData {
     date: string;
-    Price?: number;
+    Value?: number;      // Daily closing price
+    Price?: number;      // Quarterly price
     'Market-Cap'?: number;
     EPS?: number;
     TTM?: number;
@@ -85,29 +86,24 @@ export default function StockDataTable({ className = '' }: StockDataTableProps) 
 
                 const result = await response.json();
 
-                // Transform data to have all metrics in one row per date
-                const dateMap = new Map<string, StockData>();
+                console.log('Stock data received:', result.data?.length, 'rows');
+                console.log('Sample row:', result.data?.[0]);
 
-                result.data.forEach((point: any) => {
-                    const dateKey = point.date;
-                    if (!dateMap.has(dateKey)) {
-                        dateMap.set(dateKey, { date: dateKey });
-                    }
-                    const row = dateMap.get(dateKey)!;
-
-                    // Add all available metrics
-                    if (point.Price !== undefined) row.Price = point.Price;
-                    if (point['Market-Cap'] !== undefined) row['Market-Cap'] = point['Market-Cap'];
-                    if (point.EPS !== undefined) row.EPS = point.EPS;
-                    if (point.TTM !== undefined) row.TTM = point.TTM;
-                    if (point['PE-Ratio'] !== undefined) row['PE-Ratio'] = point['PE-Ratio'];
-                    if (point['PS-Ratio'] !== undefined) row['PS-Ratio'] = point['PS-Ratio'];
-                    if (point.Revenue !== undefined) row.Revenue = point.Revenue;
-                    if (point.Shares !== undefined) row.Shares = point.Shares;
+                // Filter to only show quarterly data (dates with Price, EPS, Revenue, etc.)
+                // Quarterly data has dates like 2025-12-31, 2025-09-30, 2025-06-30, 2025-03-31
+                const quarterlyData = result.data.filter((row: StockData) => {
+                    // Only include rows that have at least one fundamental metric (not just Value)
+                    return row.Price !== undefined ||
+                        row.EPS !== undefined ||
+                        row.Revenue !== undefined ||
+                        row['Market-Cap'] !== undefined;
                 });
 
-                const tableData = Array.from(dateMap.values()).sort((a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                console.log('Filtered to quarterly data:', quarterlyData.length, 'rows');
+
+                // Sort by date descending
+                const tableData = quarterlyData.sort((a: StockData, b: StockData) =>
+                    b.date.localeCompare(a.date)
                 );
 
                 setData(tableData);
@@ -139,7 +135,8 @@ export default function StockDataTable({ className = '' }: StockDataTableProps) 
         if (aVal === undefined || bVal === undefined) return 0;
 
         if (sortColumn === 'date') {
-            const comparison = new Date(aVal as string).getTime() - new Date(bVal as string).getTime();
+            // ISO dates sort correctly as strings
+            const comparison = (aVal as string).localeCompare(bVal as string);
             return sortDirection === 'asc' ? comparison : -comparison;
         }
 

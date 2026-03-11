@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 
 export interface DataPoint {
-    date: number;  // Unix timestamp
+    date: string;  // ISO date string (YYYY-MM-DD)
     [key: string]: any;
 }
 
@@ -107,7 +107,7 @@ class DatabaseService {
         const rows = db.prepare(query).all(...params) as any[];
 
         // Transform to chart format
-        const dataMap = new Map<number, DataPoint>();
+        const dataMap = new Map<string, DataPoint>();
         const columnSet = new Set<string>();
 
         for (const row of rows) {
@@ -140,7 +140,7 @@ class DatabaseService {
         }
 
         // Combine datasets
-        const dateMap = new Map<number, DataPoint>();
+        const dateMap = new Map<string, DataPoint>();
         const allColumns = new Set<string>();
 
         for (const dataset of datasets) {
@@ -162,7 +162,7 @@ class DatabaseService {
             }
         }
 
-        const combinedData = Array.from(dateMap.values()).sort((a, b) => a.date - b.date);
+        const combinedData = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
         return {
             data: combinedData,
@@ -176,7 +176,7 @@ class DatabaseService {
     }
 
     // Get date range for a series
-    getDateRange(assetClass: string, seriesName: string): { min: number; max: number } | null {
+    getDateRange(assetClass: string, seriesName: string): { min: string; max: string } | null {
         const db = this.getDB();
 
         const query = `

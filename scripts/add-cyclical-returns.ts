@@ -4,7 +4,7 @@ import path from 'path';
 const DB_PATH = path.join(process.cwd(), 'data', 'macro-data.db');
 
 interface TimeSeriesRow {
-    date: number;
+    date: string;  // ISO date string
     value: number;
 }
 
@@ -19,16 +19,16 @@ function calculateCyclicalReturns(
     data: TimeSeriesRow[],
     frequency: 'daily' | 'monthly'
 ): {
-    returns2Y: Map<number, number>;
-    returns5Y: Map<number, number>;
-    returns10Y: Map<number, number>;
+    returns2Y: Map<string, number>;
+    returns5Y: Map<string, number>;
+    returns10Y: Map<string, number>;
 } {
-    const returns2Y = new Map<number, number>();
-    const returns5Y = new Map<number, number>();
-    const returns10Y = new Map<number, number>();
+    const returns2Y = new Map<string, number>();
+    const returns5Y = new Map<string, number>();
+    const returns10Y = new Map<string, number>();
 
     // Sort by date ascending
-    const sorted = [...data].sort((a, b) => a.date - b.date);
+    const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
 
     // Calculate periods based on frequency
     const periodsPerYear = frequency === 'daily' ? 252 : 12;

@@ -64,9 +64,10 @@ try {
             const range = dbService.getDateRange(assetClass, seriesName);
             if (range) {
                 console.log(`\nDate range for ${assetClass}/${seriesName}:`);
-                console.log(`  Start: ${new Date(range.min).toISOString().split('T')[0]}`);
-                console.log(`  End:   ${new Date(range.max).toISOString().split('T')[0]}`);
-                console.log(`  Days:  ${Math.floor((range.max - range.min) / (1000 * 60 * 60 * 24))}`);
+                console.log(`  Start: ${range.min}`);
+                console.log(`  End:   ${range.max}`);
+                const days = Math.floor((new Date(range.max).getTime() - new Date(range.min).getTime()) / (1000 * 60 * 60 * 24));
+                console.log(`  Days:  ${days}`);
             } else {
                 console.log('No data found');
             }
