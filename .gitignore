@@ -50,3 +50,4 @@ venv/
 *.pyc
 __pycache__/
 .python-version
+*.backup-*

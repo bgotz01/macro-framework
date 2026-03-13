@@ -52,6 +52,9 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     // Inflation & Policy
     { value: 'cpi', label: 'CPI Inflation', color: '#2563eb', category: 'Inflation & Policy' },
     { value: 'fedfunds', label: 'Fed Funds Rate', color: '#dc2626', category: 'Inflation & Policy' },
+    { value: 'm1yoy', label: 'M1 YoY Growth', color: '#8b5cf6', category: 'Inflation & Policy' },
+    { value: 'm2yoy', label: 'M2 YoY Growth', color: '#a855f7', category: 'Inflation & Policy' },
+    { value: 'realm2yoy', label: 'Real M2 YoY (M2-CPI)', color: '#c084fc', category: 'Inflation & Policy' },
     // Bond Yields
     { value: 'tnx', label: '10Y-Monthly', color: '#16a34a', category: 'Bond Yields' },
     { value: 'us2yr', label: '2Y-Monthly', color: '#ca8a04', category: 'Bond Yields' },

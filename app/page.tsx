@@ -1,4 +1,5 @@
 import RegimeParameters from '@/components/regime/regime-parameters';
+import RegimeHistoryTable from '@/components/regime/regime-history-table';
 import { Suspense } from 'react';
 
 export default function Home() {
@@ -26,6 +27,13 @@ export default function Home() {
       <div className="mb-16">
         <Suspense fallback={<div className="text-center py-12">Loading regime parameters...</div>}>
           <RegimeParameters />
+        </Suspense>
+      </div>
+
+      {/* Regime History Table */}
+      <div className="mb-16">
+        <Suspense fallback={<div className="text-center py-12">Loading regime history...</div>}>
+          <RegimeHistoryTable />
         </Suspense>
       </div>
 

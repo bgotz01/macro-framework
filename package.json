@@ -27,7 +27,8 @@
     "calculate-percentiles": "tsx scripts/calculate-percentiles.ts",
     "calculate-yoy-percentile": "tsx scripts/calculate-yoy-percentile-change.ts",
     "calculate-yoy-growth": "tsx scripts/calculate-yoy-growth.ts",
-    "update-yoy-growth": "tsx scripts/calculate-yoy-growth-incremental.ts"
+    "update-yoy-growth": "tsx scripts/calculate-yoy-growth-incremental.ts",
+    "build-regime-timeline": "tsx scripts/build-regime-timeline.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

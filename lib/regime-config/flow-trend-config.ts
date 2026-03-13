@@ -75,10 +75,10 @@ export interface TrendStageBand {
 }
 
 export const TREND_STAGE_BANDS: TrendStageBand[] = [
-    { min: 0, max: 50, label: 'Early', color: '#22c55e' },
-    { min: 50, max: 150, label: 'Established', color: '#84cc16' },
-    { min: 150, max: 250, label: 'Mature', color: '#eab308' },
-    { min: 250, max: Infinity, label: 'Late', color: '#ef4444' }
+    { min: 0, max: 50, label: 'Early', color: '#3b82f6' },        // blue
+    { min: 50, max: 150, label: 'Established', color: '#06b6d4' }, // cyan
+    { min: 150, max: 250, label: 'Mature', color: '#eab308' },     // yellow
+    { min: 250, max: Infinity, label: 'Late', color: '#f97316' }   // orange
 ];
 
 export function getTrendStageLabel(days: number | null): TrendStage {
@@ -95,7 +95,7 @@ export function getTrendStageLabel(days: number | null): TrendStage {
 }
 
 export function getTrendStageColor(days: number | null): string {
-    if (days === null) return '#22c55e';
+    if (days === null) return '#3b82f6'; // Early (blue)
 
     const absDays = Math.abs(days);
 
@@ -104,12 +104,15 @@ export function getTrendStageColor(days: number | null): string {
             return band.color;
         }
     }
-    return '#ef4444';
+    return '#f97316'; // Late (orange)
 }
 
 // ============================================================================
 // TREND PRESSURE (Divergence Magnitude) - Distance from Equilibrium
 // ============================================================================
+// Note: "Pressure" here refers to extension magnitude (stretch intensity),
+// not final vulnerability. The actual risk assessment comes from the 
+// Stage + Pressure + Side matrix below.
 
 export type TrendPressure =
     | 'Low'
@@ -165,8 +168,8 @@ export type TrendSide = 'Upside' | 'Downside' | 'Neutral';
 
 export function getTrendSide(divergence: number | null): TrendSide {
     if (divergence === null) return 'Neutral';
-    if (divergence > 2) return 'Upside';
-    if (divergence < -2) return 'Downside';
+    if (divergence > 5) return 'Upside';   // Aligns with Low->Mid pressure transition
+    if (divergence < -5) return 'Downside';
     return 'Neutral';
 }
 
@@ -178,6 +181,7 @@ export type TrendRisk =
     | 'Continuation'
     | 'Pullback'
     | 'Distribution'
+    | 'Rollover'
     | 'Breakdown'
     | 'Mania'
     | 'Capitulation';
@@ -208,7 +212,7 @@ const RISK_MATRIX: RiskMatrixEntry[] = [
     { stage: 'Mature', pressure: 'High', side: 'Upside', risk: 'Mania', color: '#ef4444' },
     { stage: 'Mature', pressure: 'Extreme', side: 'Upside', risk: 'Mania', color: '#ef4444' },
 
-    { stage: 'Late', pressure: 'Low', side: 'Upside', risk: 'Breakdown', color: '#ef4444' },
+    { stage: 'Late', pressure: 'Low', side: 'Upside', risk: 'Distribution', color: '#eab308' },
     { stage: 'Late', pressure: 'Mid', side: 'Upside', risk: 'Distribution', color: '#eab308' },
     { stage: 'Late', pressure: 'High', side: 'Upside', risk: 'Mania', color: '#ef4444' },
     { stage: 'Late', pressure: 'Extreme', side: 'Upside', risk: 'Mania', color: '#ef4444' },
@@ -250,8 +254,8 @@ const RISK_MATRIX: RiskMatrixEntry[] = [
     { stage: 'Mature', pressure: 'High', side: 'Neutral', risk: 'Distribution', color: '#eab308' },
     { stage: 'Mature', pressure: 'Extreme', side: 'Neutral', risk: 'Distribution', color: '#eab308' },
 
-    { stage: 'Late', pressure: 'Low', side: 'Neutral', risk: 'Breakdown', color: '#ef4444' },
-    { stage: 'Late', pressure: 'Mid', side: 'Neutral', risk: 'Breakdown', color: '#ef4444' },
+    { stage: 'Late', pressure: 'Low', side: 'Neutral', risk: 'Rollover', color: '#f97316' },
+    { stage: 'Late', pressure: 'Mid', side: 'Neutral', risk: 'Rollover', color: '#f97316' },
     { stage: 'Late', pressure: 'High', side: 'Neutral', risk: 'Breakdown', color: '#ef4444' },
     { stage: 'Late', pressure: 'Extreme', side: 'Neutral', risk: 'Breakdown', color: '#ef4444' }
 ];
@@ -302,9 +306,10 @@ export interface FlowTrendState {
 export function calculateFlowTrendState(
     slope200MA: number | null,
     divergence200MA: number | null,
-    daysAbove200MA: number | null
+    slopeStreak200MA: number | null
 ): FlowTrendState {
-    const stageLabel = getTrendStageLabel(daysAbove200MA);
+    // Use slopeStreak for stage calculation (more reliable trend indicator)
+    const stageLabel = getTrendStageLabel(slopeStreak200MA);
     const pressureLabel = getTrendPressureLabel(divergence200MA);
     const sideLabel = getTrendSide(divergence200MA);
     const { risk: riskLabel, color: riskColor } = getTrendRisk(stageLabel, pressureLabel, sideLabel);
@@ -316,9 +321,9 @@ export function calculateFlowTrendState(
             color: getTrendDirectionColor(slope200MA)
         },
         stage: {
-            value: daysAbove200MA,
+            value: slopeStreak200MA,
             label: stageLabel,
-            color: getTrendStageColor(daysAbove200MA)
+            color: getTrendStageColor(slopeStreak200MA)
         },
         pressure: {
             value: divergence200MA,

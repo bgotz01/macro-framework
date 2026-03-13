@@ -293,8 +293,7 @@ function getLiquidityRegime(totalScore: number): LiquidityRegime {
                 'Strong risk appetite',
                 'Broad speculation',
                 'Growth and duration leadership'
-            ],
-            examples: '2020–2021'
+            ]
         };
     }
 
@@ -306,8 +305,7 @@ function getLiquidityRegime(totalScore: number): LiquidityRegime {
                 'Healthy credit creation',
                 'Broad risk support',
                 'Constructive asset backdrop'
-            ],
-            examples: '2013–2019'
+            ]
         };
     }
 
@@ -342,8 +340,7 @@ function getLiquidityRegime(totalScore: number): LiquidityRegime {
             'Elevated recession risk',
             'Credit stress',
             'Broad pressure on risk assets'
-        ],
-        examples: '2000, 2007, 2023'
+        ]
     };
 }
 
