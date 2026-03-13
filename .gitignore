@@ -44,6 +44,7 @@ next-env.d.ts
 data/macro-data.db
 data/macro-data.db-shm
 data/macro-data.db-wal
+data/data/macro-data.db.backup-20260309-112724
 
 # python virtual environment
 venv/
