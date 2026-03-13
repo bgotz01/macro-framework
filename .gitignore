@@ -40,11 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# sqlite database
-data/macro-data.db
-data/macro-data.db-shm
-data/macro-data.db-wal
-data/data/macro-data.db.backup-20260309-112724
+# data files - all databases, CSVs, and data directories
+data/*.db
+data/*.db-*
+data/**/*.csv
+data/**/*.json
+dataold/
 
 # python virtual environment
 venv/
