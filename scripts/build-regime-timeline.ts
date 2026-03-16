@@ -210,7 +210,8 @@ function buildConditions(data: MonthlyData): CurrentConditions {
     const liquidityRegime = calculateLiquidityRegime(
         data.real3M,
         data.real10Y,
-        data.yieldCurve
+        data.yieldCurve,
+        data.realM2
     );
 
     // Calculate flow/trend state for context

@@ -24,6 +24,14 @@ export function formatDate(date: string | null): string {
     });
 }
 
+export function formatDateFull(date: string | null): string {
+    if (!date) return '';
+    // Parse as UTC to avoid timezone shifting the day
+    const [year, month, day] = date.split('-');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${monthNames[parseInt(month) - 1]}-${day}-${year}`;
+}
+
 export function formatPercentile(p: number | null): string {
     if (p === null) return 'N/A';
     return `${p.toFixed(0)}%`;

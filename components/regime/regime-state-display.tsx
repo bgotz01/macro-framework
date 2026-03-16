@@ -59,6 +59,51 @@ export default function RegimeStateDisplay({
 }: RegimeStateDisplayProps) {
     const metadata = REGIME_METADATA[regime];
     const [isExpanded, setIsExpanded] = useState(true);
+    const [tooltip, setTooltip] = useState<string | null>(null);
+
+    // Build flags
+    const flags: Array<{ type: 'warning' | 'extreme'; short: string; message: string }> = [];
+
+    if (yieldCurveInversion) {
+        if (yieldCurveInversion.isInverted) {
+            flags.push({
+                type: 'warning',
+                short: `YC INV`,
+                message: `Yield Curve Inverted (${conditions.yieldCurve?.toFixed(2)}%) — Historical recession indicator`
+            });
+        } else if (yieldCurveInversion.monthsSinceUninversion !== null && yieldCurveInversion.monthsSinceUninversion <= 18) {
+            const monthsRemaining = 18 - yieldCurveInversion.monthsSinceUninversion;
+            flags.push({
+                type: 'warning',
+                short: `YC -${monthsRemaining}mo`,
+                message: `Yield Curve Recently Uninverted — ${monthsRemaining} months remaining in 18-month recession watch window`
+            });
+        }
+    }
+
+    if (conditions.eyp != null && conditions.eyp < -2) {
+        flags.push({
+            type: 'warning',
+            short: `EYP ${conditions.eyp.toFixed(1)}%`,
+            message: `Overvaluation: EYP ${conditions.eyp.toFixed(2)}% — equities significantly below risk-free rate`
+        });
+    }
+
+    if (conditions.slope500MAPercentile != null) {
+        if (conditions.slope500MAPercentile >= 95) {
+            flags.push({
+                type: 'extreme',
+                short: `500MA ${conditions.slope500MAPercentile.toFixed(0)}p`,
+                message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile — Extreme uptrend momentum`
+            });
+        } else if (conditions.slope500MAPercentile <= 5) {
+            flags.push({
+                type: 'extreme',
+                short: `500MA ${conditions.slope500MAPercentile.toFixed(0)}p`,
+                message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile — Extreme downtrend momentum`
+            });
+        }
+    }
 
     return (
         <div className="max-w-7xl mx-auto mb-8">
@@ -68,7 +113,32 @@ export default function RegimeStateDisplay({
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="w-full p-6 hover:bg-muted/10 transition-colors rounded-xl"
                 >
-                    <div className="text-center">
+                    <div className="relative text-center">
+                        {/* Flags — top right corner */}
+                        {flags.length > 0 && (
+                            <div className="absolute top-0 right-0 flex flex-col gap-1 items-end" onClick={e => e.stopPropagation()}>
+                                <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest mb-0.5">Flags</div>
+                                {flags.map((flag, i) => (
+                                    <div key={i} className="relative">
+                                        <span
+                                            onMouseEnter={() => setTooltip(`flag-${i}`)}
+                                            onMouseLeave={() => setTooltip(null)}
+                                            className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold cursor-default select-none ${flag.type === 'warning'
+                                                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500'
+                                                : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500'
+                                                }`}
+                                        >
+                                            {flag.short}
+                                        </span>
+                                        {tooltip === `flag-${i}` && (
+                                            <div className="absolute right-0 top-6 z-50 w-64 p-2 rounded-lg shadow-lg bg-popover border border-border text-xs text-popover-foreground text-left leading-relaxed">
+                                                {flag.message}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         <h2
                             className="text-3xl font-light tracking-wider mb-2"
                             style={{
@@ -177,58 +247,6 @@ export default function RegimeStateDisplay({
                                 {metadata.guidance}
                             </p>
                         </div>
-
-                        {/* Flags Section */}
-                        {(() => {
-                            const flags: Array<{ type: 'warning' | 'extreme'; message: string }> = [];
-
-                            if (yieldCurveInversion) {
-                                if (yieldCurveInversion.isInverted) {
-                                    flags.push({ type: 'warning', message: `Yield Curve Inverted (${conditions.yieldCurve?.toFixed(2)}%) - Historical recession indicator` });
-                                } else if (yieldCurveInversion.monthsSinceUninversion !== null && yieldCurveInversion.monthsSinceUninversion <= 18) {
-                                    const monthsRemaining = 18 - yieldCurveInversion.monthsSinceUninversion;
-                                    flags.push({ type: 'warning', message: `Yield Curve Recently Uninverted (${monthsRemaining} months remaining in 18-month recession watch window)` });
-                                }
-                            }
-
-                            if (conditions.eyp != null && conditions.eyp < -2) {
-                                flags.push({ type: 'warning', message: `Overvaluation: EYP ${conditions.eyp.toFixed(2)}% — equities significantly below risk-free rate` });
-                            }
-
-                            if (conditions.slope500MAPercentile != null) {
-                                if (conditions.slope500MAPercentile >= 95) {
-                                    flags.push({ type: 'extreme', message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile - Extreme uptrend momentum` });
-                                } else if (conditions.slope500MAPercentile <= 5) {
-                                    flags.push({ type: 'extreme', message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile - Extreme downtrend momentum` });
-                                }
-                            }
-
-                            if (flags.length === 0) return null;
-
-                            return (
-                                <div className="mb-6 space-y-2">
-                                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 text-center">Flags</div>
-                                    {flags.map((flag, index) => (
-                                        <div key={index} className={`p-3 rounded-lg border-2 flex items-start gap-3 ${flag.type === 'warning' ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-500' : 'bg-red-50 dark:bg-red-950/20 border-red-500'}`}>
-                                            <div className="flex-shrink-0 mt-0.5">
-                                                {flag.type === 'warning' ? (
-                                                    <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                                    </svg>
-                                                ) : (
-                                                    <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                                    </svg>
-                                                )}
-                                            </div>
-                                            <p className={`text-sm font-medium ${flag.type === 'warning' ? 'text-yellow-800 dark:text-yellow-200' : 'text-red-800 dark:text-red-200'}`}>
-                                                {flag.message}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            );
-                        })()}
                     </div>
                 )}
             </div>

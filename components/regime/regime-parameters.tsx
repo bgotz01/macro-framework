@@ -16,6 +16,7 @@ import TimelineSlider from './regime-timeline-slider';
 import RegimeStateDisplay from './regime-state-display';
 import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
+import RegimeClassificationSidebar from './regime-classification-sidebar';
 import {
     emptyMetric,
     formatDate
@@ -208,7 +209,8 @@ export default function RegimeParameters() {
     const liquidityRegime = calculateLiquidityRegime(
         data.real3M.value,
         data.real10Y.value,
-        data.yieldCurve.value
+        data.yieldCurve.value,
+        data.realM2.value
     );
 
     const valuationRegime = calculateValuationRegime(
@@ -288,6 +290,7 @@ export default function RegimeParameters() {
 
     return (
         <div className="max-w-7xl mx-auto">
+            {/* Full-width header section */}
             <div className="text-center mb-8">
                 <h2
                     className="text-2xl font-light tracking-wider mb-2"
@@ -342,53 +345,66 @@ export default function RegimeParameters() {
                 onSliderChange={setSliderValue}
             />
 
-            {/* Market Regime State */}
-            {displayRegimeState && regimeMetadata && (
-                <div className="mt-6">
-                    <RegimeStateDisplay
-                        regime={displayRegimeState.regime}
-                        entryDate={displayRegimeState.entryDate}
-                        currentDate={displayRegimeState.currentDate}
-                        daysInRegime={displayRegimeState.daysInRegime}
-                        triggerReason={displayRegimeState.triggerReason}
-                        description={regimeMetadata.description}
-                        guidance={regimeMetadata.guidance}
-                        color={regimeMetadata.color}
-                        conditions={displayRegimeState.conditions}
-                        yieldCurveInversion={yieldCurveInversion}
+            {/* Active Regime + Sidebar row */}
+            <div className="flex gap-4 items-start mt-6">
+                <div className="flex-1 min-w-0">
+                    {/* Market Regime State */}
+                    {displayRegimeState && regimeMetadata && (
+                        <RegimeStateDisplay
+                            regime={displayRegimeState.regime}
+                            entryDate={displayRegimeState.entryDate}
+                            currentDate={displayRegimeState.currentDate}
+                            daysInRegime={displayRegimeState.daysInRegime}
+                            triggerReason={displayRegimeState.triggerReason}
+                            description={regimeMetadata.description}
+                            guidance={regimeMetadata.guidance}
+                            color={regimeMetadata.color}
+                            conditions={displayRegimeState.conditions}
+                            yieldCurveInversion={yieldCurveInversion}
+                        />
+                    )}
+
+                    <div className="space-y-6 mt-6">
+                        {/* Input Variables Row - Collapsible */}
+                        <div>
+                            <button
+                                onClick={() => setShowInputVariables(!showInputVariables)}
+                                className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                            >
+                                <span>Input Variables</span>
+                                <svg
+                                    className={`w-4 h-4 transition-transform ${showInputVariables ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showInputVariables && (
+                                <RegimeInputVariables data={data} isUpdating={isUpdating} />
+                            )}
+                        </div>
+
+                        {/* Regime Classification Section */}
+                        <RegimeClassification
+                            data={data}
+                            liquidityRegime={liquidityRegime}
+                            valuationRegime={valuationRegime}
+                            flowTrendState={flowTrendState}
+                        />
+                    </div>
+                </div>
+
+                {/* Right Sidebar */}
+                <div className="flex-shrink-0">
+                    <RegimeClassificationSidebar
+                        data={data}
+                        liquidityRegime={liquidityRegime}
+                        valuationRegime={valuationRegime}
+                        flowTrendState={flowTrendState}
                     />
                 </div>
-            )}
-
-            <div className="space-y-6 mt-6">
-                {/* Input Variables Row - Collapsible */}
-                <div>
-                    <button
-                        onClick={() => setShowInputVariables(!showInputVariables)}
-                        className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
-                    >
-                        <span>Input Variables</span>
-                        <svg
-                            className={`w-4 h-4 transition-transform ${showInputVariables ? 'rotate-180' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    {showInputVariables && (
-                        <RegimeInputVariables data={data} isUpdating={isUpdating} />
-                    )}
-                </div>
-
-                {/* Regime Classification Section */}
-                <RegimeClassification
-                    data={data}
-                    liquidityRegime={liquidityRegime}
-                    valuationRegime={valuationRegime}
-                    flowTrendState={flowTrendState}
-                />
             </div>
         </div>
     );

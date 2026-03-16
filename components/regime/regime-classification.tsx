@@ -5,14 +5,15 @@ import {
     getReal10YLabel,
     getYieldCurveLabel,
     getEYPLabel,
-    getRealEYLabel
+    getRealEYLabel,
+    getRealM2Label
 } from '@/lib/regime-config';
 import {
     SmallMetricCard,
     ClassificationCard,
     FlowTrendCard
 } from './regime-parameters-cards';
-import { formatValue, formatDate } from './regime-parameters-utils';
+import { formatValue, formatDate, formatDateFull } from './regime-parameters-utils';
 import type { RegimeData } from './regime-parameters-types';
 
 interface RegimeClassificationProps {
@@ -20,6 +21,15 @@ interface RegimeClassificationProps {
     liquidityRegime: any;
     valuationRegime: any;
     flowTrendState: any;
+}
+
+function getTrendPressurePercentileColor(percentile: number | null | undefined): string {
+    if (percentile === null || percentile === undefined) return '#3b82f6';
+    if (percentile > 90) return '#ef4444';       // red
+    if (percentile > 75) return '#eab308';       // yellow
+    if (percentile < 10) return '#15803d';       // dark green
+    if (percentile < 25) return '#22c55e';       // light green
+    return '#3b82f6';                            // blue
 }
 
 export default function RegimeClassification({
@@ -62,7 +72,7 @@ export default function RegimeClassification({
                 </div>
                 <div className="border-l-2 border-border mx-2" />
                 <div className="flex-1 min-w-0">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         <SmallMetricCard
                             label="Real 3M"
                             concept="Policy Pressure"
@@ -92,6 +102,16 @@ export default function RegimeClassification({
                             interpretation={getYieldCurveLabel(data.yieldCurve.value)}
                             useValueForColor
                             rawValue={data.yieldCurve.value}
+                        />
+                        <SmallMetricCard
+                            label="Real M2"
+                            concept="Money Supply"
+                            value={formatValue(data.realM2.value)}
+                            percentile={data.realM2.percentile}
+                            date={formatDate(data.realM2.date)}
+                            interpretation={getRealM2Label(data.realM2.value)}
+                            useValueForColor
+                            rawValue={data.realM2.value}
                         />
                     </div>
                 </div>
@@ -144,33 +164,42 @@ export default function RegimeClassification({
                 </div>
                 <div className="border-l-2 border-border mx-2" />
                 <div className="flex-1 min-w-0">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                         <SmallMetricCard
                             label="Direction"
                             concept="200MA Slope"
                             value={formatValue(data.slope200MA.value, 2)}
                             percentile={data.slope200MA.percentile}
-                            date={formatDate(data.slope200MA.date)}
+                            date={formatDateFull(data.slope200MA.date)}
                             interpretation={flowTrendState.direction.label}
-                            customColor={flowTrendState.direction.color}
+                            customColor={getTrendPressurePercentileColor(data.slope200MA.percentile)}
                         />
                         <SmallMetricCard
                             label="Stage"
                             concept="Trend Age"
                             value={data.slopeStreak200MA.value !== null ? `${data.slopeStreak200MA.value.toFixed(0)} days` : 'N/A'}
                             percentile={data.slopeStreak200MA.percentile}
-                            date={formatDate(data.slopeStreak200MA.date)}
+                            date={formatDateFull(data.slopeStreak200MA.date)}
                             interpretation={flowTrendState.stage.label}
-                            customColor={flowTrendState.stage.color}
+                            customColor={getTrendPressurePercentileColor(data.slopeStreak200MA.percentile)}
                         />
                         <SmallMetricCard
                             label="Pressure"
                             concept="Distance from 200MA"
                             value={formatValue(data.divergence200MA.value)}
                             percentile={data.divergence200MA.percentile}
-                            date={formatDate(data.divergence200MA.date)}
+                            date={formatDateFull(data.divergence200MA.date)}
                             interpretation={flowTrendState.pressure.label}
-                            customColor={flowTrendState.pressure.color}
+                            customColor={getTrendPressurePercentileColor(data.divergence200MA.percentile)}
+                        />
+                        <SmallMetricCard
+                            label="Days Above 200MA"
+                            concept="Price vs 200MA"
+                            value={data.daysAbove200MA.value !== null ? `${data.daysAbove200MA.value.toFixed(0)} days` : 'N/A'}
+                            percentile={data.daysAbove200MA.percentile}
+                            date={formatDateFull(data.daysAbove200MA.date)}
+                            interpretation={data.daysAbove200MA.value !== null ? (data.daysAbove200MA.value > 0 ? 'Above' : 'Below') : 'N/A'}
+                            customColor={getTrendPressurePercentileColor(data.daysAbove200MA.percentile)}
                         />
                     </div>
                 </div>

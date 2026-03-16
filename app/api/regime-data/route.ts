@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
             asset_class: string;
             series_name: string;
             key: string;
+            latestOnly?: boolean; // if true, always fetch the most recent row regardless of referenceDate
         }
 
         const series: SeriesConfig[] = [
@@ -35,12 +36,12 @@ export async function GET(request: NextRequest) {
             { asset_class: 'valuations', series_name: 'PE-5yr', key: 'pe5yr' },
             { asset_class: 'valuations', series_name: 'Earnings-Yield-5yr', key: 'ey5yr' },
 
-            // Flow/Trend
-            { asset_class: 'derived', series_name: 'SP500-200MA-Slope', key: 'slope200MA' },
-            { asset_class: 'derived', series_name: 'SP500-500MA-Slope', key: 'slope500MA' },
-            { asset_class: 'derived', series_name: 'SP500-200MA-Div', key: 'divergence200MA' },
-            { asset_class: 'derived', series_name: 'SP500-200MA-PriceAboveStreak', key: 'daysAbove200MA' },
-            { asset_class: 'derived', series_name: 'SP500-200MA-SlopeStreak', key: 'slopeStreak200MA' }
+            // Flow/Trend - daily data, always fetch true latest
+            { asset_class: 'derived', series_name: 'SP500-200MA-Slope', key: 'slope200MA', latestOnly: true },
+            { asset_class: 'derived', series_name: 'SP500-500MA-Slope', key: 'slope500MA', latestOnly: true },
+            { asset_class: 'derived', series_name: 'SP500-200MA-Div', key: 'divergence200MA', latestOnly: true },
+            { asset_class: 'derived', series_name: 'SP500-200MA-PriceAboveStreak', key: 'daysAbove200MA', latestOnly: true },
+            { asset_class: 'derived', series_name: 'SP500-200MA-SlopeStreak', key: 'slopeStreak200MA', latestOnly: true }
         ];
 
         const result: any = {};
@@ -64,7 +65,17 @@ export async function GET(request: NextRequest) {
             let query: string;
             let params: any[];
 
-            if (targetDate === 'latest' && referenceDate) {
+            if (targetDate === 'latest' && s.latestOnly) {
+                // Daily data — always fetch the true latest row
+                query = `
+                    SELECT date, value, percentile_rank
+                    FROM percentile_analysis
+                    WHERE asset_class = ? AND series_name = ?
+                    ORDER BY date DESC
+                    LIMIT 1
+                `;
+                params = [s.asset_class, s.series_name];
+            } else if (targetDate === 'latest' && referenceDate) {
                 // Use reference date to align all series to the same month
                 query = `
                     SELECT date, value, percentile_rank

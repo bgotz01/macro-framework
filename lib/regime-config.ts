@@ -1,11 +1,12 @@
 // /lib/regime-config.ts
 // Liquidity Classification System
-// Based on three key liquidity variables: Real 3M, Real 10Y, Yield Curve
+// Based on four key liquidity variables: Real 3M, Real 10Y, Yield Curve, Real M2
 
 export interface LiquidityScore {
     real3M: number;
     real10Y: number;
     yieldCurve: number;
+    realM2: number;
     total: number;
 }
 
@@ -63,6 +64,20 @@ export function scoreYieldCurve(value: number | null): number {
     if (value >= 0.25) return 0;
     if (value >= -0.25) return -1;
     return -2;
+}
+
+/**
+ * Real M2 (YoY money supply growth, inflation-adjusted)
+ * Positive = money supply expanding in real terms (expansionary)
+ * Negative = money supply contracting in real terms (contractive)
+ */
+export function scoreRealM2(value: number | null): number {
+    if (value === null) return 0;
+    if (value > 5.0) return 2;    // Highly Expansionary
+    if (value > 1.0) return 1;    // Expansionary
+    if (value >= -1.0) return 0;  // Neutral
+    if (value >= -5.0) return -1; // Contractive
+    return -2;                     // Highly Contractive
 }
 
 /**
@@ -263,18 +278,20 @@ function getValuationRegime(totalScore: number): LiquidityRegime {
 export function calculateLiquidityRegime(
     real3MValue: number | null,
     real10YValue: number | null,
-    yieldCurveValue: number | null
+    yieldCurveValue: number | null,
+    realM2Value: number | null = null
 ): { score: LiquidityScore; regime: LiquidityRegime } {
     const score: LiquidityScore = {
         real3M: scoreReal3M(real3MValue),
         real10Y: scoreReal10Y(real10YValue),
         yieldCurve: scoreYieldCurve(yieldCurveValue),
+        realM2: scoreRealM2(realM2Value),
         total: 0
     };
 
-    score.total = score.real3M + score.real10Y + score.yieldCurve;
+    score.total = score.real3M + score.real10Y + score.yieldCurve + score.realM2;
 
-    const regime = getLiquidityRegime(score.total);
+    const regime = getLiquidityRegime(score.total, realM2Value);
 
     return { score, regime };
 }
@@ -282,10 +299,11 @@ export function calculateLiquidityRegime(
 /**
  * Map total score to 5-band liquidity regime
  *
- * Total score range: -6 to +6
+ * Total score range: -8 to +8 (4 metrics × ±2)
+ * Highly Expansionary requires Real M2 >= 5% as a hard gate.
  */
-function getLiquidityRegime(totalScore: number): LiquidityRegime {
-    if (totalScore >= 4) {
+function getLiquidityRegime(totalScore: number, realM2Value: number | null = null): LiquidityRegime {
+    if (totalScore >= 5 && realM2Value !== null && realM2Value >= 5) {
         return {
             name: 'Highly Expansionary Liquidity',
             description: 'Capital is abundant and credit transmission is highly supportive',
@@ -321,7 +339,7 @@ function getLiquidityRegime(totalScore: number): LiquidityRegime {
         };
     }
 
-    if (totalScore >= -3) {
+    if (totalScore >= -4) {
         return {
             name: 'Contractive Liquidity',
             description: 'Capital conditions are becoming restrictive',
@@ -371,6 +389,15 @@ export function getYieldCurveLabel(value: number | null): string {
     if (value > 0.75) return 'Expansionary';
     if (value >= 0.25) return 'Neutral';
     if (value >= -0.25) return 'Contractive';
+    return 'Highly Contractive';
+}
+
+export function getRealM2Label(value: number | null): string {
+    if (value === null) return 'N/A';
+    if (value > 5.0) return 'Highly Expansionary';
+    if (value > 1.0) return 'Expansionary';
+    if (value >= -1.0) return 'Neutral';
+    if (value >= -5.0) return 'Contractive';
     return 'Highly Contractive';
 }
 

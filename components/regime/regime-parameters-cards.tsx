@@ -162,6 +162,18 @@ export function SmallMetricCard({
             } else {
                 styles = { border: 'border-red-500 dark:border-red-400', text: 'text-red-600 dark:text-red-400' };
             }
+        } else if (label === 'Real M2') {
+            if (rawValue > 5.0) {
+                styles = { border: 'border-lime-500 dark:border-lime-400', text: 'text-lime-600 dark:text-lime-400' };
+            } else if (rawValue > 1.0) {
+                styles = { border: 'border-green-500 dark:border-green-400', text: 'text-green-600 dark:text-green-400' };
+            } else if (rawValue >= -1.0) {
+                styles = { border: 'border-blue-500 dark:border-blue-400', text: 'text-blue-600 dark:text-blue-400' };
+            } else if (rawValue >= -5.0) {
+                styles = { border: 'border-yellow-500 dark:border-yellow-400', text: 'text-yellow-600 dark:text-yellow-400' };
+            } else {
+                styles = { border: 'border-red-500 dark:border-red-400', text: 'text-red-600 dark:text-red-400' };
+            }
         } else {
             styles = getQuartileStyles(percentile, invertQuartiles);
         }

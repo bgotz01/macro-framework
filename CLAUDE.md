@@ -1,0 +1,1 @@
+database: sqlite3 data/macro-data.db

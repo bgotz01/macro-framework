@@ -10,6 +10,7 @@ import HistoricalDataTable from './historical-data-table';
 interface DivergenceChartProps {
     height?: number;
     className?: string;
+    initialMAs?: string[];
 }
 
 interface ChartDataPoint {
@@ -93,17 +94,19 @@ const DATE_PRESETS: Array<
         { label: '2020s', value: '2020s', start: '2020-01-01', end: '2029-12-31' },
         { label: 'Last 5Y', value: '5y' },
         { label: 'Last 10Y', value: '10y' },
+        { label: 'Last 20Y', value: '20y' },
         { label: 'Custom', value: 'custom' },
     ];
 
 export default function DivergenceChart({
     height = 400,
-    className = ''
+    className = '',
+    initialMAs = ['50', '200']
 }: DivergenceChartProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('price');
     const [daysMetric, setDaysMetric] = useState<'positiveSlope' | 'priceAbove'>('positiveSlope');
     const [percentileMetric, setPercentileMetric] = useState<'divergence' | 'slope' | 'slopeStreak' | 'priceAbove'>('divergence');
-    const [selectedMAs, setSelectedMAs] = useState<string[]>(['50', '200']);
+    const [selectedMAs, setSelectedMAs] = useState<string[]>(initialMAs);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
     const [datePreset, setDatePreset] = useState<string>('10y');
@@ -349,13 +352,15 @@ export default function DivergenceChart({
             endDate = customEndDate;
         } else if (datePreset === '5y') {
             const now = new Date();
-            const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
-            startDate = fiveYearsAgo.toISOString().split('T')[0];
+            startDate = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate()).toISOString().split('T')[0];
             endDate = now.toISOString().split('T')[0];
         } else if (datePreset === '10y') {
             const now = new Date();
-            const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
-            startDate = tenYearsAgo.toISOString().split('T')[0];
+            startDate = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '20y') {
+            const now = new Date();
+            startDate = new Date(now.getFullYear() - 20, now.getMonth(), now.getDate()).toISOString().split('T')[0];
             endDate = now.toISOString().split('T')[0];
         } else {
             const preset = DATE_PRESETS.find(p => p.value === datePreset);
