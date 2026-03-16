@@ -33,6 +33,7 @@ export default function RegimeParameters() {
     const [debouncedSliderValue, setDebouncedSliderValue] = useState<number>(totalMonths);
     const [data, setData] = useState<RegimeData | null>(null);
     const [regimeState, setRegimeState] = useState<any>(null);
+    const [yieldCurveInversion, setYieldCurveInversion] = useState<any>(null);
     const [initialLoading, setInitialLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -76,9 +77,10 @@ export default function RegimeParameters() {
                     : `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
 
                 // Fetch both regime data and regime state in parallel
-                const [regimeDataResponse, regimeStateResponse] = await Promise.all([
+                const [regimeDataResponse, regimeStateResponse, yieldCurveInversionResponse] = await Promise.all([
                     fetch(`/api/regime-data?date=${dateParam}`),
-                    fetch(`/api/regime-state?date=${dateParam}`)
+                    fetch(`/api/regime-state?date=${dateParam}`),
+                    fetch(`/api/yield-curve-inversion?date=${dateParam}`)
                 ]);
 
                 if (!regimeDataResponse.ok) {
@@ -102,6 +104,7 @@ export default function RegimeParameters() {
                     pe5yr: result.pe5yr || emptyMetric(),
                     ey5yr: result.ey5yr || emptyMetric(),
                     slope200MA: result.slope200MA || emptyMetric(),
+                    slope500MA: result.slope500MA || emptyMetric(),
                     divergence200MA: result.divergence200MA || emptyMetric(),
                     daysAbove200MA: result.daysAbove200MA || emptyMetric(),
                     slopeStreak200MA: result.slopeStreak200MA || emptyMetric()
@@ -113,6 +116,12 @@ export default function RegimeParameters() {
                 if (regimeStateResponse.ok) {
                     const regimeStateData = await regimeStateResponse.json();
                     setRegimeState(regimeStateData);
+                }
+
+                // Set yield curve inversion data if available
+                if (yieldCurveInversionResponse.ok) {
+                    const yieldCurveInversionData = await yieldCurveInversionResponse.json();
+                    setYieldCurveInversion(yieldCurveInversionData);
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -250,7 +259,9 @@ export default function RegimeParameters() {
                 stage: conditions.stage,
                 pressure: conditions.pressure,
                 risk: conditions.risk,
-                direction: conditions.direction
+                direction: conditions.direction,
+                yieldCurve: data.yieldCurve.value,
+                slope500MAPercentile: data.slope500MA.percentile
             }
         };
     } else {
@@ -266,7 +277,9 @@ export default function RegimeParameters() {
                 stage: flowTrendState.stage.label,
                 pressure: flowTrendState.pressure.label,
                 risk: flowTrendState.risk.label,
-                direction: flowTrendState.direction.label
+                direction: flowTrendState.direction.label,
+                yieldCurve: data.yieldCurve.value,
+                slope500MAPercentile: data.slope500MA.percentile
             }
         };
     }
@@ -342,6 +355,7 @@ export default function RegimeParameters() {
                         guidance={regimeMetadata.guidance}
                         color={regimeMetadata.color}
                         conditions={displayRegimeState.conditions}
+                        yieldCurveInversion={yieldCurveInversion}
                     />
                 </div>
             )}

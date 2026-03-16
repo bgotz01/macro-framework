@@ -4,53 +4,86 @@ import path from 'path';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
-    const dateParam = searchParams.get('date');
-
-    if (!dateParam) {
-        return NextResponse.json({ error: 'Date parameter required' }, { status: 400 });
-    }
-
-    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-    const db = new Database(dbPath, { readonly: true, timeout: 10000 });
+    const currentDate = searchParams.get('date') || 'latest';
 
     try {
-        // Convert the selected date to Unix timestamp (milliseconds)
-        const selectedDate = new Date(dateParam);
-        const selectedTimestamp = selectedDate.getTime();
+        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
+        const db = new Database(dbPath, { readonly: true, timeout: 10000 });
 
-        // Calculate 24 months ago
-        const twentyFourMonthsAgo = new Date(selectedDate);
-        twentyFourMonthsAgo.setMonth(twentyFourMonthsAgo.getMonth() - 24);
-        const cutoffTimestamp = twentyFourMonthsAgo.getTime();
-
-        // Find the most recent inversion (where curve went negative) BEFORE the selected date
-        // and within 24 months before the selected date
-        const inversionQuery = `
+        // Get the current yield curve value
+        const currentQuery = `
             SELECT date, value
             FROM percentile_analysis
-            WHERE asset_class = 'derived' 
-            AND series_name = 'Yield-Curve-10Y-3M'
-            AND value < 0
-            AND date <= ?
-            AND date >= ?
+            WHERE series_name = 'Yield-Curve-10Y-3M'
+            ${currentDate === 'latest' ? 'ORDER BY date DESC LIMIT 1' : 'AND date = ? LIMIT 1'}
+        `;
+
+        const currentRow = currentDate === 'latest'
+            ? db.prepare(currentQuery).get() as any
+            : db.prepare(currentQuery).get(currentDate) as any;
+
+        if (!currentRow) {
+            db.close();
+            return NextResponse.json({
+                isInverted: false,
+                monthsSinceUninversion: null,
+                lastInversionEndDate: null
+            });
+        }
+
+        const isCurrentlyInverted = currentRow.value < 0;
+
+        // If currently inverted, no need to check for uninversion
+        if (isCurrentlyInverted) {
+            db.close();
+            return NextResponse.json({
+                isInverted: true,
+                monthsSinceUninversion: null,
+                lastInversionEndDate: null
+            });
+        }
+
+        // Find the last date when yield curve was inverted (before current date)
+        const lastInversionQuery = `
+            SELECT date, value
+            FROM percentile_analysis
+            WHERE series_name = 'Yield-Curve-10Y-3M'
+              AND date <= ?
+              AND value < 0
             ORDER BY date DESC
             LIMIT 1
         `;
 
-        const inversionRow = db.prepare(inversionQuery).get(selectedTimestamp, cutoffTimestamp) as any;
+        const lastInversionRow = db.prepare(lastInversionQuery).get(currentRow.date) as any;
 
-        db.close();
-
-        if (!inversionRow) {
-            return NextResponse.json({ inversionDate: null });
+        if (!lastInversionRow) {
+            // Never been inverted before this date
+            db.close();
+            return NextResponse.json({
+                isInverted: false,
+                monthsSinceUninversion: null,
+                lastInversionEndDate: null
+            });
         }
 
-        // Convert timestamp back to date string
-        const inversionDate = new Date(inversionRow.date).toISOString().split('T')[0];
-        return NextResponse.json({ inversionDate });
-    } catch (error) {
+        // Calculate months since uninversion
+        const lastInversionDate = new Date(lastInversionRow.date);
+        const currentDateObj = new Date(currentRow.date);
+
+        const monthsDiff = (currentDateObj.getFullYear() - lastInversionDate.getFullYear()) * 12
+            + (currentDateObj.getMonth() - lastInversionDate.getMonth());
+
         db.close();
-        console.error('Error fetching yield curve inversion:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+
+        return NextResponse.json({
+            isInverted: false,
+            monthsSinceUninversion: monthsDiff,
+            lastInversionEndDate: lastInversionRow.date,
+            currentValue: currentRow.value
+        });
+
+    } catch (error) {
+        console.error('Error checking yield curve inversion:', error);
+        return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
     }
 }

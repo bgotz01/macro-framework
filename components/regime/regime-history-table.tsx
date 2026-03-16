@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, ChevronUp } from 'lucide-react';
+
+type SortKey = 'startDate' | 'endDate' | 'months';
+type SortDir = 'asc' | 'desc';
 
 interface RegimePeriod {
     regime: string;
@@ -15,6 +18,9 @@ export default function RegimeHistoryTable() {
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedRegime, setSelectedRegime] = useState<string>('all');
+    const [sortKey, setSortKey] = useState<SortKey>('startDate');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
     const itemsPerPage = 20;
 
     useEffect(() => {
@@ -43,19 +49,25 @@ export default function RegimeHistoryTable() {
             return 'border-l-green-500';
         }
 
-        // Red regimes: Fragile, Crisis, Contraction
-        if (normalized.includes('fragile') ||
-            normalized.includes('crisis') ||
+        // Red regimes: Crisis, Contraction
+        if (normalized.includes('crisis') ||
             normalized.includes('contraction')) {
             return 'border-l-red-500';
         }
 
-        // Yellow for Overvaluation
-        if (normalized.includes('overvaluation')) {
-            return 'border-l-yellow-500';
+        // Orange for Fragile, Overvaluation, and Bond Stress
+        if (normalized.includes('fragile') ||
+            normalized.includes('overvaluation') ||
+            normalized.includes('bond stress')) {
+            return 'border-l-orange-500';
         }
 
-        // Blue for Normal, Deep Value, Bond Stress, and others
+        // Green for Deep Value
+        if (normalized.includes('deep value')) {
+            return 'border-l-green-500';
+        }
+
+        // Blue for Normal and others
         return 'border-l-blue-500';
     };
 
@@ -68,19 +80,52 @@ export default function RegimeHistoryTable() {
     }
 
     // Calculate pagination
-    const totalPages = Math.ceil(periods.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const displayedPeriods = isExpanded ? periods.slice(startIndex, endIndex) : [];
+    const filteredPeriods = selectedRegime === 'all'
+        ? periods
+        : periods.filter(p => p.regime === selectedRegime);
+
+    const uniqueRegimes = Array.from(new Set(periods.map(p => p.regime))).sort();
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
     };
 
+    const handleRegimeFilter = (regime: string) => {
+        setSelectedRegime(regime);
+        setCurrentPage(1);
+    };
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDir('desc');
+        }
+        setCurrentPage(1);
+    };
+
+    const sortedPeriods = [...filteredPeriods].sort((a, b) => {
+        let cmp = 0;
+        if (sortKey === 'months') {
+            cmp = a.months - b.months;
+        } else {
+            const aVal = sortKey === 'endDate' && a.endDate === 'Current' ? Date.now() : new Date(a[sortKey]).getTime();
+            const bVal = sortKey === 'endDate' && b.endDate === 'Current' ? Date.now() : new Date(b[sortKey]).getTime();
+            cmp = aVal - bVal;
+        }
+        return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    const totalPages = Math.ceil(filteredPeriods.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const displayedPeriods = isExpanded ? sortedPeriods.slice(startIndex, endIndex) : [];
+
     const toggleExpanded = () => {
         setIsExpanded(!isExpanded);
         if (!isExpanded) {
-            setCurrentPage(1); // Reset to first page when expanding
+            setCurrentPage(1);
         }
     };
 
@@ -97,7 +142,7 @@ export default function RegimeHistoryTable() {
                         Regime History
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                        {periods.length} regime periods from 1960 to present
+                        {filteredPeriods.length} regime periods {selectedRegime !== 'all' ? `(filtered)` : 'from 1960 to present'}
                     </p>
                 </div>
                 <div className="text-sm text-muted-foreground">
@@ -108,6 +153,28 @@ export default function RegimeHistoryTable() {
             {/* Table - Only visible when expanded */}
             {isExpanded && (
                 <>
+                    {/* Filter dropdown */}
+                    <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
+                        <label className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-foreground">Filter by Regime:</span>
+                            <select
+                                value={selectedRegime}
+                                onChange={(e) => handleRegimeFilter(e.target.value)}
+                                className="px-3 py-1.5 rounded-lg bg-background border border-border/50 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                                <option value="all">All Regimes ({periods.length})</option>
+                                {uniqueRegimes.map((regime) => {
+                                    const count = periods.filter(p => p.regime === regime).length;
+                                    return (
+                                        <option key={regime} value={regime}>
+                                            {regime} ({count})
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </label>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-border/50">
                             <thead className="bg-muted/30">
@@ -115,14 +182,38 @@ export default function RegimeHistoryTable() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Regime
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                        Start Date
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
+                                        onClick={() => handleSort('startDate')}
+                                    >
+                                        <span className="inline-flex items-center gap-1">
+                                            Start Date
+                                            {sortKey === 'startDate'
+                                                ? sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                                                : <ChevronUp className="w-3 h-3 opacity-30" />}
+                                        </span>
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                        End Date
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
+                                        onClick={() => handleSort('endDate')}
+                                    >
+                                        <span className="inline-flex items-center gap-1">
+                                            End Date
+                                            {sortKey === 'endDate'
+                                                ? sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                                                : <ChevronUp className="w-3 h-3 opacity-30" />}
+                                        </span>
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                        Duration (Months)
+                                    <th
+                                        className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground select-none"
+                                        onClick={() => handleSort('months')}
+                                    >
+                                        <span className="inline-flex items-center justify-end gap-1 w-full">
+                                            Duration (Months)
+                                            {sortKey === 'months'
+                                                ? sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+                                                : <ChevronUp className="w-3 h-3 opacity-30" />}
+                                        </span>
                                     </th>
                                 </tr>
                             </thead>
@@ -162,7 +253,7 @@ export default function RegimeHistoryTable() {
                     {totalPages > 1 && (
                         <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between bg-muted/30">
                             <div className="text-sm text-muted-foreground">
-                                Showing {startIndex + 1} to {Math.min(endIndex, periods.length)} of {periods.length} periods
+                                Showing {startIndex + 1} to {Math.min(endIndex, filteredPeriods.length)} of {filteredPeriods.length} periods
                             </div>
                             <div className="flex items-center gap-2">
                                 <button

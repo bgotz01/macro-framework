@@ -74,7 +74,7 @@ const REGIMES: RegimeInfo[] = [
         name: 'Long Duration',
         color: '#3b82f6',
         description: 'Equities overvalued relative to bonds - duration growth',
-        entry: 'EYP < 0%',
+        entry: 'EYP < 0% AND Real 10Y > 2%',
         exit: 'EYP ≥ 0% OR EYP ≤ -2.5%',
         guidance: 'Negative equity yield premium - investors buying duration/growth'
     },
@@ -160,7 +160,7 @@ export default function RegimeModal() {
                                     : 'text-muted-foreground hover:text-foreground'
                                     }`}
                             >
-                                All Regimes
+                                Other
                             </button>
                         </div>
 
@@ -292,14 +292,14 @@ function AllRegimesContent() {
     return (
         <>
             <section>
-                <h3 className="text-xl font-semibold mb-3">All Market Regimes</h3>
+                <h3 className="text-xl font-semibold mb-3">Other Regimes</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                    Complete list of all regimes in precedence order (highest to lowest priority).
+                    Additional regimes that don't fit neatly into liquidity or valuation categories.
                 </p>
             </section>
 
             <div className="space-y-4">
-                {REGIMES.map((regime) => (
+                {REGIMES.filter(r => !['Liquidity Shock', 'Crisis', 'Bond Stress', 'Deep Value', 'Broad Growth', 'Long Duration', 'Overvaluation'].includes(r.name)).map((regime) => (
                     <RegimeCard key={regime.name} regime={regime} />
                 ))}
             </div>

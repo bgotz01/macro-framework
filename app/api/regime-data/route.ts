@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
 
             // Flow/Trend
             { asset_class: 'derived', series_name: 'SP500-200MA-Slope', key: 'slope200MA' },
+            { asset_class: 'derived', series_name: 'SP500-500MA-Slope', key: 'slope500MA' },
             { asset_class: 'derived', series_name: 'SP500-200MA-Div', key: 'divergence200MA' },
             { asset_class: 'derived', series_name: 'SP500-200MA-PriceAboveStreak', key: 'daysAbove200MA' },
             { asset_class: 'derived', series_name: 'SP500-200MA-SlopeStreak', key: 'slopeStreak200MA' }

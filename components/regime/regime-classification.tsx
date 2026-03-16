@@ -53,7 +53,7 @@ export default function RegimeClassification({
             {/* Liquidity Row */}
             <div className="flex gap-4 mb-4">
                 <div className="flex items-center justify-center w-[180px]">
-                    <h4 className="text-lg font-semibold">Liquidity</h4>
+                    <a href="/chart/percentile" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary hover:underline transition-colors">Liquidity</a>
                 </div>
                 <div className="w-[240px]">
                     <ClassificationCard
@@ -100,7 +100,7 @@ export default function RegimeClassification({
             {/* Valuation Row */}
             <div className="flex gap-4 mb-4">
                 <div className="flex items-center justify-center w-[180px]">
-                    <h4 className="text-lg font-semibold">Valuation</h4>
+                    <a href="/chart/percentile" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary hover:underline transition-colors">Valuation</a>
                 </div>
                 <div className="w-[240px]">
                     <ClassificationCard
@@ -137,7 +137,7 @@ export default function RegimeClassification({
             {/* Trend Pressure Row */}
             <div className="flex gap-4">
                 <div className="flex items-center justify-center w-[180px]">
-                    <h4 className="text-lg font-semibold">Trend Pressure</h4>
+                    <a href="/chart?chart=divergence" target="_blank" rel="noopener noreferrer" className="text-lg font-semibold hover:text-primary hover:underline transition-colors">Trend Pressure</a>
                 </div>
                 <div className="w-[240px]">
                     <FlowTrendCard flowTrendState={flowTrendState} />

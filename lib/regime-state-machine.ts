@@ -16,79 +16,79 @@
 
 export const REGIME_TRIGGERS = {
     'Deep Value': {
-        entry: (c: CurrentConditions) => c.rey !== null && c.rey > 6,
+        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= 6,
         exit: (c: CurrentConditions) => c.rey !== null && c.rey < 4,
         reason: (c: CurrentConditions) => `Deep Value: Real Earnings Yield ${c.rey?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY > 6%',
-        exitDescription: 'Exit: REY < 4%'
+        entryDescription: 'Entry: REY ≥ 6%',
+        exitDescription: 'Exit: REY ≤ 4%'
     },
     'Broad Growth': {
-        entry: (c: CurrentConditions) => c.rey !== null && c.rey > 4,
+        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= 4,
         exit: (c: CurrentConditions) => c.rey !== null && c.rey < 1,
         reason: (c: CurrentConditions) => `Broad Growth: Real Earnings Yield ${c.rey?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY > 4%',
-        exitDescription: 'Exit: REY < 1%'
+        entryDescription: 'Entry: REY ≥ 4%',
+        exitDescription: 'Exit: REY ≤ 1%'
     },
     'Fragile': {
         entry: (c: CurrentConditions) =>
             c.rey !== null && c.real10Y !== null && c.realM2 !== null &&
-            c.rey < 0 && c.real10Y < 0 && c.realM2 < 10,
+            c.rey <= 0 && c.real10Y <= 0 && c.realM2 < 10,
         exit: (c: CurrentConditions) =>
             c.real10Y !== null && c.real10Y >= 1,
         reason: (c: CurrentConditions) => `Fragile: Real earnings negative (REY ${c.rey?.toFixed(2)}%), financial repression (Real 10Y ${c.real10Y?.toFixed(2)}%), slowing liquidity (Real M2 ${c.realM2?.toFixed(1)}%)`,
-        entryDescription: 'Entry: REY < 0% AND Real 10Y < 0% AND Real M2 < 10%',
+        entryDescription: 'Entry: REY ≤ 0% AND Real 10Y ≤ 0% AND Real M2 ≤ 10%',
         exitDescription: 'Exit: Real 10Y ≥ 1%'
     },
     'Contraction': {
         entry: (c: CurrentConditions) =>
             c.rey !== null && c.eyp !== null && c.real10Y !== null &&
-            c.rey < 0 && c.eyp < 0 && c.real10Y < 0,
-        exit: (c: CurrentConditions) => c.rey !== null && c.rey > 2,
+            c.rey <= 0 && c.eyp <= 0 && c.real10Y <= 0,
+        exit: (c: CurrentConditions) => c.rey !== null && c.rey >= 2,
         reason: (c: CurrentConditions) => `Contraction: REY ${c.rey?.toFixed(2)}%, EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY < 0% AND EYP < 0% AND Real 10Y < 0%',
-        exitDescription: 'Exit: REY > 2%'
+        entryDescription: 'Entry: REY ≤ 0% AND EYP ≤ 0% AND Real 10Y ≤ 0%',
+        exitDescription: 'Exit: REY ≥ 2%'
     },
     'Long Duration': {
-        entry: (c: CurrentConditions) => c.eyp !== null && c.eyp < 0,
+        entry: (c: CurrentConditions) => c.eyp !== null && c.real10Y !== null && c.eyp <= 0 && c.real10Y >= 1,
         exit: (c: CurrentConditions) => c.eyp !== null && (c.eyp >= 0 || c.eyp <= -2.5),
-        reason: (c: CurrentConditions) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%`,
-        entryDescription: 'Entry: EYP < 0%',
+        reason: (c: CurrentConditions) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
+        entryDescription: 'Entry: EYP ≤ 0% AND Real 10Y ≥ 1%',
         exitDescription: 'Exit: EYP ≥ 0% OR EYP ≤ -2.5%'
     },
     'Overvaluation': {
-        entry: (c: CurrentConditions) => c.eyp !== null && c.eyp < -2.5,
-        exit: (c: CurrentConditions) => c.eyp !== null && c.eyp > 0,
+        entry: (c: CurrentConditions) => c.eyp !== null && c.eyp <= -2.5,
+        exit: (c: CurrentConditions) => c.eyp !== null && c.eyp >= 0,
         reason: (c: CurrentConditions) => `Overvaluation: Extreme equity unattractiveness (EYP ${c.eyp?.toFixed(2)}%)`,
-        entryDescription: 'Entry: EYP < -2.5%',
-        exitDescription: 'Exit: EYP > 0%'
+        entryDescription: 'Entry: EYP ≤ -2.5%',
+        exitDescription: 'Exit: EYP ≥ 0%'
     },
     'Crisis': {
         entry: (c: CurrentConditions) =>
             c.real10Y !== null && c.realM2 !== null &&
-            c.real10Y < -1 && c.realM2 < 5,
+            c.real10Y <= -1 && c.realM2 <= 5,
         exit: (c: CurrentConditions) =>
             c.real10Y !== null && c.realM2 !== null && (c.real10Y >= 0.5 || c.realM2 >= 7),
         reason: (c: CurrentConditions) => `Crisis: Real 10Y ${c.real10Y?.toFixed(2)}%, Real M2 ${c.realM2?.toFixed(1)}%`,
-        entryDescription: 'Entry: Real 10Y < -1% AND Real M2 < 5%',
+        entryDescription: 'Entry: Real 10Y ≤ -1% AND Real M2 ≤ 5%',
         exitDescription: 'Exit: Real 10Y ≥ 0.5% OR Real M2 ≥ 7%'
     },
     'Bond Stress': {
         entry: (c: CurrentConditions) =>
-            c.real10Y !== null && c.real3M !== null && c.real10Y < -0.5 && c.real3M < -1,
+            c.real10Y !== null && c.real3M !== null && c.real10Y <= -0.5 && c.real3M <= -1,
         exit: (c: CurrentConditions) =>
             c.real10Y !== null && c.real10Y >= 0.25,
         reason: (c: CurrentConditions) => `Bond Stress: Real 10Y ${c.real10Y?.toFixed(2)}%, Real 3M ${c.real3M?.toFixed(2)}%`,
-        entryDescription: 'Entry: Real 10Y < -0.5% AND Real 3M < -1%',
+        entryDescription: 'Entry: Real 10Y ≤ -0.5% AND Real 3M ≤ -1%',
         exitDescription: 'Exit: Real 10Y ≥ 0.25%'
     },
     'Liquidity Shock': {
         entry: (c: CurrentConditions) =>
             c.realM2 !== null && c.realM2 >= 10,
         exit: (c: CurrentConditions) =>
-            c.realM2 !== null && c.realM2 < 8,
+            c.realM2 !== null && c.realM2 <= 8,
         reason: (c: CurrentConditions) => `Liquidity Shock: Real M2 ${c.realM2?.toFixed(1)}%`,
         entryDescription: 'Entry: Real M2 ≥ 10%',
-        exitDescription: 'Exit: Real M2 < 8%'
+        exitDescription: 'Exit: Real M2 ≤ 8%'
     },
     'Normal': {
         // Normal has no entry/exit triggers - it's the default state
@@ -106,18 +106,20 @@ export const REGIME_TRIGGERS = {
 // Defines which prior regimes can transition to each regime
 // This prevents illogical transitions (e.g., Normal -> Recovery)
 
+/*
 const ALLOWED_TRANSITIONS: Partial<Record<RegimeFamily, RegimeFamily[]>> = {
     'Bond Stress': ['Crisis', 'Contraction', 'Deep Value', 'Fragile', 'Liquidity Shock', 'Normal'],  // Bond Stress from damaged or stressed states
     'Deep Value': ['Crisis', 'Contraction', 'Normal'],  // Deep Value after severe damage or from baseline
-    'Broad Growth': ['Normal', 'Deep Value', 'Bond Stress'],  // Growth from baseline or recovery
+    'Broad Growth': ['Normal', 'Deep Value', 'Bond Stress', 'Long Duration', 'Overvaluation'],  // Growth from baseline, recovery, or after valuation regimes unwind
     'Long Duration': ['Broad Growth', 'Normal', 'Bond Stress'],  // Duration from healthy states
     'Overvaluation': ['Broad Growth', 'Normal', 'Long Duration', 'Liquidity Shock', 'Bond Stress'],  // Rotation from various states
     'Fragile': ['Normal', 'Broad Growth', 'Long Duration', 'Liquidity Shock', 'Overvaluation'],  // Fragile from healthy states or after liquidity shock ends
     'Contraction': ['Normal', 'Broad Growth', 'Long Duration', 'Bond Stress', 'Fragile', 'Overvaluation'],  // Contraction from non-crisis states
     'Crisis': ['Normal', 'Broad Growth', 'Long Duration', 'Contraction', 'Liquidity Shock', 'Fragile', 'Overvaluation', 'Bond Stress'],  // Crisis can follow many states
-    'Liquidity Shock': ['Normal', 'Broad Growth', 'Long Duration', 'Crisis', 'Overvaluation'],  // Liquidity shock from various states
+    'Liquidity Shock': ['Normal', 'Broad Growth', 'Long Duration', 'Crisis', 'Overvaluation', 'Contraction', 'Fragile', 'Bond Stress', 'Deep Value'],  // Liquidity shock can override any regime - massive M2 surge is a macro override
     'Normal': ['Broad Growth', 'Long Duration', 'Contraction', 'Bond Stress', 'Liquidity Shock', 'Crisis', 'Fragile', 'Overvaluation']  // Normal as fallback
 };
+*/
 
 /**
  * Check if transition from one regime to another is allowed
@@ -126,18 +128,8 @@ function canTransition(
     from: RegimeFamily | null,
     to: RegimeFamily
 ): boolean {
-    // If no prior regime, only allow Normal or Broad Growth as starting states
-    if (from === null) {
-        return to === 'Normal' || to === 'Broad Growth';
-    }
-
-    // Check if transition is in allowed list
-    const allowed = ALLOWED_TRANSITIONS[to];
-    if (!allowed) {
-        return false;  // No transitions defined for this regime
-    }
-
-    return allowed.includes(from);
+    // Transitions unrestricted - any regime can move to any other regime
+    return true;
 }
 
 // ============================================================================
@@ -303,11 +295,11 @@ export function determineNextRegime(
         'Crisis',          // Financial repression + low money growth
         'Bond Stress',     // Financial repression + moderate/high money growth
         'Contraction',     // Real deterioration with valuation confirmation
-        'Overvaluation',   // Extreme equity unattractiveness
+        'Overvaluation',   // Extreme equity unattractiveness - must be above Long Duration (both use EYP)
         'Fragile',         // Macro deterioration before full contraction
         'Deep Value',      // Post-crisis deep value
         'Broad Growth',    // Healthy broad equity growth
-        'Long Duration'    // Overvalued equities where growth/duration still works
+        'Long Duration'    // Overvalued equities where growth/duration still works - less extreme than Overvaluation
     ];
 
     const currentRegime = currentState?.regime || null;
@@ -316,14 +308,13 @@ export function determineNextRegime(
     for (const regime of regimePrecedence) {
         const trigger = checkRegimeTrigger(regime, conditions, currentRegime);
 
-        // If a higher-priority regime triggers and transition is allowed, switch to it
-        // (Higher priority regimes can override current regime even if it hasn't exited)
+        // If a higher-priority regime triggers and it's not the current one, switch to it
         if (trigger.triggered && regime !== currentRegime && canTransition(currentRegime, regime)) {
             return createRegimeState(regime, currentDate, trigger.reason);
         }
 
-        // If this is the current regime and its entry condition is still met, persist it
-        if (regime === currentRegime && trigger.triggered && !trigger.shouldExit) {
+        // If this is the current regime and it hasn't exited, persist it
+        if (regime === currentRegime && !trigger.shouldExit) {
             return currentState!;
         }
     }

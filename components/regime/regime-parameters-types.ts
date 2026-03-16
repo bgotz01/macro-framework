@@ -27,6 +27,7 @@ export interface RegimeData {
 
     // Flow/Trend (200MA metrics)
     slope200MA: MetricData;
+    slope500MA: MetricData;
     divergence200MA: MetricData;
     daysAbove200MA: MetricData;
     slopeStreak200MA: MetricData;
@@ -46,6 +47,7 @@ export type RegimeDataKey =
     | 'pe5yr'
     | 'ey5yr'
     | 'slope200MA'
+    | 'slope500MA'
     | 'divergence200MA'
     | 'daysAbove200MA'
     | 'slopeStreak200MA';
