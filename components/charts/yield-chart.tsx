@@ -370,210 +370,159 @@ export default function YieldChart({
         );
     };
 
+    const MONTHLY_AVG_SERIES = ['US/IRX-Monthly', 'US/TNX-Monthly', 'US/US-2yr-Monthly'];
+
+    const renderBondOptions = () => {
+        const monthly = availableSeries.filter(s => s.asset_class === 'bonds' && MONTHLY_AVG_SERIES.includes(s.series_name));
+        const other = availableSeries.filter(s => s.asset_class === 'bonds' && !MONTHLY_AVG_SERIES.includes(s.series_name));
+        return (
+            <>
+                {monthly.length > 0 && (
+                    <optgroup label="Monthly Averages">
+                        {monthly.map(s => (
+                            <option key={`${s.asset_class}/${s.series_name}`} value={`${s.asset_class}/${s.series_name}`}>{s.display_name}</option>
+                        ))}
+                    </optgroup>
+                )}
+                <optgroup label="Bond Markets">
+                    {other.map(s => (
+                        <option key={`${s.asset_class}/${s.series_name}`} value={`${s.asset_class}/${s.series_name}`}>{s.display_name}</option>
+                    ))}
+                </optgroup>
+            </>
+        );
+    };
+
+    const renderSeriesOptions = () => (
+        <>
+            {renderBondOptions()}
+            <optgroup label="Economic">
+                {availableSeries.filter(s => s.asset_class === 'economic').map(s => (
+                    <option key={`${s.asset_class}/${s.series_name}`} value={`${s.asset_class}/${s.series_name}`}>{s.display_name}</option>
+                ))}
+            </optgroup>
+            <optgroup label="Equity Valuation">
+                {availableSeries.filter(s => s.asset_class === 'valuations').map(s => (
+                    <option key={`${s.asset_class}/${s.series_name}`} value={`${s.asset_class}/${s.series_name}`}>{s.display_name}</option>
+                ))}
+            </optgroup>
+        </>
+    );
+
+    const formatLatestDate = (src: ChartDataPoint[]) => {
+        if (!src.length) return '';
+        const latest = src.reduce((a, b) => b.date > a ? b.date : a, src[0].date);
+        const [y, m, d] = latest.split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    };
+
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Controls */}
             <div className="mb-6 space-y-4">
                 {/* Mode Selector */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <label className="text-sm font-medium text-card-foreground">
-                        Chart Mode:
-                    </label>
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Mode</span>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setCalculationMode('single')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'single'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'single' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
                         >
                             Single Series
                         </button>
                         <button
                             onClick={() => setCalculationMode('spread')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'spread'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'spread' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
                         >
                             Yield Spread
                         </button>
                     </div>
                 </div>
 
+                {/* Series Selector(s) */}
                 {calculationMode === 'spread' ? (
-                    /* Spread Mode: Two Series Selectors */
-                    <div className="space-y-3">
-                        <div>
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Series 1
-                            </label>
+                    <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">Series 1</span>
                             <select
                                 value={`${assetClass1}/${series1}`}
-                                onChange={(e) => {
-                                    const [ac, ...rest] = e.target.value.split('/');
-                                    setSeries1(rest.join('/'));
-                                    setAssetClass1(ac);
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                onChange={(e) => { const [ac, ...rest] = e.target.value.split('/'); setSeries1(rest.join('/')); setAssetClass1(ac); }}
+                                className="w-1/2 px-3 py-2 text-sm rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <optgroup label="Bond Markets">
-                                    {availableSeries
-                                        .filter(s => s.asset_class === 'bonds')
-                                        .map(series => (
-                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                </optgroup>
-                                <optgroup label="Economic">
-                                    {availableSeries
-                                        .filter(s => s.asset_class === 'economic')
-                                        .map(series => (
-                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                </optgroup>
-                                <optgroup label="Equity Valuation">
-                                    {availableSeries
-                                        .filter(s => s.asset_class === 'valuations')
-                                        .map(series => (
-                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                </optgroup>
+                                {renderSeriesOptions()}
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-card-foreground mb-2">
-                                Series 2
-                            </label>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">Series 2</span>
                             <select
                                 value={`${assetClass2}/${series2}`}
-                                onChange={(e) => {
-                                    const [ac, ...rest] = e.target.value.split('/');
-                                    setSeries2(rest.join('/'));
-                                    setAssetClass2(ac);
-                                }}
-                                className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                onChange={(e) => { const [ac, ...rest] = e.target.value.split('/'); setSeries2(rest.join('/')); setAssetClass2(ac); }}
+                                className="w-1/2 px-3 py-2 text-sm rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                             >
-                                <optgroup label="Bond Markets">
-                                    {availableSeries
-                                        .filter(s => s.asset_class === 'bonds')
-                                        .map(series => (
-                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                </optgroup>
-                                <optgroup label="Economic">
-                                    {availableSeries
-                                        .filter(s => s.asset_class === 'economic')
-                                        .map(series => (
-                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                </optgroup>
-                                <optgroup label="Equity Valuation">
-                                    {availableSeries
-                                        .filter(s => s.asset_class === 'valuations')
-                                        .map(series => (
-                                            <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                                {series.display_name}
-                                            </option>
-                                        ))}
-                                </optgroup>
+                                {renderSeriesOptions()}
                             </select>
+                            {!loading && spreadData.length > 0 && (
+                                <>
+                                    <div className="px-4 py-2 rounded-lg bg-muted/60 border border-border/50">
+                                        <div className="text-xs text-muted-foreground mb-0.5">Spread</div>
+                                        <div className="text-lg font-bold text-card-foreground leading-none">{spreadData[spreadData.length - 1].Value.toFixed(2)}%</div>
+                                    </div>
+                                    <div className="px-4 py-2 rounded-lg bg-muted/60 border border-border/50">
+                                        <div className="text-xs text-muted-foreground mb-0.5">As of</div>
+                                        <div className="text-lg font-bold text-card-foreground leading-none">{formatLatestDate(spreadData)}</div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 ) : (
-                    /* Single Series Mode */
-                    <div>
-                        <label className="block text-sm font-medium text-card-foreground mb-2">
-                            Yield Series
-                        </label>
+                    <div className="p-4 rounded-xl border border-border/50 bg-muted/20 flex items-center gap-4">
+                        <span className="text-xs font-medium text-muted-foreground w-16 shrink-0">Series</span>
                         <select
                             value={`${selectedAssetClass}/${selectedSeries}`}
-                            onChange={(e) => {
-                                const [ac, ...rest] = e.target.value.split('/');
-                                setSelectedSeries(rest.join('/'));
-                                setSelectedAssetClass(ac);
-                            }}
-                            className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                            onChange={(e) => { const [ac, ...rest] = e.target.value.split('/'); setSelectedSeries(rest.join('/')); setSelectedAssetClass(ac); }}
+                            className="w-1/2 px-3 py-2 text-sm rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
                         >
-                            <optgroup label="Bond Markets">
-                                {availableSeries
-                                    .filter(s => s.asset_class === 'bonds')
-                                    .map(series => (
-                                        <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
-                            </optgroup>
-                            <optgroup label="Economic">
-                                {availableSeries
-                                    .filter(s => s.asset_class === 'economic')
-                                    .map(series => (
-                                        <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
-                            </optgroup>
-                            <optgroup label="Equity Valuation">
-                                {availableSeries
-                                    .filter(s => s.asset_class === 'valuations')
-                                    .map(series => (
-                                        <option key={`${series.asset_class}/${series.series_name}`} value={`${series.asset_class}/${series.series_name}`}>
-                                            {series.display_name}
-                                        </option>
-                                    ))}
-                            </optgroup>
+                            {renderSeriesOptions()}
                         </select>
+                        {!loading && data.length > 0 && (
+                            <>
+                                <div className="px-4 py-2 rounded-lg bg-muted/60 border border-border/50">
+                                    <div className="text-xs text-muted-foreground mb-0.5">Latest</div>
+                                    <div className="text-lg font-bold text-card-foreground leading-none">{data[data.length - 1].Value.toFixed(2)}%</div>
+                                </div>
+                                <div className="px-4 py-2 rounded-lg bg-muted/60 border border-border/50">
+                                    <div className="text-xs text-muted-foreground mb-0.5">As of</div>
+                                    <div className="text-lg font-bold text-card-foreground leading-none">{formatLatestDate(data)}</div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 
                 {/* Date Range Filter */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-card-foreground">
-                        Date Range
-                    </label>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Date Range</span>
                     <div className="flex flex-wrap gap-2">
                         {DATE_PRESETS.map(preset => (
                             <button
                                 key={preset.value}
                                 onClick={() => setDatePreset(preset.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/60 text-muted-foreground hover:bg-muted'}`}
                             >
                                 {preset.label}
                             </button>
                         ))}
                     </div>
-
                     {datePreset === 'custom' && (
-                        <div className="flex gap-3 mt-3">
+                        <div className="flex gap-3 pt-1">
                             <div className="flex-1">
                                 <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
+                                <input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
                             <div className="flex-1">
                                 <label className="block text-xs text-muted-foreground mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
+                                <input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                             </div>
                         </div>
                     )}
@@ -582,89 +531,6 @@ export default function YieldChart({
 
             {/* Chart */}
             {renderContent()}
-
-            {/* Latest Data Display */}
-            {!loading && !error && (calculationMode === 'single' ? data.length > 0 : spreadData.length > 0) && (
-                <div className="mt-6 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-card-foreground mb-3">
-                        Latest Data
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {calculationMode === 'single' && data.length > 0 && (
-                            <>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Value</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
-                                        {data[data.length - 1].Value.toFixed(2)}%
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
-                                        {(() => {
-                                            // Find the most recent date in the data
-                                            const latestDate = data.reduce((latest, current) =>
-                                                current.date > latest ? current.date : latest, data[0].date
-                                            );
-                                            // Parse date as local date to avoid timezone issues
-                                            const [year, month, day] = latestDate.split('-').map(Number);
-                                            const localDate = new Date(year, month - 1, day);
-                                            return localDate.toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Series</div>
-                                    <div className="text-sm font-medium text-card-foreground">
-                                        {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                        {calculationMode === 'spread' && spreadData.length > 0 && (
-                            <>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Spread</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
-                                        {spreadData[spreadData.length - 1].Value.toFixed(2)}%
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
-                                        {(() => {
-                                            // Find the most recent date in the spread data
-                                            const latestDate = spreadData.reduce((latest, current) =>
-                                                current.date > latest ? current.date : latest, spreadData[0].date
-                                            );
-                                            // Parse date as local date to avoid timezone issues
-                                            const [year, month, day] = latestDate.split('-').map(Number);
-                                            const localDate = new Date(year, month - 1, day);
-                                            return localDate.toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Calculation</div>
-                                    <div className="text-sm font-medium text-card-foreground">
-                                        {availableSeries.find(s => s.series_name === series1)?.display_name || series1}
-                                        {' - '}
-                                        {availableSeries.find(s => s.series_name === series2)?.display_name || series2}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -616,8 +616,16 @@ export default function DivergenceChart({
         );
     };
 
+    const latestDate = data.length > 0 ? data[data.length - 1].date : null;
+
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
+            {/* Latest Date */}
+            {latestDate && (
+                <div className="mb-4 text-xs text-muted-foreground text-right">
+                    Latest data: {latestDate}
+                </div>
+            )}
             {/* Controls */}
             <div className="mb-6 space-y-4">
                 {/* View Mode Toggle */}

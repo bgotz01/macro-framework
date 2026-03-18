@@ -4,7 +4,7 @@ import path from 'path';
 import Papa from 'papaparse';
 
 const DATA_DIR = path.join(process.cwd(), 'data', 'economic');
-const INPUT_FILE = path.join(DATA_DIR, 'CPIAUCSL.csv');
+const INPUT_FILE = path.join(DATA_DIR, 'US', 'CPIAUCSL.csv');
 const OUTPUT_FILE = path.join(DATA_DIR, 'CPINominal.csv');
 
 interface CPIRow {

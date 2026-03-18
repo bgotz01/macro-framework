@@ -94,6 +94,8 @@ export default function EquitiesChart({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [convertToUSD, setConvertToUSD] = useState(false);
+    const [show200MA, setShow200MA] = useState(false);
+    const [show50MA, setShow50MA] = useState(false);
 
     // Ratio calculation state
     const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
@@ -397,6 +399,22 @@ export default function EquitiesChart({
         }
     }, [filteredData, calculationMode, onDateRangeChange]);
 
+    // Compute 200-day and 50-day moving averages over filteredData
+    const ma200Data = (() => {
+        const sourceData = calculationMode === 'ratio' ? ratioData : filteredData;
+        return sourceData.map((point, i) => {
+            const win200 = sourceData.slice(Math.max(0, i - 199), i + 1);
+            const win50 = sourceData.slice(Math.max(0, i - 49), i + 1);
+            const avg200 = win200.reduce((sum, p) => sum + (p.Value ?? 0), 0) / win200.length;
+            const avg50 = win50.reduce((sum, p) => sum + (p.Value ?? 0), 0) / win50.length;
+            return {
+                ...point,
+                MA200: win200.length === 200 ? avg200 : null,
+                MA50: win50.length === 50 ? avg50 : null,
+            };
+        });
+    })();
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -439,7 +457,7 @@ export default function EquitiesChart({
                     </div>
                 )}
                 <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <LineChart data={show200MA || show50MA ? ma200Data : chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
@@ -481,6 +499,30 @@ export default function EquitiesChart({
                                 : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
                             }
                         />
+                        {show200MA && (
+                            <Line
+                                type="monotone"
+                                dataKey="MA200"
+                                stroke="#f59e0b"
+                                strokeWidth={1.5}
+                                dot={false}
+                                strokeDasharray="4 2"
+                                name="200-Day MA"
+                                connectNulls={false}
+                            />
+                        )}
+                        {show50MA && (
+                            <Line
+                                type="monotone"
+                                dataKey="MA50"
+                                stroke="#10b981"
+                                strokeWidth={1.5}
+                                dot={false}
+                                strokeDasharray="4 2"
+                                name="50-Day MA"
+                                connectNulls={false}
+                            />
+                        )}
                     </LineChart>
                 </ResponsiveContainer>
             </>
@@ -680,6 +722,34 @@ export default function EquitiesChart({
                                 />
                                 <span className="text-sm font-medium text-card-foreground">
                                     Convert to USD (currently in {selectedCurrency})
+                                </span>
+                            </label>
+                        </div>
+                    )}
+
+                    {/* 200MA / 50MA Toggles */}
+                    {calculationMode === 'single' && (
+                        <div className="flex items-center gap-6 p-3 rounded-lg bg-muted/50">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={show200MA}
+                                    onChange={(e) => setShow200MA(e.target.checked)}
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+                                />
+                                <span className="text-sm font-medium text-card-foreground">
+                                    200-Day MA
+                                </span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={show50MA}
+                                    onChange={(e) => setShow50MA(e.target.checked)}
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
+                                />
+                                <span className="text-sm font-medium text-card-foreground">
+                                    50-Day MA
                                 </span>
                             </label>
                         </div>

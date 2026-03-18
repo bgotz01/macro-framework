@@ -11,23 +11,27 @@ interface DataPoint {
 
 function calculateMonthlyRollingAverage(data: DataPoint[], windowMonths: number): Map<number, number> {
     const result = new Map<number, number>();
+    if (data.length === 0) return result;
+
+    const minPoints = Math.floor(windowMonths * 0.7);
+    let left = 0;
+    let sum = 0;
 
     for (let i = 0; i < data.length; i++) {
-        const currentDate = new Date(data[i].date);
-        const windowStart = new Date(currentDate);
+        sum += data[i].value;
+
+        const windowStart = new Date(data[i].date);
         windowStart.setMonth(windowStart.getMonth() - windowMonths);
+        const windowStartMs = windowStart.getTime();
 
-        const windowData = data.filter(point => {
-            const pointDate = new Date(point.date);
-            return pointDate >= windowStart && pointDate <= currentDate;
-        });
+        while (left < i && data[left].date < windowStartMs) {
+            sum -= data[left].value;
+            left++;
+        }
 
-        const minPoints = Math.floor(windowMonths * 0.7);
-
-        if (windowData.length >= minPoints) {
-            const sum = windowData.reduce((acc, point) => acc + point.value, 0);
-            const average = sum / windowData.length;
-            result.set(data[i].date, average);
+        const count = i - left + 1;
+        if (count >= minPoints) {
+            result.set(data[i].date, sum / count);
         }
     }
 

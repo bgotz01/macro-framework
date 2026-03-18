@@ -11,35 +11,39 @@ interface DataPoint {
 
 function calculateRollingAverage(data: DataPoint[], windowMonths: number): Map<number, number> {
     const result = new Map<number, number>();
+    if (data.length === 0) return result;
 
-    // Determine if data is daily or monthly by checking the interval between first two points
     const isDaily = data.length > 1 && (data[1].date - data[0].date) < 40 * 24 * 60 * 60 * 1000;
+    const windowMs = isDaily
+        ? windowMonths * 30 * 24 * 60 * 60 * 1000
+        : windowMonths * 31 * 24 * 60 * 60 * 1000; // monthly: generous window, exact month boundary below
+    const minPoints = isDaily ? Math.floor(windowMonths * 30 * 0.7) : Math.floor(windowMonths * 0.7);
 
-    const windowDays = isDaily ? windowMonths * 30 : null;
+    // Sliding window: O(n) — left pointer advances as window moves forward
+    let left = 0;
+    let sum = 0;
 
     for (let i = 0; i < data.length; i++) {
-        const currentDate = new Date(data[i].date);
-        let windowStart: Date;
+        sum += data[i].value;
 
-        if (isDaily && windowDays) {
-            windowStart = new Date(currentDate);
-            windowStart.setDate(windowStart.getDate() - windowDays);
-        } else {
-            windowStart = new Date(currentDate);
-            windowStart.setMonth(windowStart.getMonth() - windowMonths);
+        // Compute the window start boundary for this point
+        const windowStartMs = isDaily
+            ? data[i].date - windowMs
+            : (() => {
+                const d = new Date(data[i].date);
+                d.setMonth(d.getMonth() - windowMonths);
+                return d.getTime();
+            })();
+
+        // Evict points that have fallen outside the window
+        while (left < i && data[left].date < windowStartMs) {
+            sum -= data[left].value;
+            left++;
         }
 
-        const windowData = data.filter(point => {
-            const pointDate = new Date(point.date);
-            return pointDate >= windowStart && pointDate <= currentDate;
-        });
-
-        const minPoints = isDaily ? Math.floor(windowDays! * 0.7) : Math.floor(windowMonths * 0.7);
-
-        if (windowData.length >= minPoints) {
-            const sum = windowData.reduce((acc, point) => acc + point.value, 0);
-            const average = sum / windowData.length;
-            result.set(data[i].date, average);
+        const count = i - left + 1;
+        if (count >= minPoints) {
+            result.set(data[i].date, sum / count);
         }
     }
 

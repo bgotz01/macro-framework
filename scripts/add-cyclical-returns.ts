@@ -4,7 +4,7 @@ import path from 'path';
 const DB_PATH = path.join(process.cwd(), 'data', 'macro-data.db');
 
 interface TimeSeriesRow {
-    date: string;  // ISO date string
+    date: string;
     value: number;
 }
 
@@ -17,7 +17,8 @@ interface SeriesConfig {
 
 function calculateCyclicalReturns(
     data: TimeSeriesRow[],
-    frequency: 'daily' | 'monthly'
+    frequency: 'daily' | 'monthly',
+    fromIndex: number
 ): {
     returns2Y: Map<string, number>;
     returns5Y: Map<string, number>;
@@ -27,43 +28,34 @@ function calculateCyclicalReturns(
     const returns5Y = new Map<string, number>();
     const returns10Y = new Map<string, number>();
 
-    // Sort by date ascending
-    const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
-
-    // Calculate periods based on frequency
     const periodsPerYear = frequency === 'daily' ? 252 : 12;
     const periods2Y = periodsPerYear * 2;
     const periods5Y = periodsPerYear * 5;
     const periods10Y = periodsPerYear * 10;
 
-    for (let i = 0; i < sorted.length; i++) {
-        const currentValue = sorted[i].value;
-        const currentDate = sorted[i].date;
+    // Only iterate from fromIndex onwards (new data), but we need full array for lookbacks
+    for (let i = fromIndex; i < data.length; i++) {
+        const currentValue = data[i].value;
+        const currentDate = data[i].date;
 
-        // 2-year return
         if (i >= periods2Y) {
-            const pastValue = sorted[i - periods2Y].value;
+            const pastValue = data[i - periods2Y].value;
             if (pastValue !== 0) {
-                const returnPct = ((currentValue - pastValue) / pastValue) * 100;
-                returns2Y.set(currentDate, returnPct);
+                returns2Y.set(currentDate, ((currentValue - pastValue) / pastValue) * 100);
             }
         }
 
-        // 5-year return
         if (i >= periods5Y) {
-            const pastValue = sorted[i - periods5Y].value;
+            const pastValue = data[i - periods5Y].value;
             if (pastValue !== 0) {
-                const returnPct = ((currentValue - pastValue) / pastValue) * 100;
-                returns5Y.set(currentDate, returnPct);
+                returns5Y.set(currentDate, ((currentValue - pastValue) / pastValue) * 100);
             }
         }
 
-        // 10-year return
         if (i >= periods10Y) {
-            const pastValue = sorted[i - periods10Y].value;
+            const pastValue = data[i - periods10Y].value;
             if (pastValue !== 0) {
-                const returnPct = ((currentValue - pastValue) / pastValue) * 100;
-                returns10Y.set(currentDate, returnPct);
+                returns10Y.set(currentDate, ((currentValue - pastValue) / pastValue) * 100);
             }
         }
     }
@@ -74,129 +66,91 @@ function calculateCyclicalReturns(
 function addCyclicalReturnsForSeries(db: Database.Database, config: SeriesConfig) {
     console.log(`\nProcessing ${config.series_name} (${config.frequency})...`);
 
-    // Fetch all data for this series
-    const stmt = db.prepare(`
+    // Find the latest date already computed for this series
+    const latestComputed = (db.prepare(`
+        SELECT MAX(date) as max_date FROM time_series
+        WHERE asset_class = ? AND series_name = ? AND column_name = ?
+    `).get(config.asset_class, config.series_name, `${config.column_name}_Return2Y`) as { max_date: string | null }).max_date;
+
+    // Fetch all source data (need full history for lookback windows)
+    const data = db.prepare(`
         SELECT date, value 
         FROM time_series 
-        WHERE asset_class = ? 
-          AND series_name = ? 
-          AND column_name = ?
+        WHERE asset_class = ? AND series_name = ? AND column_name = ?
           AND value IS NOT NULL
         ORDER BY date ASC
-    `);
-
-    const data = stmt.all(
-        config.asset_class,
-        config.series_name,
-        config.column_name
-    ) as TimeSeriesRow[];
+    `).all(config.asset_class, config.series_name, config.column_name) as TimeSeriesRow[];
 
     console.log(`  Found ${data.length} data points`);
 
     const periodsPerYear = config.frequency === 'daily' ? 252 : 12;
-    const minDataPoints = periodsPerYear * 10; // Need at least 10 years for 10Y returns
-
-    if (data.length < minDataPoints) {
-        console.log(`  ⚠️  Not enough data points for 10-year returns (need ${minDataPoints}, have ${data.length})`);
+    if (data.length < periodsPerYear * 10) {
+        console.log(`  ⚠️  Not enough data for 10Y returns`);
         return;
     }
 
-    // Calculate cyclical returns
-    const { returns2Y, returns5Y, returns10Y } = calculateCyclicalReturns(data, config.frequency);
-    console.log(`  Calculated returns: 2Y=${returns2Y.size}, 5Y=${returns5Y.size}, 10Y=${returns10Y.size}`);
+    // Find the index where new data starts
+    let fromIndex = 0;
+    if (latestComputed) {
+        const idx = data.findIndex(d => d.date > latestComputed);
+        if (idx === -1) {
+            console.log(`  ✓ Already up to date`);
+            return;
+        }
+        fromIndex = idx;
+        console.log(`  Incremental: processing ${data.length - fromIndex} new rows since ${latestComputed}`);
+    } else {
+        console.log(`  Full run: no existing data`);
+    }
 
-    // Prepare insert statement
+    const { returns2Y, returns5Y, returns10Y } = calculateCyclicalReturns(data, config.frequency, fromIndex);
+
     const insertStmt = db.prepare(`
         INSERT OR REPLACE INTO time_series (date, asset_class, series_name, column_name, value)
         VALUES (?, ?, ?, ?, ?)
     `);
 
-    // Insert returns
-    const insert = db.transaction(() => {
+    const inserted = db.transaction(() => {
         let count = 0;
-
-        // Insert 2-year returns
-        for (const [date, returnPct] of returns2Y) {
-            insertStmt.run(
-                date,
-                config.asset_class,
-                config.series_name,
-                `${config.column_name}_Return2Y`,
-                returnPct
-            );
+        for (const [date, val] of returns2Y) {
+            insertStmt.run(date, config.asset_class, config.series_name, `${config.column_name}_Return2Y`, val);
             count++;
         }
-
-        // Insert 5-year returns
-        for (const [date, returnPct] of returns5Y) {
-            insertStmt.run(
-                date,
-                config.asset_class,
-                config.series_name,
-                `${config.column_name}_Return5Y`,
-                returnPct
-            );
+        for (const [date, val] of returns5Y) {
+            insertStmt.run(date, config.asset_class, config.series_name, `${config.column_name}_Return5Y`, val);
             count++;
         }
-
-        // Insert 10-year returns
-        for (const [date, returnPct] of returns10Y) {
-            insertStmt.run(
-                date,
-                config.asset_class,
-                config.series_name,
-                `${config.column_name}_Return10Y`,
-                returnPct
-            );
+        for (const [date, val] of returns10Y) {
+            insertStmt.run(date, config.asset_class, config.series_name, `${config.column_name}_Return10Y`, val);
             count++;
         }
-
         return count;
-    });
+    })();
 
-    const inserted = insert();
     console.log(`  ✓ Inserted ${inserted} cyclical return values`);
 }
 
 function main() {
     const db = new Database(DB_PATH);
+    console.log('Starting incremental cyclical returns calculation...\n');
 
-    console.log('Starting cyclical returns calculation...\n');
-    console.log('Database:', DB_PATH);
-
-    // Get all series from equities, commodities, crypto, and volatility
     const assetClasses = ['equities', 'commodities', 'crypto', 'volatility'];
 
-    const seriesStmt = db.prepare(`
+    const allSeries = db.prepare(`
         SELECT DISTINCT asset_class, series_name, column_name
         FROM time_series
         WHERE asset_class IN (${assetClasses.map(() => '?').join(',')})
           AND column_name = 'Value'
         ORDER BY asset_class, series_name
-    `);
+    `).all(...assetClasses) as Array<{ asset_class: string; series_name: string; column_name: string }>;
 
-    const allSeries = seriesStmt.all(...assetClasses) as Array<{
-        asset_class: string;
-        series_name: string;
-        column_name: string;
-    }>;
+    console.log(`Found ${allSeries.length} series to process\n`);
 
-    console.log(`Found ${allSeries.length} series to process (all daily frequency)\n`);
-
-    // All these asset classes use daily data
-    const seriesConfigs: SeriesConfig[] = allSeries.map(series => ({
-        asset_class: series.asset_class,
-        series_name: series.series_name,
-        column_name: series.column_name,
-        frequency: 'daily' as const
-    }));
-
-    // Process each series
-    for (const config of seriesConfigs) {
+    for (const series of allSeries) {
         try {
-            addCyclicalReturnsForSeries(db, config);
+            addCyclicalReturnsForSeries(db, { ...series, frequency: 'daily' });
         } catch (error) {
-            console.error(`  ✗ Error processing ${config.series_name}:`, error);
+            console.error(`  ✗ Error processing ${series.series_name}:`, error);
         }
     }
 

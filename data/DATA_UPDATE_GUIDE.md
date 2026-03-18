@@ -324,15 +324,15 @@ tsx scripts/import-data-incremental.ts
 ### Weekly Maintenance
 ```bash
 # Recalculate derived metrics
-tsx scripts/calculate-rolling-averages-incremental.ts
-tsx scripts/calculate-yoy-growth-incremental.ts
-tsx scripts/calculate-monthly-averages-incremental.ts
+npx tsx scripts/calculate-rolling-averages-incremental.ts
+npx tsx scripts/calculate-yoy-growth-incremental.ts
+npx tsx scripts/calculate-monthly-averages-incremental.ts
 ```
 
 ### Monthly Maintenance
 ```bash
 # Full recalculation of percentiles
-tsx scripts/calculate-percentiles.ts
+npx tsx scripts/calculate-percentiles.ts
 ```
 
 ## Python Environment Setup

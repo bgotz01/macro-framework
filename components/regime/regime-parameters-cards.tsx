@@ -80,7 +80,7 @@ export function SmallMetricCard({
                 )}
                 {percentile !== null && (
                     <div className="text-[9px] font-medium mb-0.5" style={textStyle}>
-                        Percentile: {formatPercentile(percentile)}
+                        P: {formatPercentile(percentile)}
                     </div>
                 )}
                 <div className="text-[9px] text-muted-foreground">{date}</div>
@@ -192,7 +192,7 @@ export function SmallMetricCard({
                 </div>
             )}
             <div className={`text-[9px] font-medium mb-0.5 ${styles.text}`}>
-                Percentile: {formatPercentile(percentile)}
+                P: {formatPercentile(percentile)}
             </div>
             <div className="text-[9px] text-muted-foreground">{date}</div>
         </div>

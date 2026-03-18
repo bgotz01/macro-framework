@@ -137,16 +137,16 @@ function canTransition(
 // ============================================================================
 
 export type RegimeFamily =
-    | 'Deep Value'      // Deep Value: REY > 6%
-    | 'Broad Growth'    // Equities Growth: REY > 4%
-    | 'Contraction'     // Real earnings collapsing: REY < 0%
-    | 'Long Duration'   // Duration growth: -2.5% < EYP < 0%
-    | 'Overvaluation'   // Extreme equity unattractiveness: EYP < -2.5%
-    | 'Fragile'         // Macro deterioration: REY < 0, Real10Y < 0, slowing liquidity
-    | 'Crisis'          // Real rates negative + low money growth: Real10Y < 0 && RealM2 < 4
-    | 'Bond Stress'     // Real rates deeply negative: Real10Y < 0 && Real3M < 0
-    | 'Liquidity Shock' // High money growth: RealM2 ≥ 10
-    | 'Normal';         // Balanced conditions - no extreme triggers
+    | 'Deep Value'
+    | 'Broad Growth'
+    | 'Contraction'
+    | 'Long Duration'
+    | 'Overvaluation'
+    | 'Fragile'
+    | 'Crisis'
+    | 'Bond Stress'
+    | 'Liquidity Shock'
+    | 'Normal';
 
 export interface RegimeState {
     regime: RegimeFamily;
@@ -172,6 +172,7 @@ export interface CurrentConditions {
     risk: string;
     direction: string;
     trendAge: number | null; // Slope streak in days (positive or negative)
+    slope200MA?: number | null; // 200-day MA slope
 }
 
 export interface RegimeTransition {
@@ -291,15 +292,15 @@ export function determineNextRegime(
     // Check new regime triggers in precedence order
     // Higher priority regimes can always override lower priority ones
     const regimePrecedence: RegimeFamily[] = [
-        'Liquidity Shock', // Financial repression + high money growth - most specific
-        'Crisis',          // Financial repression + low money growth
-        'Bond Stress',     // Financial repression + moderate/high money growth
-        'Contraction',     // Real deterioration with valuation confirmation
-        'Overvaluation',   // Extreme equity unattractiveness - must be above Long Duration (both use EYP)
-        'Fragile',         // Macro deterioration before full contraction
-        'Deep Value',      // Post-crisis deep value
-        'Broad Growth',    // Healthy broad equity growth
-        'Long Duration'    // Overvalued equities where growth/duration still works - less extreme than Overvaluation
+        'Liquidity Shock',
+        'Crisis',
+        'Bond Stress',
+        'Contraction',
+        'Overvaluation',
+        'Fragile',
+        'Deep Value',
+        'Broad Growth',
+        'Long Duration'
     ];
 
     const currentRegime = currentState?.regime || null;

@@ -41,6 +41,7 @@ interface RegimeStateDisplayProps {
         direction: string;
         yieldCurve?: number | null;
         slope500MAPercentile?: number | null;
+        slope200MA?: number | null;
     };
     yieldCurveInversion?: {
         isInverted: boolean;
@@ -103,6 +104,14 @@ export default function RegimeStateDisplay({
                 message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile — Extreme downtrend momentum`
             });
         }
+    }
+
+    if (conditions.slope200MA != null && conditions.slope200MA < -0.02) {
+        flags.push({
+            type: 'extreme',
+            short: `200MA ↓`,
+            message: `200-Day MA slope is negative (${conditions.slope200MA.toFixed(3)}) — long-term trend is declining`
+        });
     }
 
     return (

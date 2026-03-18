@@ -29,19 +29,30 @@ function createMonthlyAverages() {
 
             // Calculate monthly averages from daily data using month-end dates
             // Only include complete months (not the current partial month)
+            // Handles both text dates (YYYY-MM-DD) and legacy ms timestamps
             const query = `
                 WITH monthly_data AS (
                     SELECT 
-                        date(strftime('%Y-%m-01', date/1000, 'unixepoch'), '+1 month', '-1 day') as month_end,
+                        date(strftime('%Y-%m-01',
+                            CASE
+                                WHEN typeof(date) = 'text' THEN date
+                                ELSE datetime(date/1000, 'unixepoch')
+                            END
+                        ), '+1 month', '-1 day') as month_end,
                         AVG(value) as avg_value,
                         COUNT(*) as data_points,
-                        strftime('%Y-%m', date/1000, 'unixepoch') as year_month
+                        strftime('%Y-%m',
+                            CASE
+                                WHEN typeof(date) = 'text' THEN date
+                                ELSE datetime(date/1000, 'unixepoch')
+                            END
+                        ) as year_month
                     FROM time_series
                     WHERE asset_class = 'bonds'
                       AND series_name = ?
                       AND column_name = 'Value'
                       AND value IS NOT NULL
-                    GROUP BY strftime('%Y-%m', date/1000, 'unixepoch')
+                    GROUP BY year_month
                 ),
                 filtered_data AS (
                     SELECT 
@@ -52,7 +63,7 @@ function createMonthlyAverages() {
                     WHERE month_end < date('now', 'start of month')
                 )
                 SELECT 
-                    strftime('%s', month_end) * 1000 as date,
+                    month_end as date,
                     avg_value,
                     data_points
                 FROM filtered_data
@@ -103,8 +114,7 @@ function createMonthlyAverages() {
             const samples = results.slice(-3);
             console.log('  Latest 3 months:');
             samples.forEach(row => {
-                const dateStr = new Date(row.date).toISOString().split('T')[0];
-                console.log(`    ${dateStr}: ${row.avg_value.toFixed(2)}% (${row.data_points} days)`);
+                console.log(`    ${row.date}: ${row.avg_value.toFixed(2)}% (${row.data_points} days)`);
             });
             console.log('');
         }
@@ -127,8 +137,8 @@ function createMonthlyAverages() {
         `).all() as any[];
 
         summary.forEach(row => {
-            const firstDate = new Date(row.first_date).toISOString().split('T')[0];
-            const lastDate = new Date(row.last_date).toISOString().split('T')[0];
+            const firstDate = row.first_date ? String(row.first_date).split('T')[0] : 'N/A';
+            const lastDate = row.last_date ? String(row.last_date).split('T')[0] : 'N/A';
             console.log(`  ${row.series_name}:`);
             console.log(`    Months: ${row.total_months}`);
             console.log(`    Period: ${firstDate} to ${lastDate}`);

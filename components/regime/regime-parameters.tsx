@@ -239,7 +239,8 @@ export default function RegimeParameters() {
             pressure: flowTrendState.pressure.label,
             risk: flowTrendState.risk.label,
             direction: flowTrendState.direction.label,
-            trendAge: data.slopeStreak200MA.value
+            trendAge: data.slopeStreak200MA.value,
+            slope200MA: data.slope200MA.value
         };
 
         // Import and use the state machine logic
@@ -263,7 +264,8 @@ export default function RegimeParameters() {
                 risk: conditions.risk,
                 direction: conditions.direction,
                 yieldCurve: data.yieldCurve.value,
-                slope500MAPercentile: data.slope500MA.percentile
+                slope500MAPercentile: data.slope500MA.percentile,
+                slope200MA: data.slope200MA.value
             }
         };
     } else {
@@ -281,7 +283,8 @@ export default function RegimeParameters() {
                 risk: flowTrendState.risk.label,
                 direction: flowTrendState.direction.label,
                 yieldCurve: data.yieldCurve.value,
-                slope500MAPercentile: data.slope500MA.percentile
+                slope500MAPercentile: data.slope500MA.percentile,
+                slope200MA: data.slope200MA.value
             }
         };
     }

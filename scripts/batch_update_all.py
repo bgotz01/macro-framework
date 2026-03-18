@@ -19,7 +19,7 @@ import time
 DB_PATH = "data/macro-data.db"
 
 # Date range - for incremental updates only
-START_DATE = "2026-01-01"
+START_DATE = "2026-03-01"
 END_DATE = datetime.now().strftime("%Y-%m-%d")
 
 # Yahoo Finance ticker mappings

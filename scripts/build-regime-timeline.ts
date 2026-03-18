@@ -202,6 +202,16 @@ function getMonthlyData(db: Database.Database, date: string): MonthlyData | null
         data[s.key] = row ? row.value : null;
     }
 
+    // Forward-fill slope200MA if missing (SP500 daily data may not land on exact month-end)
+    if (data.slope200MA === null) {
+        const prior = db.prepare(`
+            SELECT value FROM percentile_analysis
+            WHERE asset_class = 'derived' AND series_name = 'SP500-200MA-Slope' AND date < ?
+            ORDER BY date DESC LIMIT 1
+        `).get(date) as { value: number } | undefined;
+        if (prior) data.slope200MA = prior.value;
+    }
+
     return data as MonthlyData;
 }
 
@@ -235,7 +245,8 @@ function buildConditions(data: MonthlyData): CurrentConditions {
         pressure: flowTrendState.pressure.label,
         risk: flowTrendState.risk.label,
         direction: flowTrendState.direction.label,
-        trendAge: data.slopeStreak200MA  // Trend age in days (positive or negative)
+        trendAge: data.slopeStreak200MA,  // Trend age in days (positive or negative)
+        slope200MA: data.slope200MA
     };
 }
 
