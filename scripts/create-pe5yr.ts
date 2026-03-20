@@ -83,6 +83,8 @@ console.log('Inserting PE-5yr data...');
 const insertStmt = db.prepare(`
     INSERT INTO time_series (asset_class, series_name, column_name, date, value)
     VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(date, asset_class, series_name, column_name)
+    DO UPDATE SET value = excluded.value
 `);
 
 const insertMany = db.transaction((data: TimeSeriesRow[]) => {

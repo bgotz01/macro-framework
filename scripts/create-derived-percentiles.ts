@@ -20,8 +20,7 @@ function createDerivedPercentiles() {
                     pa1.value - pa2.value as real_yield
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
-                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                    ON substr(pa1.date, 1, 7) = substr(pa2.date, 1, 7)
                 WHERE pa1.asset_class = 'bonds'
                   AND pa1.series_name = 'US/TNX-Monthly'
                   AND pa2.asset_class = 'economic'
@@ -77,8 +76,7 @@ function createDerivedPercentiles() {
                     pa1.value - pa2.value as real_yield_3m
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
-                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                    ON substr(pa1.date, 1, 7) = substr(pa2.date, 1, 7)
                 WHERE pa1.asset_class = 'bonds'
                   AND pa1.series_name = 'US/IRX-Monthly'
                   AND pa2.asset_class = 'economic'
@@ -240,8 +238,7 @@ function createDerivedPercentiles() {
                     (100.0 / pa1.value) - pa2.value as eyp
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
-                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                    ON substr(pa1.date, 1, 7) = substr(pa2.date, 1, 7)
                 WHERE pa1.asset_class = 'valuations'
                   AND pa1.series_name = 'Shiller-PE'
                   AND pa2.asset_class = 'bonds'
@@ -349,8 +346,7 @@ function createDerivedPercentiles() {
                     (100.0 / pa1.value) - pa2.value as rey
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
-                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                    ON substr(pa1.date, 1, 7) = substr(pa2.date, 1, 7)
                 WHERE pa1.asset_class = 'valuations'
                   AND pa1.series_name = 'Shiller-PE'
                   AND pa2.asset_class = 'economic'
@@ -404,8 +400,7 @@ function createDerivedPercentiles() {
                     pa1.value - pa2.value as rey5yr
                 FROM percentile_analysis pa1
                 INNER JOIN percentile_analysis pa2 
-                    ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
-                       strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                    ON substr(pa1.date, 1, 7) = substr(pa2.date, 1, 7)
                 WHERE pa1.asset_class = 'valuations'
                   AND pa1.series_name = 'Earnings-Yield-5yr'
                   AND pa2.asset_class = 'economic'
@@ -446,6 +441,88 @@ function createDerivedPercentiles() {
 
         insertManyREY5yr(rey5yrResults);
         console.log(`  ✅ Inserted ${rey5yrResults.length} Real Earnings Yield 5yr percentiles\n`);
+
+        // 6. PE-1yr (TTM) — simple percentile ranking from time_series
+        console.log('6. Calculating PE-1yr (TTM) percentiles...');
+        const pe1yrQuery = `
+            WITH ranked AS (
+                SELECT 
+                    date,
+                    value,
+                    PERCENT_RANK() OVER (ORDER BY value) * 100 as percentile_rank
+                FROM time_series
+                WHERE asset_class = 'valuations'
+                  AND series_name = 'PE-1yr'
+                  AND column_name = 'Value'
+                  AND value IS NOT NULL
+            )
+            SELECT 
+                date,
+                value,
+                ROUND(percentile_rank, 2) as percentile_rank
+            FROM ranked
+            ORDER BY date
+        `;
+
+        const pe1yrResults = db.prepare(pe1yrQuery).all() as any[];
+        console.log(`  Found ${pe1yrResults.length} data points`);
+
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'PE-1yr'`).run();
+
+        const insertPE1yr = db.prepare(`
+            INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
+            VALUES (?, 'valuations', 'PE-1yr', 'Value', ?, ?)
+        `);
+
+        const insertManyPE1yr = db.transaction((data: any[]) => {
+            for (const row of data) {
+                insertPE1yr.run(row.date, row.value, row.percentile_rank);
+            }
+        });
+
+        insertManyPE1yr(pe1yrResults);
+        console.log(`  ✅ Inserted ${pe1yrResults.length} PE-1yr percentiles\n`);
+
+        // 7. PE-2yr — simple percentile ranking from time_series
+        console.log('7. Calculating PE-2yr percentiles...');
+        const pe2yrQuery = `
+            WITH ranked AS (
+                SELECT 
+                    date,
+                    value,
+                    PERCENT_RANK() OVER (ORDER BY value) * 100 as percentile_rank
+                FROM time_series
+                WHERE asset_class = 'valuations'
+                  AND series_name = 'PE-2yr'
+                  AND column_name = 'Value'
+                  AND value IS NOT NULL
+            )
+            SELECT 
+                date,
+                value,
+                ROUND(percentile_rank, 2) as percentile_rank
+            FROM ranked
+            ORDER BY date
+        `;
+
+        const pe2yrResults = db.prepare(pe2yrQuery).all() as any[];
+        console.log(`  Found ${pe2yrResults.length} data points`);
+
+        db.prepare(`DELETE FROM percentile_analysis WHERE series_name = 'PE-2yr'`).run();
+
+        const insertPE2yr = db.prepare(`
+            INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
+            VALUES (?, 'valuations', 'PE-2yr', 'Value', ?, ?)
+        `);
+
+        const insertManyPE2yr = db.transaction((data: any[]) => {
+            for (const row of data) {
+                insertPE2yr.run(row.date, row.value, row.percentile_rank);
+            }
+        });
+
+        insertManyPE2yr(pe2yrResults);
+        console.log(`  ✅ Inserted ${pe2yrResults.length} PE-2yr percentiles\n`);
 
         console.log('✅ All derived metric percentiles created!\n');
 

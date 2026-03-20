@@ -66,6 +66,8 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     // Equity Valuation
     { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899', category: 'Equity Valuation' },
     { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e', category: 'Equity Valuation' },
+    { value: 'pe1yr', label: 'P/E-1yr (TTM)', color: '#e11d48', category: 'Equity Valuation' },
+    { value: 'pe2yr', label: 'P/E-2yr', color: '#be123c', category: 'Equity Valuation' },
     { value: 'eycape', label: 'EY CAPE', color: '#db2777', category: 'Equity Valuation' },
     { value: 'ey5yr', label: 'EY-5yr', color: '#fb7185', category: 'Equity Valuation' },
     // Equity Spreads
@@ -270,7 +272,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                             if (value === null || value === undefined) return null;
 
                             // Determine suffix: P/E ratios use 'x', everything else uses '%'
-                            const suffix = (seriesValue === 'shillerpe' || seriesValue === 'pe5yr') ? 'x' : '%';
+                            const suffix = (seriesValue === 'shillerpe' || seriesValue === 'pe5yr' || seriesValue === 'pe1yr' || seriesValue === 'pe2yr') ? 'x' : '%';
 
                             return (
                                 <p key={seriesValue} className="text-sm">
@@ -603,6 +605,10 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                     <p><strong>Note:</strong> EYP = Earnings Yield Premium = Earnings Yield - 3M Treasury Rate</p>
                     <p>• EYP (CAPE) uses earnings yield from CAPE (1/CAPE - 3M)</p>
                     <p>• EYP-5yr uses earnings yield from P/E-5yr (1/P/E-5yr - 3M)</p>
+                    <p>• P/E-1yr (TTM) = Price / trailing twelve months EPS (no smoothing)</p>
+                    <p>• P/E-2yr = Price / 24-month rolling average of TTM EPS</p>
+                    <p>• P/E-5yr = Price / 60-month rolling average of TTM EPS</p>
+                    <p>• Shiller P/E (CAPE) = Price / 10-year inflation-adjusted average EPS</p>
                 </div>
             </div>
 

@@ -90,20 +90,12 @@ export default function RegimeStateDisplay({
         });
     }
 
-    if (conditions.slope500MAPercentile != null) {
-        if (conditions.slope500MAPercentile >= 95) {
-            flags.push({
-                type: 'extreme',
-                short: `500MA ${conditions.slope500MAPercentile.toFixed(0)}p`,
-                message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile — Extreme uptrend momentum`
-            });
-        } else if (conditions.slope500MAPercentile <= 5) {
-            flags.push({
-                type: 'extreme',
-                short: `500MA ${conditions.slope500MAPercentile.toFixed(0)}p`,
-                message: `500MA Slope at ${conditions.slope500MAPercentile.toFixed(0)}th percentile — Extreme downtrend momentum`
-            });
-        }
+    if (conditions.slope500MAPercentile != null && conditions.slope500MAPercentile > 85) {
+        flags.push({
+            type: 'warning',
+            short: `Overvalued`,
+            message: `Trend pressure at ${conditions.slope500MAPercentile.toFixed(0)}th percentile — market may be overextended relative to long-term trend`
+        });
     }
 
     if (conditions.slope200MA != null && conditions.slope200MA < -0.02) {
@@ -166,7 +158,7 @@ export default function RegimeStateDisplay({
                         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-3">
                             <span>Entry: {new Date(entryDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                             <span>•</span>
-                            <span>{daysInRegime} days in regime</span>
+                            <span>{daysInRegime} months in regime</span>
                         </div>
                         <div className="flex justify-center mt-3">
                             <svg

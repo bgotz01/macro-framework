@@ -193,7 +193,7 @@ export default function RegimeClassification({
                             customColor={getTrendPressurePercentileColor(data.divergence200MA.percentile)}
                         />
                         <SmallMetricCard
-                            label="Days Above 200MA"
+                            label="Days Above"
                             concept="Price vs 200MA"
                             value={data.daysAbove200MA.value !== null ? `${data.daysAbove200MA.value.toFixed(0)} days` : 'N/A'}
                             percentile={data.daysAbove200MA.percentile}

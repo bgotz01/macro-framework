@@ -19,8 +19,7 @@ function addRealEY5yr() {
                 pa1.value - pa2.value as rey5yr
             FROM percentile_analysis pa1
             INNER JOIN percentile_analysis pa2 
-                ON strftime('%Y-%m', datetime(pa1.date / 1000, 'unixepoch')) = 
-                   strftime('%Y-%m', datetime(pa2.date / 1000, 'unixepoch'))
+                ON substr(pa1.date, 1, 7) = substr(pa2.date, 1, 7)
             WHERE pa1.asset_class = 'valuations'
               AND pa1.series_name = 'Earnings-Yield-5yr'
               AND pa2.asset_class = 'economic'
@@ -78,6 +77,8 @@ function addRealEY5yr() {
         const insert = db.prepare(`
             INSERT INTO percentile_analysis (date, asset_class, series_name, column_name, value, percentile_rank)
             VALUES (?, 'derived', 'Real-Earnings-Yield-5yr', 'Value', ?, ?)
+            ON CONFLICT(date, asset_class, series_name, column_name)
+            DO UPDATE SET value = excluded.value, percentile_rank = excluded.percentile_rank
         `);
 
         const insertMany = db.transaction((data: any[]) => {

@@ -60,16 +60,17 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'No regime data found' }, { status: 404 });
         }
 
-        // Calculate days in regime
+        // Calculate months in regime
         const entryDate = new Date(row.entry_date);
         const currentDate = new Date(row.date);
-        const daysInRegime = Math.floor((currentDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
+        const monthsInRegime = (currentDate.getFullYear() - entryDate.getFullYear()) * 12
+            + (currentDate.getMonth() - entryDate.getMonth());
 
         return NextResponse.json({
             regime: row.regime,
             entryDate: row.entry_date,
             currentDate: row.date,
-            daysInRegime,
+            daysInRegime: monthsInRegime,
             triggerReason: row.trigger_reason,
             conditions: {
                 liquidityScore: row.liquidity_score,

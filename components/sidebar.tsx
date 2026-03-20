@@ -56,6 +56,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime-active',
             },
             {
+                title: 'Trend Pressure',
+                href: '/trend-pressure',
+            },
+            {
                 title: 'Regime Context',
                 href: '/context',
             },
@@ -150,6 +154,15 @@ const sidebarData: SidebarCategory[] = [
                 ],
             },
 
+        ],
+    },
+    {
+        category: 'Tools',
+        items: [
+            {
+                title: 'Data Input',
+                href: '/data-input',
+            },
         ],
     },
 ];
