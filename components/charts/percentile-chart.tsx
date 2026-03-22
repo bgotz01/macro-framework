@@ -97,6 +97,7 @@ const DATE_PRESETS: Array<
         { label: '2020s', value: '2020s', start: '2020-01-01', end: '2029-12-31' },
         { label: 'Last 5Y', value: '5y' },
         { label: 'Last 10Y', value: '10y' },
+        { label: 'Last 20Y', value: '20y' },
         { label: 'Custom', value: 'custom' },
     ];
 
@@ -170,6 +171,11 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
             const now = new Date();
             const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
             startDate = tenYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '20y') {
+            const now = new Date();
+            const twentyYearsAgo = new Date(now.getFullYear() - 20, now.getMonth(), now.getDate());
+            startDate = twentyYearsAgo.toISOString().split('T')[0];
             endDate = now.toISOString().split('T')[0];
         } else {
             const preset = DATE_PRESETS.find(p => p.value === datePreset);

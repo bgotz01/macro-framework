@@ -3,8 +3,13 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 
+interface SeriesOption {
+    series_name: string;
+    display_name: string;
+    asset_class: string;
+}
+
 interface VolatilityChartProps {
-    assetClass?: string;
     seriesName?: string;
     startDate?: string;
     endDate?: string;
@@ -45,54 +50,70 @@ const DATE_PRESETS: Array<
     ];
 
 export default function VolatilityChart({
-    assetClass = 'equities',
     seriesName: initialSeriesName,
     startDate: initialStartDate,
     endDate: initialEndDate,
     height = 500,
     className = ''
 }: VolatilityChartProps) {
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string }>>([]);
+    const [allSeries, setAllSeries] = useState<{ equities: SeriesOption[]; bonds: SeriesOption[] }>({ equities: [], bonds: [] });
     const [selectedSeries, setSelectedSeries] = useState<string>(initialSeriesName || '');
     const [volatilityData, setVolatilityData] = useState<VolatilityDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<VolatilityDataPoint[]>([]);
     const [datePreset, setDatePreset] = useState<string>('all');
     const [customStartDate, setCustomStartDate] = useState<string>(initialStartDate || '');
     const [customEndDate, setCustomEndDate] = useState<string>(initialEndDate || '');
-    const [chartMode, setChartMode] = useState<'single' | 'spread'>('single');
+    const [chartMode, setChartMode] = useState<'single' | 'spread' | 'percentile'>('single');
     const [selectedPeriod, setSelectedPeriod] = useState<'63' | '126' | '252' | '504'>('252');
     const [spreadPeriod1, setSpreadPeriod1] = useState<'63' | '126' | '252' | '504'>('252');
     const [spreadPeriod2, setSpreadPeriod2] = useState<'63' | '126' | '252' | '504'>('126');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [percentileData, setPercentileData] = useState<Array<{ date: string; percentile_rank: number }>>([]);
 
-    // Load available series
+    // Derive the asset class from the selected series
+    const assetClass = allSeries.bonds.some(s => s.series_name === selectedSeries) ? 'bonds' : 'equities';
+
+    // Load all series from both asset classes
     useEffect(() => {
-        const loadSeries = async () => {
+        const loadAllSeries = async () => {
             try {
-                const response = await fetch(`/api/data/${assetClass}`);
-                if (!response.ok) throw new Error('Failed to load series list');
+                const [eqRes, bondRes] = await Promise.all([
+                    fetch('/api/data/equities'),
+                    fetch('/api/data/bonds'),
+                ]);
 
-                const result = await response.json();
-                const seriesWithNames = result.seriesInfo.map((s: any) => ({
+                const eqData = eqRes.ok ? await eqRes.json() : { seriesInfo: [] };
+                const bondData = bondRes.ok ? await bondRes.json() : { seriesInfo: [] };
+
+                const equities: SeriesOption[] = eqData.seriesInfo.map((s: any) => ({
                     series_name: s.series_name,
-                    display_name: s.display_name
+                    display_name: s.display_name,
+                    asset_class: 'equities',
                 }));
-                setAvailableSeries(seriesWithNames);
 
-                // Auto-select S&P 500 if available, otherwise first series
-                if (!initialSeriesName && seriesWithNames.length > 0) {
-                    const sp500 = seriesWithNames.find((s: { series_name: string }) => s.series_name === 'US/GSPC');
-                    setSelectedSeries(sp500 ? sp500.series_name : seriesWithNames[0].series_name);
+                const bonds: SeriesOption[] = bondData.seriesInfo
+                    .filter((s: any) => !s.series_name.includes('-Monthly'))
+                    .map((s: any) => ({
+                        series_name: s.series_name,
+                        display_name: s.display_name,
+                        asset_class: 'bonds',
+                    }));
+
+                setAllSeries({ equities, bonds });
+
+                // Default to S&P 500
+                if (!initialSeriesName) {
+                    const sp500 = equities.find(s => s.series_name === 'US/GSPC');
+                    setSelectedSeries(sp500 ? sp500.series_name : equities[0]?.series_name || bonds[0]?.series_name || '');
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
-                setAvailableSeries([]);
             }
         };
 
-        loadSeries();
-    }, [assetClass, initialSeriesName]);
+        loadAllSeries();
+    }, [initialSeriesName]);
 
     // Load volatility data
     useEffect(() => {
@@ -142,6 +163,32 @@ export default function VolatilityChart({
 
         loadVolatility();
     }, [assetClass, selectedSeries]);
+
+    // Load percentile data for 1yr vol
+    useEffect(() => {
+        if (chartMode !== 'percentile' || !selectedSeries) {
+            setPercentileData([]);
+            return;
+        }
+
+        const loadPercentile = async () => {
+            try {
+                const res = await fetch(
+                    `/api/percentile-history?assetClass=${encodeURIComponent(assetClass)}&seriesName=${encodeURIComponent(selectedSeries)}&columnName=Value_Vol252`
+                );
+                if (!res.ok) {
+                    setPercentileData([]);
+                    return;
+                }
+                const result = await res.json();
+                setPercentileData(result.data || []);
+            } catch {
+                setPercentileData([]);
+            }
+        };
+
+        loadPercentile();
+    }, [chartMode, assetClass, selectedSeries]);
 
     // Filter data based on date range
     useEffect(() => {
@@ -223,6 +270,83 @@ export default function VolatilityChart({
         const chartData = filteredData.length > 0 ? filteredData : volatilityData;
         const noDataInRange = datePreset !== 'all' && filteredData.length === 0;
 
+        if (chartMode === 'percentile') {
+            // Build percentile chart data with date filtering
+            let pData = percentileData;
+            if (datePreset !== 'all') {
+                let startDate: string | null = null;
+                let endDate: string | null = null;
+                if (datePreset === 'custom') {
+                    startDate = customStartDate;
+                    endDate = customEndDate;
+                } else if (datePreset === '5y') {
+                    const now = new Date();
+                    startDate = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+                } else if (datePreset === '10y') {
+                    const now = new Date();
+                    startDate = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+                } else {
+                    const preset = DATE_PRESETS.find(p => p.value === datePreset);
+                    if (preset && 'start' in preset && preset.start && preset.end) {
+                        startDate = preset.start;
+                        endDate = preset.end;
+                    }
+                }
+                if (startDate) pData = pData.filter(d => d.date >= startDate!);
+                if (endDate) pData = pData.filter(d => d.date <= endDate!);
+            }
+
+            if (pData.length === 0) {
+                return (
+                    <div className="flex items-center justify-center" style={{ height }}>
+                        <p className="text-muted-foreground">No percentile data available for this series. Run add-volatility-percentiles script.</p>
+                    </div>
+                );
+            }
+
+            return (
+                <ResponsiveContainer width="100%" height={height}>
+                    <LineChart data={pData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
+                        <XAxis
+                            dataKey="date"
+                            stroke="#9ca3af"
+                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tickFormatter={(value) => new Date(value).getFullYear().toString()}
+                        />
+                        <YAxis
+                            stroke="#9ca3af"
+                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            domain={[0, 100]}
+                            tickFormatter={(value) => `${value}`}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#1f2937',
+                                border: '1px solid #374151',
+                                borderRadius: '8px',
+                                color: '#f9fafb'
+                            }}
+                            labelStyle={{ color: '#9ca3af' }}
+                            formatter={(value: any) => [`${Number(value).toFixed(1)}th percentile`, '']}
+                        />
+                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <ReferenceLine y={25} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
+                        <ReferenceLine y={50} stroke="#6b7280" strokeDasharray="3 3" strokeOpacity={0.5} />
+                        <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} />
+                        <Line
+                            type="monotone"
+                            dataKey="percentile_rank"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={false}
+                            name="1yr Vol Percentile"
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            );
+        }
+
         if (chartMode === 'spread') {
             // Calculate spread data
             const period1Key = `${spreadPeriod1}-Day Vol` as keyof VolatilityDataPoint;
@@ -278,7 +402,7 @@ export default function VolatilityChart({
                                 stroke="#9ca3af"
                                 tick={{ fill: '#9ca3af', fontSize: 12 }}
                                 domain={['auto', 'auto']}
-                                tickFormatter={(value) => `${value.toFixed(1)}%`}
+                                tickFormatter={(value) => assetClass === 'bonds' ? `${value.toFixed(2)}pp` : `${value.toFixed(1)}%`}
                             />
                             <Tooltip
                                 contentStyle={{
@@ -288,7 +412,7 @@ export default function VolatilityChart({
                                     color: '#f9fafb'
                                 }}
                                 labelStyle={{ color: '#9ca3af' }}
-                                formatter={(value: any) => [`${Number(value).toFixed(2)}pp`, '']}
+                                formatter={(value: any) => [`${Number(value).toFixed(2)}${assetClass === 'bonds' ? 'pp' : 'pp'}`, '']}
                             />
                             <Legend wrapperStyle={{ color: '#9ca3af' }} />
                             <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="3 3" />
@@ -344,7 +468,7 @@ export default function VolatilityChart({
                             stroke="#9ca3af"
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             domain={['auto', 'auto']}
-                            tickFormatter={(value) => `${value.toFixed(0)}%`}
+                            tickFormatter={(value) => assetClass === 'bonds' ? `${value.toFixed(2)}pp` : `${value.toFixed(0)}%`}
                         />
                         <Tooltip
                             contentStyle={{
@@ -354,7 +478,7 @@ export default function VolatilityChart({
                                 color: '#f9fafb'
                             }}
                             labelStyle={{ color: '#9ca3af' }}
-                            formatter={(value: any) => [`${Number(value).toFixed(2)}%`, '']}
+                            formatter={(value: any) => [`${Number(value).toFixed(2)}${assetClass === 'bonds' ? 'pp' : '%'}`, '']}
                         />
                         <Legend wrapperStyle={{ color: '#9ca3af' }} />
 
@@ -432,6 +556,15 @@ export default function VolatilityChart({
                         >
                             Spread (P1 − P2)
                         </button>
+                        <button
+                            onClick={() => setChartMode('percentile')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${chartMode === 'percentile'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                        >
+                            Percentile (1yr)
+                        </button>
                     </div>
                 </div>
 
@@ -444,13 +577,26 @@ export default function VolatilityChart({
                             value={selectedSeries}
                             onChange={(e) => setSelectedSeries(e.target.value)}
                             className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                            disabled={availableSeries.length === 0}
+                            disabled={allSeries.equities.length === 0 && allSeries.bonds.length === 0}
                         >
-                            {availableSeries.map(series => (
-                                <option key={series.series_name} value={series.series_name}>
-                                    {series.display_name}
-                                </option>
-                            ))}
+                            {allSeries.equities.length > 0 && (
+                                <optgroup label="Equity Indexes">
+                                    {allSeries.equities.map(s => (
+                                        <option key={s.series_name} value={s.series_name}>
+                                            {s.display_name}
+                                        </option>
+                                    ))}
+                                </optgroup>
+                            )}
+                            {allSeries.bonds.length > 0 && (
+                                <optgroup label="Bond Yields">
+                                    {allSeries.bonds.map(s => (
+                                        <option key={s.series_name} value={s.series_name}>
+                                            {s.display_name}
+                                        </option>
+                                    ))}
+                                </optgroup>
+                            )}
                         </select>
                     </div>
                 </div>
@@ -505,16 +651,22 @@ export default function VolatilityChart({
                 <div className="mb-4 flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-semibold text-card-foreground">
-                            {chartMode === 'spread' ? 'Volatility Spread' : 'Historical Volatility'}
+                            {chartMode === 'percentile'
+                                ? '1-Year Volatility Percentile'
+                                : chartMode === 'spread' ? 'Volatility Spread' : 'Historical Volatility'}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                            {chartMode === 'spread'
-                                ? 'Difference between volatility periods (percentage points)'
-                                : 'Annualized standard deviation (percentage)'}
+                            {chartMode === 'percentile'
+                                ? 'Expanding-window percentile rank of 252-day volatility (0 = lowest ever, 100 = highest ever)'
+                                : chartMode === 'spread'
+                                    ? 'Difference between volatility periods (percentage points)'
+                                    : assetClass === 'bonds'
+                                        ? 'Annualized std dev of daily yield changes (percentage points)'
+                                        : 'Annualized standard deviation (percentage)'}
                         </p>
                         {volatilityData.length > 0 && (
                             <p className="text-xs text-muted-foreground mt-1">
-                                Latest data: {new Date(volatilityData[volatilityData.length - 1].date).toLocaleDateString('en-US', {
+                                Latest data: {new Date(volatilityData[volatilityData.length - 1].date + 'T00:00:00').toLocaleDateString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
                                     day: 'numeric'
@@ -523,7 +675,7 @@ export default function VolatilityChart({
                         )}
                     </div>
 
-                    {/* Period Selector */}
+                    {/* Period Selector - hidden in percentile mode */}
                     {chartMode === 'single' ? (
                         <div className="flex gap-2">
                             <button
@@ -563,7 +715,7 @@ export default function VolatilityChart({
                                 2-Year
                             </button>
                         </div>
-                    ) : (
+                    ) : chartMode === 'spread' ? (
                         <div className="flex gap-3 items-center">
                             <div>
                                 <label className="block text-xs text-muted-foreground mb-1">Period 1</label>
@@ -593,7 +745,7 @@ export default function VolatilityChart({
                                 </select>
                             </div>
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {renderContent()}
@@ -617,23 +769,26 @@ export default function VolatilityChart({
 
                             const periodLabel = period === '63' ? '3mo' : period === '126' ? '6mo' : period === '252' ? '1yr' : '2yr';
 
+                            const unit = assetClass === 'bonds' ? 'pp' : '%';
+
                             return (
                                 <div key={period} className="p-3 rounded-lg bg-muted/50">
                                     <div className="text-xs font-semibold text-muted-foreground mb-1">
                                         {periodLabel} Volatility
                                     </div>
                                     <div className="text-lg font-bold text-card-foreground">
-                                        {latest.toFixed(1)}%
+                                        {assetClass === 'bonds' ? latest.toFixed(2) : latest.toFixed(1)}{unit}
                                     </div>
                                     <div className="text-xs text-muted-foreground mt-1">
-                                        Avg: {avg.toFixed(1)}% | Range: {min.toFixed(1)}% to {max.toFixed(1)}%
+                                        Avg: {assetClass === 'bonds' ? avg.toFixed(2) : avg.toFixed(1)}{unit} | Range: {assetClass === 'bonds' ? min.toFixed(2) : min.toFixed(1)}{unit} to {assetClass === 'bonds' ? max.toFixed(2) : max.toFixed(1)}{unit}
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
-                )}
-            </div>
-        </div>
+                )
+                }
+            </div >
+        </div >
     );
 }

@@ -91,7 +91,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Missing assetClass or seriesName parameter' }, { status: 400 });
         }
 
-        const query = `
+        const columnName = searchParams.get('columnName');
+
+        let query = `
             SELECT 
                 date,
                 value,
@@ -99,10 +101,17 @@ export async function GET(request: NextRequest) {
             FROM percentile_analysis
             WHERE asset_class = ?
               AND series_name = ?
-            ORDER BY date ASC
         `;
+        const params: any[] = [assetClass, seriesName];
 
-        const rows = db.prepare(query).all(assetClass, seriesName) as any[];
+        if (columnName) {
+            query += ` AND column_name = ?`;
+            params.push(columnName);
+        }
+
+        query += ` ORDER BY date ASC`;
+
+        const rows = db.prepare(query).all(...params) as any[];
 
         db.close();
 

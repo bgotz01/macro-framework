@@ -66,8 +66,8 @@ async function getInitialData(year: number | 'latest') {
                 seriesName: row.series_name,
                 date: row.date,
                 dateStr: new Date(row.date).toISOString().split('T')[0],
-                value: row.value,
-                percentileRank: row.percentile_rank
+                value: row.value ?? 0,
+                percentileRank: row.percentile_rank ?? 0
             };
         } else {
             result[s.key] = null;

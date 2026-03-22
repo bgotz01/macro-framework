@@ -6,7 +6,7 @@ Complete guide for updating all financial data in the macro framework applicatio
 
 This application tracks multiple asset classes with data sourced from Yahoo Finance and FRED. Data is stored in CSV files and imported into a SQLite database for efficient querying.
 
-## Quick Start - Update All Data
+## Quick Start - Update All Data (Incremental Only)
 
 ```bash
 # 1. Update all data from Yahoo Finance (recommended)

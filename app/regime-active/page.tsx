@@ -1,5 +1,6 @@
 import RegimeParameters from '@/components/regime/regime-parameters';
 import RegimeHistoryTable from '@/components/regime/regime-history-table';
+import ChatWidget from '@/components/chat/chat-widget';
 import { Suspense } from 'react';
 
 export default function RegimeActivePage() {
@@ -16,6 +17,8 @@ export default function RegimeActivePage() {
                     <RegimeHistoryTable />
                 </Suspense>
             </div>
+
+            <ChatWidget />
         </div>
     );
 }

@@ -64,6 +64,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/context',
             },
             {
+                title: 'Annual Returns',
+                href: '/annual',
+            },
+            {
                 title: 'Signals',
                 href: '/signals',
             },

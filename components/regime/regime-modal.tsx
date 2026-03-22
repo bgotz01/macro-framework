@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type Tab = 'overview' | 'liquidity' | 'valuation' | 'crisis';
+type Tab = 'overview' | 'liquidity' | 'valuation' | 'crisis' | 'precedence';
 
 interface RegimeInfo {
     name: string;
@@ -162,6 +162,15 @@ export default function RegimeModal() {
                             >
                                 Other
                             </button>
+                            <button
+                                onClick={() => setActiveTab('precedence')}
+                                className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'precedence'
+                                    ? 'bg-background text-foreground border-b-2 border-primary'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                            >
+                                Precedence
+                            </button>
                         </div>
 
                         {/* Tab Content */}
@@ -170,6 +179,7 @@ export default function RegimeModal() {
                             {activeTab === 'liquidity' && <LiquidityRegimesContent />}
                             {activeTab === 'valuation' && <ValuationRegimesContent />}
                             {activeTab === 'crisis' && <AllRegimesContent />}
+                            {activeTab === 'precedence' && <PrecedenceContent />}
                         </div>
                     </div>
                 </div>
@@ -303,6 +313,72 @@ function AllRegimesContent() {
                     <RegimeCard key={regime.name} regime={regime} />
                 ))}
             </div>
+        </>
+    );
+}
+
+const PRECEDENCE_ORDER = [
+    { rank: 1, name: 'Liquidity Shock', color: '#fbbf24', metric: 'Real M2', reason: 'Massive liquidity injection overrides all other conditions — speculative dynamics dominate' },
+    { rank: 2, name: 'Crisis', color: '#991b1b', metric: 'Real 10Y + Real M2', reason: 'Severe financial repression with tight money — system-level stress takes priority' },
+    { rank: 3, name: 'Bond Stress', color: '#ea580c', metric: 'Real 10Y + Real 3M', reason: 'Deep negative real rates across the curve — bonds structurally broken' },
+    { rank: 4, name: 'Contraction', color: '#dc2626', metric: 'REY + EYP + Real 10Y', reason: 'Real earnings, valuations, and rates all collapsing simultaneously' },
+    { rank: 5, name: 'Overvaluation', color: '#eab308', metric: 'EYP', reason: 'Extreme equity unattractiveness vs bonds — valuation risk dominates' },
+    { rank: 6, name: 'Fragile', color: '#f97316', metric: 'REY + Real 10Y + Real M2', reason: 'Deteriorating conditions — early warning before contraction or crisis' },
+    { rank: 7, name: 'Deep Value', color: '#15803d', metric: 'REY', reason: 'Extreme cheapness — post-crash accumulation opportunity' },
+    { rank: 8, name: 'Broad Growth', color: '#22c55e', metric: 'REY', reason: 'Strong real earnings — healthy equity expansion environment' },
+    { rank: 9, name: 'Long Duration', color: '#3b82f6', metric: 'EYP + Real 10Y', reason: 'Equities overvalued but functioning — duration/growth regime' },
+    { rank: 10, name: 'Normal', color: '#6b7280', metric: '—', reason: 'Default fallback when no outlier triggers are active' },
+];
+
+function PrecedenceContent() {
+    return (
+        <>
+            <section>
+                <h3 className="text-xl font-semibold mb-3">Regime Precedence Order</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                    When multiple regime triggers fire simultaneously, the highest-priority regime wins.
+                    This ordering reflects the severity and dominance of each condition — liquidity shocks and crises
+                    override valuation signals because they represent system-level forces.
+                </p>
+            </section>
+
+            <div className="space-y-2">
+                {PRECEDENCE_ORDER.map((item) => (
+                    <div
+                        key={item.name}
+                        className="flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
+                    >
+                        <div className="flex items-center gap-3 min-w-[180px]">
+                            <span className="text-lg font-bold text-muted-foreground w-7 text-right">{item.rank}</span>
+                            <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: item.color }}
+                            />
+                            <span className="font-semibold">{item.name}</span>
+                        </div>
+                        <div className="flex-1 text-sm text-muted-foreground">
+                            {item.reason}
+                        </div>
+                        <div className="text-xs font-mono text-muted-foreground/70 min-w-[120px] text-right">
+                            {item.metric}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <section className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30 mt-2">
+                <h4 className="text-sm font-semibold mb-2 text-blue-700 dark:text-blue-400">How It Works</h4>
+                <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+                    <p>
+                        The state machine checks triggers from rank 1 down. The first regime whose entry condition is met
+                        (and whose exit condition has not fired) becomes the active regime.
+                    </p>
+                    <p>
+                        Regimes use <span className="font-semibold text-foreground">hysteresis</span> — entry and exit thresholds differ —
+                        so a regime won't deactivate the moment conditions slightly improve. This prevents noisy flip-flopping.
+                    </p>
+                </div>
+            </section>
         </>
     );
 }

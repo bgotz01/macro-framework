@@ -23,19 +23,22 @@ interface PercentileDataTableProps {
     displayName?: string;
 }
 
+const safeFmt = (decimals: number, suffix: string) => (v: number) =>
+    v == null ? 'N/A' : `${v.toFixed(decimals)}${suffix}`;
+
 const SERIES_OPTIONS = [
-    { assetClass: 'economic', seriesName: 'CPI', displayName: 'CPI Inflation', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'economic', seriesName: 'US/FEDFUNDS', displayName: 'Fed Funds Rate', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'bonds', seriesName: 'US/TNX-Monthly', displayName: '10Y Treasury', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'bonds', seriesName: 'US/US-2yr-Monthly', displayName: '2Y Treasury', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'bonds', seriesName: 'US/IRX-Monthly', displayName: '3M Treasury', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'valuations', seriesName: 'Shiller-PE', displayName: 'Shiller P/E (CAPE)', format: (v: number) => `${v.toFixed(1)}x` },
-    { assetClass: 'valuations', seriesName: 'PE-5yr', displayName: 'P/E-5yr', format: (v: number) => `${v.toFixed(1)}x` },
-    { assetClass: 'derived', seriesName: 'Real-Yield', displayName: 'Real Yield (10Y-CPI)', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'derived', seriesName: 'Yield-Curve', displayName: 'Yield Curve (10Y-2Y)', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'derived', seriesName: 'Yield-Curve-10Y-3M', displayName: 'Yield Curve (10Y-3M)', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'derived', seriesName: 'Earnings-Yield-Premium', displayName: 'EY-3M', format: (v: number) => `${v.toFixed(2)}%` },
-    { assetClass: 'derived', seriesName: 'Real-Earnings-Yield', displayName: 'EY-CPI', format: (v: number) => `${v.toFixed(2)}%` },
+    { assetClass: 'economic', seriesName: 'CPI', displayName: 'CPI Inflation', format: safeFmt(2, '%') },
+    { assetClass: 'economic', seriesName: 'US/FEDFUNDS', displayName: 'Fed Funds Rate', format: safeFmt(2, '%') },
+    { assetClass: 'bonds', seriesName: 'US/TNX-Monthly', displayName: '10Y Treasury', format: safeFmt(2, '%') },
+    { assetClass: 'bonds', seriesName: 'US/US-2yr-Monthly', displayName: '2Y Treasury', format: safeFmt(2, '%') },
+    { assetClass: 'bonds', seriesName: 'US/IRX-Monthly', displayName: '3M Treasury', format: safeFmt(2, '%') },
+    { assetClass: 'valuations', seriesName: 'Shiller-PE', displayName: 'Shiller P/E (CAPE)', format: safeFmt(1, 'x') },
+    { assetClass: 'valuations', seriesName: 'PE-5yr', displayName: 'P/E-5yr', format: safeFmt(1, 'x') },
+    { assetClass: 'derived', seriesName: 'Real-Yield', displayName: 'Real Yield (10Y-CPI)', format: safeFmt(2, '%') },
+    { assetClass: 'derived', seriesName: 'Yield-Curve', displayName: 'Yield Curve (10Y-2Y)', format: safeFmt(2, '%') },
+    { assetClass: 'derived', seriesName: 'Yield-Curve-10Y-3M', displayName: 'Yield Curve (10Y-3M)', format: safeFmt(2, '%') },
+    { assetClass: 'derived', seriesName: 'Earnings-Yield-Premium', displayName: 'EY-3M', format: safeFmt(2, '%') },
+    { assetClass: 'derived', seriesName: 'Real-Earnings-Yield', displayName: 'EY-CPI', format: safeFmt(2, '%') },
 ];
 
 export default function PercentileDataTable({
@@ -212,7 +215,7 @@ export default function PercentileDataTable({
                                     </thead>
                                     <tbody>
                                         {data.map((row, index) => {
-                                            const percentile = row.percentileRank;
+                                            const percentile = row.percentileRank ?? 0;
                                             let interpretation = '';
                                             if (percentile < 25) interpretation = 'Low (Bottom Quartile)';
                                             else if (percentile < 50) interpretation = 'Below Average';
