@@ -4,7 +4,7 @@ import path from 'path';
 
 const SERIES_CONFIG: Record<string, { asset_class: string; series_name: string; column_name: string; timeSeriesOnly?: boolean; quarterFill?: boolean }> = {
     CPI: { asset_class: 'economic', series_name: 'CPI', column_name: 'Value' },
-    'M2-YoY': { asset_class: 'economic', series_name: 'M2-YoY', column_name: 'Value' },
+    'M2': { asset_class: 'economic', series_name: 'M2SL', column_name: 'Value', timeSeriesOnly: true },
     'SP500-EPS': { asset_class: 'valuations', series_name: 'SP500-EPS', column_name: 'Value', timeSeriesOnly: true, quarterFill: true },
 };
 
@@ -63,9 +63,31 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // If M2, compute M2-YoY from nominal values
+        let computedYoY: number | null = null;
+        if (series === 'M2') {
+            const entryDate = dates[0];
+            const [y, m] = entryDate.split('-').map(Number);
+            const prevYear = y - 1;
+            const prevMonthEnd = new Date(prevYear, m, 0).getDate();
+            const prevDate = `${prevYear}-${String(m).padStart(2, '0')}-${String(prevMonthEnd).padStart(2, '0')}`;
+
+            const prevRow = db.prepare(`
+                SELECT value FROM time_series
+                WHERE series_name = 'M2SL' AND column_name = 'Value' AND date = ?
+            `).get(prevDate) as { value: number } | undefined;
+
+            if (prevRow && prevRow.value) {
+                computedYoY = ((value - prevRow.value) / prevRow.value) * 100;
+                upsertTS.run(entryDate, 'economic', 'M2-YoY', 'Value', computedYoY);
+                upsertPA.run(entryDate, 'economic', 'M2-YoY', 'Value', computedYoY);
+            }
+        }
+
         db.close();
 
-        return NextResponse.json({ success: true, date: dates[0], dates, series, value });
+        const extra = computedYoY !== null ? ` → M2 YoY: ${computedYoY.toFixed(2)}%` : (series === 'M2' ? ' (no prior year data for YoY)' : '');
+        return NextResponse.json({ success: true, date: dates[0], dates, series, value, extra });
     } catch (error) {
         console.error('Error inserting data:', error);
         return NextResponse.json({ error: 'Failed to insert data' }, { status: 500 });
@@ -95,6 +117,17 @@ export async function GET(request: NextRequest) {
         `).all(config.asset_class, config.series_name, config.column_name) as { date: string; value: number }[];
         const rows = [...rowsDesc].reverse();
 
+        // For M2, also fetch YoY values and merge them
+        let yoyMap: Record<string, number> = {};
+        if (series === 'M2') {
+            const yoyRows = db.prepare(`
+                SELECT date, value FROM time_series
+                WHERE asset_class = 'economic' AND series_name = 'M2-YoY' AND column_name = 'Value'
+                ORDER BY date DESC LIMIT 30
+            `).all() as { date: string; value: number }[];
+            for (const r of yoyRows) yoyMap[r.date] = r.value;
+        }
+
         db.close();
 
         const QUARTER_MONTHS = new Set([3, 6, 9, 12]);
@@ -123,7 +156,7 @@ export async function GET(request: NextRequest) {
             // Only keep complete chunks (3 rows each), newest first, limit to 8 quarters
             data = chunks.filter(c => c.length === 3).reverse().slice(0, 8).flat();
         } else {
-            data = rows.reverse().map(row => ({ ...row, isFilled: false }));
+            data = rows.reverse().map(row => ({ ...row, isFilled: false, yoy: yoyMap[row.date] ?? null }));
         }
 
         return NextResponse.json({ series, data });

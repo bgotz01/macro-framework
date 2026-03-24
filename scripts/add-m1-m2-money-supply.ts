@@ -143,7 +143,9 @@ function calculateRealM2(db: Database.Database) {
         FROM time_series m2
         INNER JOIN time_series cpi ON m2.date = cpi.date
         WHERE m2.series_name = 'M2-YoY'
+          AND m2.column_name = 'Value'
           AND cpi.series_name = 'CPI'
+          AND cpi.column_name = 'Value'
           AND m2.value IS NOT NULL
           AND cpi.value IS NOT NULL
         ORDER BY m2.date ASC

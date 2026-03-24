@@ -225,9 +225,8 @@ export function FlowTrendCard({
 }: {
     flowTrendState: FlowTrendState;
 }) {
-    // Use color from risk assessment
-    const borderStyle = { borderColor: flowTrendState.risk.color };
-    const textStyle = { color: flowTrendState.risk.color };
+    // Use color from pressure assessment
+    const borderStyle = { borderColor: flowTrendState.pressure.color };
 
     // Determine if trend is negative (MA slope has been negative)
     const isNegativeTrend = flowTrendState.stage.value !== null && flowTrendState.stage.value < 0;
@@ -240,14 +239,9 @@ export function FlowTrendCard({
             <div className="text-xs opacity-80 mb-1">
                 Stage: {flowTrendState.stage.label}
             </div>
-            <div className="text-xs opacity-80 mb-1">
+            <div className="text-xs opacity-80">
                 Pressure: {flowTrendState.pressure.label}
             </div>
-            {!isNegativeTrend && (
-                <div className="text-xs opacity-80">
-                    Risk: <span className="font-bold" style={textStyle}>{flowTrendState.risk.label}</span>
-                </div>
-            )}
         </div>
     );
 }

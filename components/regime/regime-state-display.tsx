@@ -20,6 +20,16 @@ const REGIME_METRICS: Record<RegimeFamily, Set<string>> = {
     'Normal': new Set([])
 };
 
+/** Renders trigger description with AND/OR in a subtle muted style */
+function formatTriggerDescription(text: string) {
+    const parts = text.split(/\b(AND|OR)\b/);
+    return parts.map((part, i) =>
+        part === 'AND' || part === 'OR'
+            ? <span key={i} className="text-muted-foreground/50 text-xs font-medium mx-0.5">{part}</span>
+            : <span key={i}>{part}</span>
+    );
+}
+
 interface RegimeStateDisplayProps {
     regime: RegimeFamily;
     entryDate: string;
@@ -49,6 +59,10 @@ interface RegimeStateDisplayProps {
         lastInversionEndDate: string | null;
         currentValue?: number;
     } | null;
+    triggerDescriptions?: {
+        entryDescription: string;
+        exitDescription: string;
+    } | null;
 }
 
 export default function RegimeStateDisplay({
@@ -56,7 +70,8 @@ export default function RegimeStateDisplay({
     entryDate,
     daysInRegime,
     conditions,
-    yieldCurveInversion
+    yieldCurveInversion,
+    triggerDescriptions
 }: RegimeStateDisplayProps) {
     const metadata = REGIME_METADATA[regime];
     const [isExpanded, setIsExpanded] = useState(true);
@@ -184,14 +199,14 @@ export default function RegimeStateDisplay({
                                     <div>
                                         <div className="text-[10px] font-semibold text-green-600 dark:text-green-400 mb-1">ENTRY</div>
                                         <div className="text-sm text-foreground leading-relaxed">
-                                            {REGIME_TRIGGERS[regime].entryDescription}
+                                            {formatTriggerDescription(triggerDescriptions?.entryDescription ?? REGIME_TRIGGERS[regime].entryDescription)}
                                         </div>
                                     </div>
-                                    {REGIME_TRIGGERS[regime].exitDescription && (
+                                    {(triggerDescriptions?.exitDescription ?? REGIME_TRIGGERS[regime].exitDescription) && (
                                         <div>
                                             <div className="text-[10px] font-semibold text-red-600 dark:text-red-400 mb-1">EXIT</div>
                                             <div className="text-sm text-foreground leading-relaxed">
-                                                {REGIME_TRIGGERS[regime].exitDescription}
+                                                {formatTriggerDescription(triggerDescriptions?.exitDescription ?? REGIME_TRIGGERS[regime].exitDescription)}
                                             </div>
                                         </div>
                                     )}

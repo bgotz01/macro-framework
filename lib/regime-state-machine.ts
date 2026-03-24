@@ -23,10 +23,10 @@ export const REGIME_TRIGGERS = {
         exitDescription: 'Exit: REY ≤ 4%'
     },
     'Broad Growth': {
-        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= 4,
+        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= 3,
         exit: (c: CurrentConditions) => c.rey !== null && c.rey < 1,
         reason: (c: CurrentConditions) => `Broad Growth: Real Earnings Yield ${c.rey?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY ≥ 4%',
+        entryDescription: 'Entry: REY ≥ 3%',
         exitDescription: 'Exit: REY ≤ 1%'
     },
     'Fragile': {

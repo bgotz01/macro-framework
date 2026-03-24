@@ -173,8 +173,7 @@ export default function RegimeClassificationSidebar({ data, liquidityRegime, val
 
                     {/* Trend Pressure */}
                     <div>
-                        <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Trend Pressure</div>
-                        <div className="text-[10px] font-medium text-foreground mb-1.5 truncate">{flowTrendState.risk?.label ?? '—'}</div>
+                        <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Trend Pressure</div>
                         <div className="grid grid-cols-2 gap-1">
                             <MiniCard
                                 label="Direction"

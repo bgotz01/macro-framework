@@ -38,7 +38,7 @@ export default function EconomicsChart({
     height = 400,
     className = ''
 }: EconomicsChartProps) {
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
+    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string; geography?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
@@ -71,7 +71,8 @@ export default function EconomicsChart({
                     .map((s: any) => ({
                         series_name: s.series_name,
                         display_name: s.display_name,
-                        units: s.units
+                        units: s.units,
+                        geography: s.geography
                     }));
 
                 setAvailableSeries(seriesWithNames);
@@ -291,6 +292,7 @@ export default function EconomicsChart({
             'Federal Budget': [],
             'Inflation & Prices': [],
             'Interest Rates': [],
+            'International': [],
             'Other': []
         };
 
@@ -299,7 +301,10 @@ export default function EconomicsChart({
             const name = series.display_name.toLowerCase();
             const seriesName = series.series_name.toLowerCase();
 
-            if (name.includes('m1') || name.includes('m2') || name.includes('money supply')) {
+            // Route non-US series to International
+            if (series.geography && series.geography !== 'US') {
+                categories['International'].push(series);
+            } else if (name.includes('m1') || name.includes('m2') || name.includes('money supply')) {
                 categories['Money Supply'].push(series);
             } else if (name.includes('money market') || seriesName.includes('money-market')) {
                 categories['Money Market Funds'].push(series);

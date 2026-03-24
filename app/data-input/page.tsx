@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 const SERIES_OPTIONS = [
     { value: 'CPI', label: 'CPI (YoY %)', placeholder: '2.4' },
-    { value: 'M2-YoY', label: 'M2 YoY (%)', placeholder: '4.3' },
+    { value: 'M2', label: 'M2 ($B → YoY%)', placeholder: '22442.1' },
     { value: 'SP500-EPS', label: 'SP500 EPS ($)', placeholder: '234.06' },
 ];
 
 interface RecentRow {
     date: string;
     value: number;
+    yoy?: number | null;
     isFilled?: boolean;
 }
 
@@ -41,7 +42,6 @@ export default function DataInputPage() {
     }, []);
 
     useEffect(() => {
-        setRecent([]);
         loadRecent(series);
     }, [series, loadRecent]);
 
@@ -63,7 +63,7 @@ export default function DataInputPage() {
             if (!res.ok) {
                 setStatus({ type: 'error', message: json.error || 'Failed to save' });
             } else {
-                setStatus({ type: 'success', message: `Saved ${series} = ${json.value} for ${json.dates ? json.dates.join(', ') : json.date}` });
+                setStatus({ type: 'success', message: `Saved ${series === 'M2' ? 'M2 nominal' : series} = ${json.value} for ${json.dates ? json.dates.join(', ') : json.date}${json.extra || ''}` });
                 setValue('');
                 loadRecent(series);
             }
@@ -75,7 +75,7 @@ export default function DataInputPage() {
     };
 
     const selectedOption = SERIES_OPTIONS.find(o => o.value === series)!;
-    const isPercent = series !== 'SP500-EPS';
+    const isPercent = series === 'CPI';
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -150,7 +150,7 @@ export default function DataInputPage() {
                         </div>
                         <div className="flex-1">
                             <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                                Value {isPercent ? '(%)' : '($)'}
+                                Value {isPercent ? '(%)' : series === 'M2' ? '($B)' : '($)'}
                             </label>
                             <input
                                 type="number"
@@ -229,18 +229,34 @@ export default function DataInputPage() {
                         <thead>
                             <tr className="text-xs text-muted-foreground border-b border-border">
                                 <th className="text-left pb-2">Date</th>
-                                <th className="text-right pb-2">Value</th>
+                                {series === 'M2' ? (
+                                    <>
+                                        <th className="text-right pb-2">Nominal ($B)</th>
+                                        <th className="text-right pb-2">YoY %</th>
+                                    </>
+                                ) : (
+                                    <th className="text-right pb-2">Value</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody>
                             {recent.length === 0 && !loadingRecent ? (
-                                <tr><td colSpan={2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
+                                <tr><td colSpan={series === 'M2' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
                             ) : recent.map(row => (
                                 <tr key={row.date} className="border-b border-border/40 last:border-0">
                                     <td className="py-1.5 text-muted-foreground">{row.date}</td>
-                                    <td className="py-1.5 text-right font-medium">
-                                        {isPercent ? `${row.value.toFixed(2)}%` : row.value.toFixed(2)}
-                                    </td>
+                                    {series === 'M2' ? (
+                                        <>
+                                            <td className="py-1.5 text-right font-medium">{row.value.toFixed(1)}</td>
+                                            <td className="py-1.5 text-right font-medium">
+                                                {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <td className="py-1.5 text-right font-medium">
+                                            {isPercent ? `${row.value.toFixed(2)}%` : row.value.toFixed(2)}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

@@ -82,7 +82,7 @@ const REGIMES: RegimeInfo[] = [
         name: 'Broad Growth',
         color: '#22c55e',
         description: 'Strong real earnings environment - healthy equity expansion',
-        entry: 'REY > 4%',
+        entry: 'REY > 3%',
         exit: 'REY < 1%',
         guidance: 'Earnings growing faster than inflation - lean into quality growth'
     },

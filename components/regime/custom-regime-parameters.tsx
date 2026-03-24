@@ -1,0 +1,345 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { calculateFlowTrendState } from '@/lib/regime-config/flow-trend-config';
+import { REGIME_METADATA, type RegimeFamily } from '@/lib/regime-state-machine';
+import { buildCustomTriggers, determineCustomRegime } from '@/lib/custom-regime-engine';
+import CustomRegimeModal, { DEFAULT_THRESHOLDS, type CustomThresholds } from './custom-regime-modal';
+import RegimeModal from './regime-modal';
+import TimelineSlider from './regime-timeline-slider';
+import RegimeStateDisplay from './regime-state-display';
+import RegimeInputVariables from './regime-input-variables';
+import RegimeClassification from './regime-classification';
+import RegimeClassificationSidebar from './regime-classification-sidebar';
+import { emptyMetric } from './regime-parameters-utils';
+import type { RegimeData } from './regime-parameters-types';
+import {
+    calculateLiquidityRegime,
+    calculateValuationRegime
+} from '@/lib/regime-config';
+
+function buildTriggerDescriptions(regime: RegimeFamily, t: CustomThresholds): { entryDescription: string; exitDescription: string } {
+    const map: Record<string, { entryDescription: string; exitDescription: string }> = {
+        'Deep Value': { entryDescription: `Entry: REY ≥ ${t.deepValue.entry}%`, exitDescription: `Exit: REY < ${t.deepValue.exit}%` },
+        'Broad Growth': { entryDescription: `Entry: REY ≥ ${t.broadGrowth.entry}%`, exitDescription: `Exit: REY < ${t.broadGrowth.exit}%` },
+        'Fragile': { entryDescription: `Entry: REY ≤ ${t.fragile.entryRey}% AND Real 10Y ≤ ${t.fragile.entryReal10Y}% AND Real M2 < ${t.fragile.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.fragile.exitReal10Y}%` },
+        'Contraction': { entryDescription: `Entry: REY ≤ ${t.contraction.entryRey}% AND EYP ≤ ${t.contraction.entryEyp}% AND Real 10Y ≤ ${t.contraction.entryReal10Y}%`, exitDescription: `Exit: REY ≥ ${t.contraction.exitRey}%` },
+        'Long Duration': { entryDescription: `Entry: EYP ≤ ${t.longDuration.entryEyp}% AND Real 10Y ≥ ${t.longDuration.entryReal10Y}%`, exitDescription: `Exit: EYP ≥ ${t.longDuration.exitEypHigh}% OR EYP ≤ ${t.longDuration.exitEypLow}%` },
+        'Overvaluation': { entryDescription: `Entry: EYP ≤ ${t.overvaluation.entry}%`, exitDescription: `Exit: EYP ≥ ${t.overvaluation.exit}%` },
+        'Crisis': { entryDescription: `Entry: Real 10Y ≤ ${t.crisis.entryReal10Y}% AND Real M2 ≤ ${t.crisis.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.crisis.exitReal10Y}% OR Real M2 ≥ ${t.crisis.exitRealM2}%` },
+        'Bond Stress': { entryDescription: `Entry: Real 10Y ≤ ${t.bondStress.entryReal10Y}% AND Real 3M ≤ ${t.bondStress.entryReal3M}%`, exitDescription: `Exit: Real 10Y ≥ ${t.bondStress.exitReal10Y}%` },
+        'Liquidity Shock': { entryDescription: `Entry: Real M2 ≥ ${t.liquidityShock.entry}%`, exitDescription: `Exit: Real M2 ≤ ${t.liquidityShock.exit}%` },
+        'Normal': { entryDescription: 'Default state when no outlier triggers are active', exitDescription: '' },
+    };
+    return map[regime] || map['Normal'];
+}
+
+export default function CustomRegimeParameters() {
+    const startYear = 1960;
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    const totalMonths = (currentYear - startYear) * 12 + currentMonth;
+
+    const [sliderValue, setSliderValue] = useState<number>(totalMonths);
+    const [debouncedSliderValue, setDebouncedSliderValue] = useState<number>(totalMonths);
+    const [data, setData] = useState<RegimeData | null>(null);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showInputVariables, setShowInputVariables] = useState(true);
+    const [thresholds, setThresholds] = useState<CustomThresholds>({ ...DEFAULT_THRESHOLDS });
+    const [yieldCurveInversion, setYieldCurveInversion] = useState<any>(null);
+
+    // Load saved thresholds on mount
+    useEffect(() => {
+        fetch('/api/custom-thresholds')
+            .then(r => r.json())
+            .then(saved => { if (saved) setThresholds(saved); })
+            .catch(() => { });
+    }, []);
+
+    // Save + apply thresholds
+    const handleApplyThresholds = (t: CustomThresholds) => {
+        setThresholds(t);
+        fetch('/api/custom-thresholds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(t),
+        }).catch(() => { });
+    };
+
+    // Debounce slider
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSliderValue(sliderValue), 150);
+        return () => clearTimeout(timer);
+    }, [sliderValue]);
+
+    const getDateFromSlider = (value: number) => {
+        const year = startYear + Math.floor(value / 12);
+        const month = value % 12;
+        return { year, month };
+    };
+
+    const { year: selectedYear, month: selectedMonth } = getDateFromSlider(sliderValue);
+    const displayDate = sliderValue === totalMonths
+        ? 'Latest'
+        : `${new Date(selectedYear, selectedMonth).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+
+    // Fetch data
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                if (data) { setIsUpdating(true); } else { setInitialLoading(true); }
+                setError(null);
+
+                const { year, month } = getDateFromSlider(debouncedSliderValue);
+                const dateParam = debouncedSliderValue === totalMonths
+                    ? 'latest'
+                    : `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
+
+                const [regimeDataResponse, yieldCurveInversionResponse] = await Promise.all([
+                    fetch(`/api/regime-data?date=${dateParam}`),
+                    fetch(`/api/yield-curve-inversion?date=${dateParam}`)
+                ]);
+
+                if (!regimeDataResponse.ok) throw new Error('Failed to fetch regime data');
+
+                const result = await regimeDataResponse.json();
+                const regimeData: RegimeData = {
+                    fedFunds: result.fedFunds || emptyMetric(),
+                    irx: result.irx || emptyMetric(),
+                    tnx: result.tnx || emptyMetric(),
+                    cpi: result.cpi || emptyMetric(),
+                    eyp5yr: result.eyp5yr || emptyMetric(),
+                    rey5yr: result.rey5yr || emptyMetric(),
+                    real10Y: result.real10Y || emptyMetric(),
+                    real3M: result.real3M || emptyMetric(),
+                    realM2: result.realM2 || emptyMetric(),
+                    yieldCurve: result.yieldCurve || emptyMetric(),
+                    pe5yr: result.pe5yr || emptyMetric(),
+                    ey5yr: result.ey5yr || emptyMetric(),
+                    slope200MA: result.slope200MA || emptyMetric(),
+                    slope500MA: result.slope500MA || emptyMetric(),
+                    divergence200MA: result.divergence200MA || emptyMetric(),
+                    daysAbove200MA: result.daysAbove200MA || emptyMetric(),
+                    slopeStreak200MA: result.slopeStreak200MA || emptyMetric()
+                };
+                setData(regimeData);
+
+                if (yieldCurveInversionResponse.ok) {
+                    setYieldCurveInversion(await yieldCurveInversionResponse.json());
+                }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load data');
+            } finally {
+                setInitialLoading(false);
+                setIsUpdating(false);
+            }
+        };
+        fetchData();
+    }, [debouncedSliderValue, totalMonths]);
+
+    // Check if thresholds differ from defaults
+    const isCustom = JSON.stringify(thresholds) !== JSON.stringify(DEFAULT_THRESHOLDS);
+
+    // Loading / error states
+    if (initialLoading || error || !data) {
+        return (
+            <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-8">
+                    <h2 className="text-2xl font-light tracking-wider mb-2"
+                        style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+                        CUSTOM REGIME ENGINE
+                    </h2>
+                    <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
+                        style={{ letterSpacing: '0.2em' }}>
+                        User-Defined Thresholds
+                    </p>
+                </div>
+                <TimelineSlider
+                    sliderValue={sliderValue} totalMonths={totalMonths}
+                    startYear={startYear} currentYear={currentYear}
+                    displayDate={displayDate} onSliderChange={setSliderValue}
+                />
+                {initialLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                ) : (
+                    <div className="text-center py-12">
+                        <p className="text-red-500 font-medium mb-2">Error loading data</p>
+                        <p className="text-sm text-muted-foreground">{error || 'No data available'}</p>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Run custom engine
+    const flowTrendState = calculateFlowTrendState(
+        data.slope200MA.value,
+        data.divergence200MA.value,
+        data.slopeStreak200MA.value
+    );
+
+    const conditions = {
+        real3M: data.real3M.value,
+        realM2: data.realM2.value,
+        rey: data.rey5yr.value,
+        eyp: data.eyp5yr.value,
+        real10Y: data.real10Y.value,
+        liquidityScore: 0,
+        stage: flowTrendState.stage.label,
+        pressure: flowTrendState.pressure.label,
+        risk: flowTrendState.risk.label,
+        direction: flowTrendState.direction.label,
+        trendAge: data.slopeStreak200MA.value,
+        slope200MA: data.slope200MA.value
+    };
+
+    const customTriggers = buildCustomTriggers(thresholds);
+    const customRegimeState = determineCustomRegime(null, conditions, displayDate, customTriggers);
+
+    const regimeMetadata = REGIME_METADATA[customRegimeState.regime as RegimeFamily];
+
+    // Build trigger descriptions from custom thresholds for the active regime
+    const triggerDescriptions = buildTriggerDescriptions(customRegimeState.regime as RegimeFamily, thresholds);
+
+    const displayRegimeState = {
+        regime: customRegimeState.regime,
+        entryDate: customRegimeState.entryDate,
+        currentDate: displayDate,
+        daysInRegime: 0,
+        triggerReason: customRegimeState.triggerReason,
+        conditions: {
+            real3M: data.real3M.value,
+            realM2: data.realM2.value,
+            rey: data.rey5yr.value,
+            eyp: data.eyp5yr.value,
+            real10Y: data.real10Y.value,
+            stage: flowTrendState.stage.label,
+            pressure: flowTrendState.pressure.label,
+            risk: flowTrendState.risk.label,
+            direction: flowTrendState.direction.label,
+            yieldCurve: data.yieldCurve.value,
+            slope500MAPercentile: data.slope500MA.percentile,
+            slope200MA: data.slope200MA.value
+        }
+    };
+
+    const liquidityRegime = calculateLiquidityRegime(
+        data.real3M.value, data.real10Y.value,
+        data.yieldCurve.value, data.realM2.value
+    );
+    const valuationRegime = calculateValuationRegime(
+        data.eyp5yr.value, data.rey5yr.value
+    );
+
+    return (
+        <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8">
+                <h2 className="text-2xl font-light tracking-wider mb-2"
+                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+                    CUSTOM REGIME ENGINE
+                </h2>
+                <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
+                    style={{ letterSpacing: '0.2em' }}>
+                    User-Defined Thresholds
+                </p>
+                <div className="flex gap-2">
+                    <CustomRegimeModal thresholds={thresholds} onApply={handleApplyThresholds} />
+                    <RegimeModal />
+                </div>
+                {isCustom && (
+                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        Custom thresholds active
+                    </div>
+                )}
+            </div>
+
+            {/* Date Picker */}
+            <div className="flex items-center justify-center gap-3 mb-4">
+                <label className="text-xs font-medium text-muted-foreground">Jump to date:</label>
+                <input
+                    type="date"
+                    min={`${startYear}-01-01`}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => {
+                        if (e.target.value) {
+                            const selectedDate = new Date(e.target.value);
+                            const y = selectedDate.getFullYear();
+                            const m = selectedDate.getMonth();
+                            setSliderValue(Math.min((y - startYear) * 12 + m, totalMonths));
+                        }
+                    }}
+                    className="px-3 py-1.5 rounded-md bg-muted text-card-foreground border border-border text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+            </div>
+
+            <TimelineSlider
+                sliderValue={sliderValue} totalMonths={totalMonths}
+                startYear={startYear} currentYear={currentYear}
+                displayDate={displayDate} onSliderChange={setSliderValue}
+            />
+
+            {/* Active Regime + Sidebar */}
+            <div className="flex gap-4 items-start mt-6">
+                <div className="flex-1 min-w-0">
+                    {regimeMetadata && (
+                        <RegimeStateDisplay
+                            regime={displayRegimeState.regime}
+                            entryDate={displayRegimeState.entryDate}
+                            currentDate={displayRegimeState.currentDate}
+                            daysInRegime={displayRegimeState.daysInRegime}
+                            triggerReason={displayRegimeState.triggerReason}
+                            description={regimeMetadata.description}
+                            guidance={regimeMetadata.guidance}
+                            color={regimeMetadata.color}
+                            conditions={displayRegimeState.conditions}
+                            yieldCurveInversion={yieldCurveInversion}
+                            triggerDescriptions={triggerDescriptions}
+                        />
+                    )}
+
+                    <div className="space-y-6 mt-6">
+                        <div>
+                            <button
+                                onClick={() => setShowInputVariables(!showInputVariables)}
+                                className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                            >
+                                <span>Input Variables</span>
+                                <svg className={`w-4 h-4 transition-transform ${showInputVariables ? 'rotate-180' : ''}`}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showInputVariables && (
+                                <RegimeInputVariables data={data} isUpdating={isUpdating} />
+                            )}
+                        </div>
+
+                        <RegimeClassification
+                            data={data}
+                            liquidityRegime={liquidityRegime}
+                            valuationRegime={valuationRegime}
+                            flowTrendState={flowTrendState}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex-shrink-0">
+                    <RegimeClassificationSidebar
+                        data={data}
+                        liquidityRegime={liquidityRegime}
+                        valuationRegime={valuationRegime}
+                        flowTrendState={flowTrendState}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}

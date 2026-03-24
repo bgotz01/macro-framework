@@ -56,6 +56,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime-active',
             },
             {
+                title: 'Regime Custom',
+                href: '/regime-custom',
+            },
+            {
                 title: 'Trend Pressure',
                 href: '/trend-pressure',
             },
