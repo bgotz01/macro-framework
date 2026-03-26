@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import CycleCard, { Section, Phase, Row, MiniNote, Break, RegimeEvent } from './cycle-card';
-import CycleChartsModal from './cycle-charts-modal';
+
 
 const cyclesData = [
     {
@@ -12,6 +12,7 @@ const cyclesData = [
         period: "1996 – 2008",
         accent: "from-cyan-500/20 to-blue-500/20",
         borderAccent: "border-l-cyan-400",
+        tabColor: "text-cyan-400 border-cyan-400",
         charts: [
             { name: "Earnings Yield Premium", path: "/charts/context/1996/EYP.png" },
             { name: "Fed Funds Rate", path: "/charts/context/1996/FedFunds.png" }
@@ -50,6 +51,7 @@ const cyclesData = [
         period: "2008 – 2020",
         accent: "from-violet-500/20 to-fuchsia-500/20",
         borderAccent: "border-l-violet-400",
+        tabColor: "text-violet-400 border-violet-400",
         charts: [
             { name: "Earnings Yield Premium", path: "/charts/context/2008/EYP.png" },
             { name: "Fed Funds Rate", path: "/charts/context/2008/FedFunds.png" }
@@ -88,6 +90,7 @@ const cyclesData = [
         period: "2020 – ~2032",
         accent: "from-amber-500/20 to-orange-500/20",
         borderAccent: "border-l-amber-400",
+        tabColor: "text-amber-400 border-amber-400",
         isCurrent: true,
         charts: [
             { name: "Earnings Yield Premium", path: "/charts/context/2020/EYP.png" },
@@ -118,74 +121,113 @@ const cyclesData = [
 ];
 
 export default function RegimeCyclesTimeline() {
-    const [expandedCycle, setExpandedCycle] = useState<number | null>(1);
+    const [activeTab, setActiveTab] = useState<number>(1);
+
+    const activeCycle = cyclesData.find(c => c.cycleNumber === activeTab)!;
 
     return (
-        <div className="space-y-5">
-            {cyclesData.map((cycle) => (
-                <CycleCard
-                    key={cycle.cycleNumber}
-                    cycleNumber={cycle.cycleNumber}
-                    title={cycle.title}
-                    subtitle={cycle.subtitle}
-                    period={cycle.period}
-                    accent={cycle.accent}
-                    borderAccent={cycle.borderAccent}
-                    isExpanded={expandedCycle === cycle.cycleNumber}
-                    onToggle={() => setExpandedCycle(expandedCycle === cycle.cycleNumber ? null : cycle.cycleNumber)}
-                    isCurrent={cycle.isCurrent}
-                >
-                    {cycle.charts && cycle.charts.length > 0 && (
-                        <CycleChartsModal
-                            cycleNumber={cycle.cycleNumber}
-                            cycleTitle={cycle.title}
-                            charts={cycle.charts}
-                        />
-                    )}
+        <div className="space-y-0">
+            {/* Tabs */}
+            <div className="flex gap-1 rounded-t-2xl border border-b-0 border-border/70 bg-card/80 px-3 pt-3 backdrop-blur-sm">
+                {cyclesData.map((cycle) => {
+                    const isActive = activeTab === cycle.cycleNumber;
+                    return (
+                        <button
+                            key={cycle.cycleNumber}
+                            onClick={() => setActiveTab(cycle.cycleNumber)}
+                            className={`relative flex flex-col items-start gap-0.5 rounded-t-xl border-b-2 px-4 py-3 text-left transition-all ${isActive
+                                ? `${cycle.tabColor} bg-background/60`
+                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold ${isActive ? 'border-current bg-current/10' : 'border-border bg-muted/30'
+                                    }`}>
+                                    {cycle.cycleNumber}
+                                </span>
+                                <span className="text-sm font-semibold leading-tight">{cycle.title}</span>
+                                {cycle.isCurrent && (
+                                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                                        Current
+                                    </span>
+                                )}
+                            </div>
+                            <span className="pl-7 text-[11px] font-medium uppercase tracking-[0.12em] opacity-70">
+                                {cycle.period}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Section label="Old Mechanism Failing">
-                            {cycle.oldMechanism}
-                        </Section>
+            {/* Expanded content */}
+            <div className={`rounded-b-2xl border border-border/70 bg-card/80 backdrop-blur-sm ${activeCycle.borderAccent} border-l-4`}>
+                <div className={`bg-gradient-to-r ${activeCycle.accent} px-5 py-4`}>
+                    <p className="text-sm text-muted-foreground">{activeCycle.subtitle}</p>
+                </div>
 
-                        <Section label="Transition (~2 years)">
-                            {cycle.transition}
-                        </Section>
-                    </div>
-
-                    {cycle.phases.map((phase, idx) => (
-                        <div key={idx}>
-                            <Phase
-                                title={phase.title}
-                                subtitle={phase.subtitle}
-                                period={phase.period}
-                                isCurrent={phase.isCurrent}
-                            >
-                                {phase.note && <MiniNote>{phase.note}</MiniNote>}
-                                <Row label="Drivers">{phase.drivers}</Row>
-                                <Row label="Result">{phase.result}</Row>
-                            </Phase>
-
-                            {idx === 0 && cycle.phases.length > 1 && (
-                                <Break kind="phase">
-                                    {cycle.cycleNumber === 1 && "Dot-com crash (2000) — long-duration equities collapse."}
-                                    {cycle.cycleNumber === 2 && "Crisis recovery largely completes. Markets begin functioning more normally again."}
-                                    {cycle.cycleNumber === 3 && "Inflation accelerates. Central banks are forced to raise rates and tighten liquidity conditions."}
-                                </Break>
-                            )}
+                <div className="border-t border-border/60 bg-background/40 px-5 py-5">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Section label="Old Mechanism Failing">
+                                {activeCycle.oldMechanism}
+                            </Section>
+                            <Section label="Transition (~2 years)">
+                                {activeCycle.transition}
+                            </Section>
                         </div>
-                    ))}
 
-                    {cycle.regimeBreak && (
-                        <RegimeEvent
-                            year={cycle.regimeBreak.year}
-                            title="Regime Break"
-                            description={cycle.regimeBreak.description}
-                            breakdown={cycle.regimeBreak.breakdown}
-                        />
-                    )}
-                </CycleCard>
-            ))}
+                        {activeCycle.phases.map((phase, idx) => (
+                            <div key={idx}>
+                                <Phase
+                                    title={phase.title}
+                                    subtitle={phase.subtitle}
+                                    period={phase.period}
+                                    isCurrent={phase.isCurrent}
+                                >
+                                    {phase.note && <MiniNote>{phase.note}</MiniNote>}
+                                    <Row label="Drivers">{phase.drivers}</Row>
+                                    <Row label="Result">{phase.result}</Row>
+                                </Phase>
+
+                                {idx === 0 && activeCycle.phases.length > 1 && (
+                                    <Break kind="phase">
+                                        {activeCycle.cycleNumber === 1 && "Dot-com crash (2000) — long-duration equities collapse."}
+                                        {activeCycle.cycleNumber === 2 && "Crisis recovery largely completes. Markets begin functioning more normally again."}
+                                        {activeCycle.cycleNumber === 3 && "Inflation accelerates. Central banks are forced to raise rates and tighten liquidity conditions."}
+                                    </Break>
+                                )}
+                            </div>
+                        ))}
+
+                        {activeCycle.regimeBreak && (
+                            <RegimeEvent
+                                year={activeCycle.regimeBreak.year}
+                                title="Regime Break"
+                                description={activeCycle.regimeBreak.description}
+                                breakdown={activeCycle.regimeBreak.breakdown}
+                            />
+                        )}
+
+                        {activeCycle.charts && activeCycle.charts.length > 0 && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {activeCycle.charts.map((chart) => (
+                                    <div key={chart.name} className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                                        <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                            {chart.name}
+                                        </div>
+                                        <img
+                                            src={chart.path}
+                                            alt={chart.name}
+                                            className="w-full rounded-lg"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

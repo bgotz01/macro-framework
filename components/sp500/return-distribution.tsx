@@ -159,7 +159,16 @@ export default function ReturnDistribution({ stats1y, stats2y, stats2025, stats2
                             />
                             <YAxis tick={{ fontSize: 10 }} />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px' }}
+                                content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const d = payload[0].payload;
+                                    return (
+                                        <div style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '12px', padding: '8px 12px' }}>
+                                            <div style={{ fontWeight: 600 }}>{d.label}</div>
+                                            <div>{d.count} stocks</div>
+                                        </div>
+                                    );
+                                }}
                             />
                             <Bar
                                 dataKey="count"

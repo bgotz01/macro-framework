@@ -95,7 +95,7 @@ interface Props {
 }
 
 export default function RegimeClassificationSidebar({ data, liquidityRegime, valuationRegime, flowTrendState }: Props) {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
 
     return (
         <div className="flex flex-col items-end">

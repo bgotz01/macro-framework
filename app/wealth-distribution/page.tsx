@@ -39,6 +39,30 @@ export default function WealthDistributionPage() {
                 </p>
             </div>
 
+            <div className="space-y-4">
+                <h2 className="text-2xl font-semibold">Generational Breakdown</h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {wealthData.map((gen, index) => (
+                        <Card key={gen.name}>
+                            <CardHeader className="pb-3 text-center">
+                                <CardTitle className="text-lg font-bold" style={{ color: COLORS[index] }}>
+                                    {gen.name.split(' (')[0]}
+                                </CardTitle>
+                                <CardDescription className="text-sm">
+                                    {gen.name.match(/\(([^)]+)\)/)?.[1]}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="text-center">
+                                <div className="text-3xl font-bold">{formatCurrency(gen.value)}</div>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    {gen.percentage.toFixed(1)}% of total wealth
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Wealth by Generation (2025)</CardTitle>
@@ -79,30 +103,6 @@ export default function WealthDistributionPage() {
                     </div>
                 </CardContent>
             </Card>
-
-            <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Generational Breakdown</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {wealthData.map((gen, index) => (
-                        <Card key={gen.name}>
-                            <CardHeader className="pb-3 text-center">
-                                <CardTitle className="text-lg font-bold" style={{ color: COLORS[index] }}>
-                                    {gen.name.split(' (')[0]}
-                                </CardTitle>
-                                <CardDescription className="text-sm">
-                                    {gen.name.match(/\(([^)]+)\)/)?.[1]}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="text-center">
-                                <div className="text-3xl font-bold">{formatCurrency(gen.value)}</div>
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    {gen.percentage.toFixed(1)}% of total wealth
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 }

@@ -38,19 +38,45 @@ const sidebarData: SidebarCategory[] = [
         category: 'Markets',
         items: [
             {
-                title: 'Matrix',
-                href: '/matrix',
+                title: 'Chart',
+                href: '/chart',
                 children: [
-                    { title: 'Historical', href: '/matrix/historical' },
-                    { title: 'Decades', href: '/matrix/decades' },
-                    { title: 'Percentile', href: '/matrix/percentile' },
-                    { title: 'Similar Periods', href: '/matrix/similar' },
+                    { title: 'All Charts', href: '/chart' },
+                    { title: 'Percentile Analysis', href: '/chart/percentile' },
+                    { title: 'Data Explorer', href: '/chart/data' },
                 ],
             },
+
+
+
             {
-                title: 'Regime Detector',
-                href: '/regime',
+                title: 'S&P 500',
+                href: '/sp500',
+                children: [
+                    { title: 'Constituents', href: '/sp500/constituents' },
+
+                ],
             },
+
+            {
+                title: 'Markets',
+                href: '/markets',
+                children: [
+                    { title: 'Highlights', href: '/markets/highlights' },
+                    { title: 'Annual Returns', href: '/markets/annual-returns' },
+                    { title: 'Annual Filter', href: '/markets/annual-filter' },
+
+                    { title: 'FAANG', href: '/markets/faang' },
+                    { title: 'Crude Oil', href: '/markets/crude-oil' },
+                ],
+            },
+
+        ],
+    },
+    {
+        category: 'Regime State',
+        items: [
+
             {
                 title: 'Regime Active',
                 href: '/regime-active',
@@ -68,39 +94,20 @@ const sidebarData: SidebarCategory[] = [
                 href: '/context',
             },
             {
-                title: 'Annual Returns',
-                href: '/annual',
-            },
-            {
-                title: 'Signals',
-                href: '/signals',
-            },
-            {
-                title: 'S&P 500',
-                href: '/sp500',
+                title: 'Regime Historical',
+                href: '/regime-historical',
                 children: [
-                    { title: 'Stocks', href: '/sp500/stocks' },
-
+                    { title: 'Long Duration', href: '/regime-historical/long-duration' },
                 ],
             },
             {
-                title: 'Chart',
-                href: '/chart',
+                title: 'Matrix',
+                href: '/matrix',
                 children: [
-                    { title: 'All Charts', href: '/chart' },
-                    { title: 'Percentile Analysis', href: '/chart/percentile' },
-                    { title: 'Data Explorer', href: '/chart/data' },
-                ],
-            },
-            {
-                title: 'Markets',
-                href: '/markets',
-                children: [
-                    { title: 'Highlights', href: '/markets/highlights' },
-                    { title: 'Annual Returns', href: '/markets/annual-returns' },
-
-                    { title: 'Stocks', href: '/markets/stocks' },
-                    { title: 'Crude Oil', href: '/markets/crude-oil' },
+                    { title: 'Historical', href: '/matrix/historical' },
+                    { title: 'Decades', href: '/matrix/decades' },
+                    { title: 'Percentile', href: '/matrix/percentile' },
+                    { title: 'Similar Periods', href: '/matrix/similar' },
                 ],
             },
         ],
@@ -111,6 +118,13 @@ const sidebarData: SidebarCategory[] = [
             {
                 title: 'Framework',
                 href: '/framework',
+                children: [
+                    { title: 'Process', href: '/framework/process' },
+                    { title: 'O1 Signal', href: '/framework/signal' },
+                    { title: 'O2 Swing', href: '/framework/swing' },
+                    { title: 'O3 Story', href: '/framework/story' },
+
+                ],
             },
             {
                 title: '12-Year Cycle',
@@ -159,6 +173,15 @@ const sidebarData: SidebarCategory[] = [
                     { title: '2006 Yield Curve', href: '/insights/major-events/2006-yield-curve' },
                     { title: '2008 QE', href: '/insights/major-events/2008-qe' },
                     { title: '2001 China joins WTO', href: '/insights/other-events/2001-china-wto' },
+                ],
+            },
+            {
+                title: 'Case Study',
+                href: '/case-study',
+                children: [
+                    { title: 'Gold Flip', href: '/case-study/gold-flip' },
+                    { title: 'Oil Flip', href: '/case-study/oil-flip' },
+                    { title: 'Japan', href: '/case-study/japan' },
                 ],
             },
 

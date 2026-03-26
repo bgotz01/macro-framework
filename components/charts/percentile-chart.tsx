@@ -70,17 +70,23 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'pe2yr', label: 'P/E-2yr', color: '#be123c', category: 'Equity Valuation' },
     { value: 'eycape', label: 'EY CAPE', color: '#db2777', category: 'Equity Valuation' },
     { value: 'ey5yr', label: 'EY-5yr', color: '#fb7185', category: 'Equity Valuation' },
+    { value: 'ey2yr', label: 'EY-2yr', color: '#14b8a6', category: 'Equity Valuation' },
     // Equity Spreads
     { value: 'eyp5yr', label: 'EYP-5yr', color: '#a78bfa', category: 'Equity Spreads' },
+    { value: 'eyp2yr', label: 'EYP-2yr', color: '#f59e0b', category: 'Equity Spreads' },
     { value: 'rey5yr', label: 'Real EY-5yr', color: '#0d9488', category: 'Equity Spreads' },
+    { value: 'rey2yr', label: 'Real EY-2yr', color: '#ea580c', category: 'Equity Spreads' },
 ];
 
 const METRIC_TOOLTIPS: Record<string, string> = {
     'eyp': 'EYP (CAPE) = Earnings Yield Premium using CAPE. Calculated as (1/CAPE) - 3M Treasury Rate. Measures equity risk premium over cash.',
     'eyp5yr': 'EYP-5yr = Earnings Yield Premium using 5-year P/E. Calculated as (1/P/E-5yr) - 3M Treasury Rate. Measures equity risk premium over cash using 5-year average earnings.',
+    'eyp2yr': 'EYP-2yr = Earnings Yield Premium using 2-year P/E. Calculated as (1/P/E-2yr) - 3M Treasury Rate. Measures equity risk premium over cash using 2-year average earnings.',
     'eycape': 'Earnings Yield CAPE = 1 / Shiller P/E. The inverse of CAPE, representing expected earnings yield using inflation-adjusted 10-year average earnings.',
     'ey5yr': 'Earnings Yield 5yr = 1 / P/E-5yr. The inverse of P/E-5yr, representing expected earnings yield using 5-year average earnings.',
+    'ey2yr': 'Earnings Yield 2yr = 1 / P/E-2yr. The inverse of P/E-2yr, representing expected earnings yield using 2-year average earnings.',
     'rey5yr': 'Real Earnings Yield 5yr = (1 / P/E-5yr) - CPI Inflation. Measures real return potential using 5-year average earnings.',
+    'rey2yr': 'Real Earnings Yield 2yr = (1 / P/E-2yr) - CPI Inflation. Measures real return potential using 2-year average earnings.',
 };
 
 const DATE_PRESETS: Array<
@@ -611,6 +617,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                     <p><strong>Note:</strong> EYP = Earnings Yield Premium = Earnings Yield - 3M Treasury Rate</p>
                     <p>• EYP (CAPE) uses earnings yield from CAPE (1/CAPE - 3M)</p>
                     <p>• EYP-5yr uses earnings yield from P/E-5yr (1/P/E-5yr - 3M)</p>
+                    <p>• EY-2yr = 1 / P/E-2yr (earnings yield using 2-year average earnings)</p>
                     <p>• P/E-1yr (TTM) = Price / trailing twelve months EPS (no smoothing)</p>
                     <p>• P/E-2yr = Price / 24-month rolling average of TTM EPS</p>
                     <p>• P/E-5yr = Price / 60-month rolling average of TTM EPS</p>

@@ -49,9 +49,9 @@ export async function GET(request: NextRequest) {
                     MAX(CASE WHEN series_name = 'Yield-Curve' THEN value END) as yieldcurve_value,
                     MAX(CASE WHEN series_name = 'Yield-Curve' THEN percentile_rank END) as yieldcurve_percentile,
                     MAX(CASE WHEN series_name = 'Yield-Curve' THEN yoy_percentile_change END) as yieldcurve_yoy,
-                    MAX(CASE WHEN series_name = 'Yield-Curve-3M' THEN value END) as yieldcurve3m_value,
-                    MAX(CASE WHEN series_name = 'Yield-Curve-3M' THEN percentile_rank END) as yieldcurve3m_percentile,
-                    MAX(CASE WHEN series_name = 'Yield-Curve-3M' THEN yoy_percentile_change END) as yieldcurve3m_yoy,
+                    MAX(CASE WHEN series_name = 'Yield-Curve-10Y-3M' THEN value END) as yieldcurve3m_value,
+                    MAX(CASE WHEN series_name = 'Yield-Curve-10Y-3M' THEN percentile_rank END) as yieldcurve3m_percentile,
+                    MAX(CASE WHEN series_name = 'Yield-Curve-10Y-3M' THEN yoy_percentile_change END) as yieldcurve3m_yoy,
                     MAX(CASE WHEN series_name = 'Shiller-PE' THEN value END) as shillerpe_value,
                     MAX(CASE WHEN series_name = 'Shiller-PE' THEN percentile_rank END) as shillerpe_percentile,
                     MAX(CASE WHEN series_name = 'Shiller-PE' THEN yoy_percentile_change END) as shillerpe_yoy,
@@ -70,12 +70,21 @@ export async function GET(request: NextRequest) {
                     MAX(CASE WHEN series_name = 'Earnings-Yield-5yr' THEN value END) as ey5yr_value,
                     MAX(CASE WHEN series_name = 'Earnings-Yield-5yr' THEN percentile_rank END) as ey5yr_percentile,
                     MAX(CASE WHEN series_name = 'Earnings-Yield-5yr' THEN yoy_percentile_change END) as ey5yr_yoy,
+                    MAX(CASE WHEN series_name = 'Earnings-Yield-2yr' THEN value END) as ey2yr_value,
+                    MAX(CASE WHEN series_name = 'Earnings-Yield-2yr' THEN percentile_rank END) as ey2yr_percentile,
+                    MAX(CASE WHEN series_name = 'Earnings-Yield-2yr' THEN yoy_percentile_change END) as ey2yr_yoy,
+                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-2yr' THEN value END) as eyp2yr_value,
+                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-2yr' THEN percentile_rank END) as eyp2yr_percentile,
+                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-2yr' THEN yoy_percentile_change END) as eyp2yr_yoy,
                     MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-5yr' THEN value END) as eyp5yr_value,
                     MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-5yr' THEN percentile_rank END) as eyp5yr_percentile,
                     MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-5yr' THEN yoy_percentile_change END) as eyp5yr_yoy,
                     MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN value END) as rey5yr_value,
                     MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN percentile_rank END) as rey5yr_percentile,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN yoy_percentile_change END) as rey5yr_yoy
+                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN yoy_percentile_change END) as rey5yr_yoy,
+                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-2yr' THEN value END) as rey2yr_value,
+                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-2yr' THEN percentile_rank END) as rey2yr_percentile,
+                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-2yr' THEN yoy_percentile_change END) as rey2yr_yoy
                 FROM percentile_analysis
                 GROUP BY date
                 ORDER BY date ASC

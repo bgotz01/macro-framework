@@ -93,6 +93,9 @@ export async function GET(request: NextRequest) {
         db.close();
 
         // Get ALL price data from PostgreSQL (not paginated yet)
+        // IMPORTANT: Price returns use historical_prices (split-adjusted prices).
+        // Market cap uses stock_snapshot (actual values, unaffected by splits).
+        // Never derive market cap from historical_prices — split-adjusted prices × shares = wrong.
         const allSymbols = allConstituents.map(c => c.symbol);
 
         const priceData = await prisma.$queryRaw<any[]>`

@@ -84,6 +84,17 @@ The historical view reconstructs the index by:
 - `data/SP500/SP500.csv` - Current constituents
 - `data/SP500/SP500Changes.csv` - Historical changes
 
+## PostgreSQL Tables (Price & Market Cap)
+
+### `historical_prices`
+Daily OHLCV data for all S&P 500 stocks. Prices are **split-adjusted** (sourced from Yahoo Finance `history()`). After a stock split, all historical prices are retroactively divided. Use this table for **price return calculations only**.
+
+### `stock_snapshot`
+Daily price and market cap snapshots. The `marketCap` column is the **actual market cap at that date** (not retroactively adjusted). Splits do not affect market cap (price halves but shares double). Use this table for **market cap comparisons and MCap Δ calculations**.
+
+### ⚠️ Split Safety Rule
+**Never derive market cap from `historical_prices`** (e.g. by multiplying split-adjusted close × shares outstanding). This will produce incorrect values for any stock that has split. Always use `stock_snapshot.marketCap` for market cap data.
+
 ## Analytics Available
 
 1. **Sector Composition** - Distribution across 11 GICS sectors
