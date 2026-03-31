@@ -39,6 +39,7 @@ export default function RegimeParameters() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showInputVariables, setShowInputVariables] = useState(true);
+    const [showClassification, setShowClassification] = useState(false);
 
     // Debounce slider value to prevent excessive API calls
     useEffect(() => {
@@ -390,12 +391,27 @@ export default function RegimeParameters() {
                         </div>
 
                         {/* Regime Classification Section */}
-                        <RegimeClassification
-                            data={data}
-                            liquidityRegime={liquidityRegime}
-                            valuationRegime={valuationRegime}
-                            flowTrendState={flowTrendState}
-                        />
+                        <div>
+                            <button
+                                onClick={() => setShowClassification(!showClassification)}
+                                className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                            >
+                                <span>Regime Classification</span>
+                                <svg
+                                    className={`w-4 h-4 transition-transform ${showClassification ? 'rotate-180' : ''}`}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showClassification && (
+                                <RegimeClassification
+                                    data={data}
+                                    liquidityRegime={liquidityRegime}
+                                    valuationRegime={valuationRegime}
+                                    flowTrendState={flowTrendState}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
 

@@ -172,7 +172,8 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
     const CustomTooltip = ({ active, payload }: any) => {
         if (!active || !payload?.length) return null;
         const d = payload[0].payload as DataPoint;
-        const date = new Date(d.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        const [y, m, dy] = d.date.split('-').map(Number);
+        const date = new Date(y, m - 1, dy).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         return (
             <div className="bg-background border-2 border-border rounded-lg p-3 shadow-lg text-sm space-y-1">
                 <p className="font-semibold">{date}</p>
@@ -260,7 +261,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                                 {latest.trend_pressure_score?.toFixed(1)}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                {new Date(latest.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                {(() => { const [y, m, d] = latest.date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
                             </div>
                         </div>
                     )}

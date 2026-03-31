@@ -114,7 +114,14 @@ export default function StocksTable({
         <div className="bg-card border border-border/50 rounded-2xl shadow-sm">
             <div className="p-6 border-b border-border space-y-4">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold">Stock Listings</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-bold">Stock Listings</h2>
+                        {sortedStocks.length > 0 && sortedStocks[0].latest_date && (
+                            <span className="text-sm text-muted-foreground">
+                                as of {(() => { const [y, m, d] = sortedStocks[0].latest_date.split('T')[0].split('-'); return new Date(+y, +m - 1, +d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
+                            </span>
+                        )}
+                    </div>
                     {pagination?.total > 0 && (
                         <div className="text-sm text-muted-foreground">
                             Showing {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}

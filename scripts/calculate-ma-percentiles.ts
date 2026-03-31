@@ -12,59 +12,69 @@ interface DataPoint {
 function calculatePercentilesForSeries(assetClass: string, seriesName: string) {
     console.log(`\nCalculating percentiles for ${seriesName}...`);
 
-    // Load all data for this series
-    const data = db.prepare(`
+    // Find the latest date already computed
+    const latestRow = db.prepare(`
+        SELECT MAX(date) as max_date FROM percentile_analysis
+        WHERE asset_class = ? AND series_name = ? AND percentile_rank IS NOT NULL
+    `).get(assetClass, seriesName) as { max_date: string | null };
+
+    const latestComputed = latestRow?.max_date;
+
+    // Load ALL data (needed for correct percentile ranking)
+    const allData = db.prepare(`
         SELECT date, value
         FROM time_series
         WHERE asset_class = ? AND series_name = ?
         ORDER BY date ASC
     `).all(assetClass, seriesName) as DataPoint[];
 
-    if (data.length === 0) {
-        console.log(`No data found for ${seriesName}`);
+    if (allData.length === 0) {
+        console.log(`  No data found`);
         return;
     }
 
-    console.log(`Loaded ${data.length} data points`);
+    // Determine which dates are new
+    const newData = latestComputed
+        ? allData.filter(d => d.date > latestComputed)
+        : allData;
 
-    // Sort by value to calculate percentiles
-    const sortedByValue = [...data].sort((a, b) => a.value - b.value);
+    if (newData.length === 0) {
+        console.log(`  ✓ Already up to date`);
+        return;
+    }
 
-    // Delete existing percentiles
-    db.prepare(`
-        DELETE FROM percentile_analysis 
-        WHERE asset_class = ? AND series_name = ?
-    `).run(assetClass, seriesName);
+    if (latestComputed) {
+        console.log(`  Incremental: ${newData.length} new rows since ${latestComputed}`);
+    } else {
+        console.log(`  Full run: ${allData.length} rows`);
+    }
 
-    // Insert percentiles
+    // Sort full dataset by value for percentile ranking
+    const sortedByValue = [...allData].sort((a, b) => a.value - b.value);
+
+    // Build a rank map: for each data point, its position in the sorted array
+    // Using a Map keyed by date for O(1) lookup
+    const rankMap = new Map<string, number>();
+    for (let i = 0; i < sortedByValue.length; i++) {
+        rankMap.set(sortedByValue[i].date, i);
+    }
+
+    const totalCount = sortedByValue.length - 1;
+
     const insertStmt = db.prepare(`
-        INSERT INTO percentile_analysis (asset_class, series_name, date, column_name, value, percentile_rank)
+        INSERT OR REPLACE INTO percentile_analysis (asset_class, series_name, date, column_name, value, percentile_rank)
         VALUES (?, ?, ?, 'value', ?, ?)
     `);
 
-    const insertPercentiles = db.transaction((data: DataPoint[]) => {
-        for (const point of data) {
-            // Find percentile rank
-            const rank = sortedByValue.findIndex(p => p.date === point.date && p.value === point.value);
-            const percentile = (rank / (sortedByValue.length - 1)) * 100;
-
+    db.transaction(() => {
+        for (const point of newData) {
+            const rank = rankMap.get(point.date) ?? 0;
+            const percentile = totalCount > 0 ? (rank / totalCount) * 100 : 0;
             insertStmt.run(assetClass, seriesName, point.date, point.value, percentile);
         }
-    });
+    })();
 
-    insertPercentiles(data);
-
-    console.log(`Saved ${data.length} percentile values for ${seriesName}`);
-
-    // Show some statistics
-    const minValue = sortedByValue[0].value;
-    const maxValue = sortedByValue[sortedByValue.length - 1].value;
-    const medianValue = sortedByValue[Math.floor(sortedByValue.length / 2)].value;
-
-    console.log(`Statistics for ${seriesName}:`);
-    console.log(`  Min: ${minValue.toFixed(4)}`);
-    console.log(`  Median: ${medianValue.toFixed(4)}`);
-    console.log(`  Max: ${maxValue.toFixed(4)}`);
+    console.log(`  ✓ Inserted ${newData.length} percentile values`);
 }
 
 // List of all MA-related series to calculate percentiles for
@@ -73,17 +83,14 @@ const series = [
     { assetClass: 'derived', seriesName: 'SP500-MA50' },
     { assetClass: 'derived', seriesName: 'SP500-MA200' },
     { assetClass: 'derived', seriesName: 'SP500-MA500' },
-
     // Divergences
     { assetClass: 'derived', seriesName: 'SP500-50MA-Div' },
     { assetClass: 'derived', seriesName: 'SP500-200MA-Div' },
     { assetClass: 'derived', seriesName: 'SP500-500MA-Div' },
-
     // Slopes
     { assetClass: 'derived', seriesName: 'SP500-50MA-Slope' },
     { assetClass: 'derived', seriesName: 'SP500-200MA-Slope' },
     { assetClass: 'derived', seriesName: 'SP500-500MA-Slope' },
-
     // Streaks
     { assetClass: 'derived', seriesName: 'SP500-50MA-SlopeStreak' },
     { assetClass: 'derived', seriesName: 'SP500-200MA-SlopeStreak' },
@@ -93,13 +100,12 @@ const series = [
     { assetClass: 'derived', seriesName: 'SP500-500MA-PriceAboveStreak' }
 ];
 
-console.log('Starting MA percentile calculation...');
+console.log('Starting incremental MA percentile calculation...');
 
 try {
     for (const s of series) {
         calculatePercentilesForSeries(s.assetClass, s.seriesName);
     }
-
     console.log('\n✅ All MA percentiles calculated successfully!');
 } catch (error) {
     console.error('Error calculating MA percentiles:', error);

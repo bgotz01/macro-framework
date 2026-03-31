@@ -13,9 +13,27 @@ function main() {
     const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
     const db = new Database(dbPath);
 
-    console.log('Fetching SP500 price and MA data...');
+    console.log('Starting incremental SP500 MA divergence calculation...');
 
-    // Get all SP500 price data with MAs
+    // Find the latest date already computed (use 200MA-Div as reference)
+    const latestRow = db.prepare(`
+        SELECT MAX(date) as max_date FROM time_series
+        WHERE asset_class = 'derived' AND series_name = 'SP500-200MA-Div'
+    `).get() as { max_date: string | null };
+
+    const latestComputed = latestRow?.max_date;
+
+    // Build query — full history if no prior data, otherwise only new dates
+    let whereClause = '';
+    const params: string[] = [];
+    if (latestComputed) {
+        whereClause = 'AND p.date > ?';
+        params.push(latestComputed);
+        console.log(`Incremental: processing dates after ${latestComputed}`);
+    } else {
+        console.log('Full run: no existing data');
+    }
+
     const data = db.prepare(`
         SELECT 
             p.date,
@@ -30,20 +48,21 @@ function main() {
         WHERE p.asset_class = 'equities' 
         AND p.series_name = 'US/GSPC'
         AND p.column_name = 'Value'
+        ${whereClause}
         ORDER BY p.date ASC
-    `).all() as PriceRow[];
-
-    console.log(`Found ${data.length} price records`);
+    `).all(...params) as PriceRow[];
 
     if (data.length === 0) {
-        console.error('No SP500 price data found!');
-        process.exit(1);
+        console.log('✓ Already up to date');
+        db.close();
+        return;
     }
+
+    console.log(`Found ${data.length} new price records to process`);
 
     // Calculate divergences
     const divergences = data.map(row => {
         if (!row.price) return null;
-
         return {
             date: row.date,
             div50: row.ma50 ? ((row.price - row.ma50) / row.ma50) * 100 : null,
@@ -54,7 +73,6 @@ function main() {
 
     console.log(`Calculated ${divergences.length} divergence records`);
 
-    // Prepare insert statements
     const insertTimeSeries = db.prepare(`
         INSERT OR REPLACE INTO time_series (date, asset_class, series_name, column_name, value)
         VALUES (?, ?, ?, ?, ?)
@@ -65,83 +83,43 @@ function main() {
         VALUES (?, ?, ?, ?, ?, NULL)
     `);
 
-    // Insert divergences
-    console.log('Inserting 50MA divergence...');
-    db.transaction(() => {
+    const inserted = db.transaction(() => {
+        let count = 0;
         for (const d of divergences) {
             if (d.div50 !== null) {
                 insertTimeSeries.run(d.date, 'derived', 'SP500-50MA-Div', 'value', d.div50);
                 insertPercentile.run(d.date, 'derived', 'SP500-50MA-Div', 'value', d.div50);
+                count++;
             }
-        }
-    })();
-
-    console.log('Inserting 200MA divergence...');
-    db.transaction(() => {
-        for (const d of divergences) {
             if (d.div200 !== null) {
                 insertTimeSeries.run(d.date, 'derived', 'SP500-200MA-Div', 'value', d.div200);
                 insertPercentile.run(d.date, 'derived', 'SP500-200MA-Div', 'value', d.div200);
+                count++;
             }
-        }
-    })();
-
-    console.log('Inserting 500MA divergence...');
-    db.transaction(() => {
-        for (const d of divergences) {
             if (d.div500 !== null) {
                 insertTimeSeries.run(d.date, 'derived', 'SP500-500MA-Div', 'value', d.div500);
                 insertPercentile.run(d.date, 'derived', 'SP500-500MA-Div', 'value', d.div500);
+                count++;
             }
         }
+        return count;
     })();
 
     // Update metadata
-    console.log('Updating metadata...');
     const upsertMetadata = db.prepare(`
         INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, description, source, last_updated, units)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-
     const now = Math.floor(Date.now() / 1000);
 
-    upsertMetadata.run(
-        'derived',
-        'SP500-50MA-Div',
-        'S&P 500 50MA Divergence',
-        'Price divergence from 50-day moving average as percentage',
-        'Calculated from SP500-Price and SP500-MA50',
-        now,
-        '%'
-    );
+    upsertMetadata.run('derived', 'SP500-50MA-Div', 'S&P 500 50MA Divergence', 'Price divergence from 50-day moving average as percentage', 'Calculated from SP500-Price and SP500-MA50', now, '%');
+    upsertMetadata.run('derived', 'SP500-200MA-Div', 'S&P 500 200MA Divergence', 'Price divergence from 200-day moving average as percentage', 'Calculated from SP500-Price and SP500-MA200', now, '%');
+    upsertMetadata.run('derived', 'SP500-500MA-Div', 'S&P 500 500MA Divergence', 'Price divergence from 500-day moving average as percentage', 'Calculated from SP500-Price and SP500-MA500', now, '%');
 
-    upsertMetadata.run(
-        'derived',
-        'SP500-200MA-Div',
-        'S&P 500 200MA Divergence',
-        'Price divergence from 200-day moving average as percentage',
-        'Calculated from SP500-Price and SP500-MA200',
-        now,
-        '%'
-    );
-
-    upsertMetadata.run(
-        'derived',
-        'SP500-500MA-Div',
-        'S&P 500 500MA Divergence',
-        'Price divergence from 500-day moving average as percentage',
-        'Calculated from SP500-Price and SP500-MA500',
-        now,
-        '%'
-    );
-
-    console.log('\nSummary:');
-    console.log(`- 50MA Divergence: ${divergences.filter(d => d.div50 !== null).length} records`);
-    console.log(`- 200MA Divergence: ${divergences.filter(d => d.div200 !== null).length} records`);
-    console.log(`- 500MA Divergence: ${divergences.filter(d => d.div500 !== null).length} records`);
+    console.log(`✓ Inserted ${inserted} divergence values`);
 
     db.close();
-    console.log('\nDone!');
+    console.log('Done!');
 }
 
 main();

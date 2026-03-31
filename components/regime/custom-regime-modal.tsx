@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface CustomThresholds {
     deepValue: { entry: number; exit: number };
@@ -34,6 +34,17 @@ interface Props {
 function ThresholdRow({ label, value, onChange, suffix = '%' }: {
     label: string; value: number; onChange: (v: number) => void; suffix?: string;
 }) {
+    const [localValue, setLocalValue] = useState<string>(String(value));
+
+    useEffect(() => {
+        setLocalValue(String(value));
+    }, [value]);
+
+    const commit = () => {
+        const parsed = parseFloat(localValue);
+        onChange(isNaN(parsed) ? 0 : parsed);
+    };
+
     return (
         <div className="flex items-center justify-between gap-3">
             <label className="text-xs text-muted-foreground whitespace-nowrap">{label}</label>
@@ -41,8 +52,9 @@ function ThresholdRow({ label, value, onChange, suffix = '%' }: {
                 <input
                     type="number"
                     step="0.25"
-                    value={value}
-                    onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+                    value={localValue}
+                    onChange={(e) => setLocalValue(e.target.value)}
+                    onBlur={commit}
                     className="w-20 px-2 py-1 text-xs rounded border border-border bg-muted text-right focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <span className="text-xs text-muted-foreground w-4">{suffix}</span>

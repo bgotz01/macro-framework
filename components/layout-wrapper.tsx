@@ -25,7 +25,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
                 />
 
                 {/* Main content */}
-                <main className="flex-1 transition-all duration-300">
+                <main className="flex-1 min-w-0 transition-all duration-300">
                     {/* Mobile sidebar toggle */}
                     <div className="lg:hidden p-6">
                         <button

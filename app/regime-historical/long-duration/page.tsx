@@ -22,6 +22,9 @@ export default function LongDurationPage() {
                 <p className="text-sm font-light text-muted-foreground tracking-widest uppercase" style={{ letterSpacing: '0.2em' }}>
                     Long-Duration Regime Analysis
                 </p>
+                <p className="mt-4 text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left">
+                    In a long duration regime, high growth stocks (profitable or not) become the primary trade. The most obvious stocks had already been growing steadily and fit the macro narrative (AI in 2023+, China/commodities in 2005+, tech in 1995+).
+                </p>
             </div>
 
             <div className="flex justify-center gap-2 mb-12">

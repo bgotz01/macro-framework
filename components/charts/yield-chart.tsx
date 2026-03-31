@@ -108,7 +108,7 @@ export default function YieldChart({
                 setAvailableSeries(allSeries);
 
                 // Auto-select 10Y Treasury as default, fallback to first series
-                const default10Y = allSeries.find(s => s.series_name === 'US/TNX-Monthly');
+                const default10Y = allSeries.find(s => s.series_name === 'US/TNX') || allSeries.find(s => s.series_name === 'US/TNX-Monthly');
                 const defaultSeries = default10Y || allSeries[0];
 
                 if (defaultSeries) {
@@ -418,6 +418,11 @@ export default function YieldChart({
 
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
+            {data.length > 0 && (
+                <div className="mb-4 text-xs text-muted-foreground text-right">
+                    Latest data: {formatLatestDate(calculationMode === 'spread' ? spreadData : data)}
+                </div>
+            )}
             {/* Controls */}
             <div className="mb-6 space-y-4">
                 {/* Mode Selector */}

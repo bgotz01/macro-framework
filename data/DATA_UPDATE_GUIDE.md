@@ -15,10 +15,10 @@ python scripts/batch_update_all.py
 # 2. Import new data into database
 npx tsx scripts/import-data-incremental.ts
 
-# 3. Recalculate cyclical returns (for returns chart - 2Y, 5Y, 10Y returns)
+# 3. Calculate cyclical returns (for returns chart - 2Y, 5Y, 10Y returns)
 npx tsx scripts/add-cyclical-returns.ts
 
-# 4. Recalculate volatility metrics (for volatility chart - 63d, 126d, 252d, 504d)
+# 4. Calculate volatility metrics (for volatility chart - 63d, 126d, 252d, 504d)
 npx tsx scripts/add-volatility-metrics.ts
 
 # 5. Recalculate percentiles (optional, if needed)
@@ -26,6 +26,15 @@ npx tsx scripts/calculate-percentiles.ts
 
 # 6. Economic data
 npx tsx scripts/import-new-economic-data.ts
+
+
+# 6. Divergence
+npx tsx scripts/calculate-sp500-moving-averages.ts
+npx tsx scripts/calculate-sp500-ma-divergence.ts
+npx tsx scripts/calculate-sp500-ma-slope.ts
+npx tsx scripts/calculate-sp500-ma-stats.ts
+npx tsx scripts/calculate-ma-percentiles.ts
+
 ```
 
 

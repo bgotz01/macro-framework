@@ -82,10 +82,6 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime-active',
             },
             {
-                title: 'Regime Custom',
-                href: '/regime-custom',
-            },
-            {
                 title: 'Trend Pressure',
                 href: '/trend-pressure',
             },
@@ -184,7 +180,10 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Japan', href: '/case-study/japan' },
                 ],
             },
-
+            {
+                title: 'Content Ideas',
+                href: '/insights/content',
+            },
         ],
     },
     {

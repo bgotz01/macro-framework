@@ -40,11 +40,7 @@ export default function RegimeClassification({
 }: RegimeClassificationProps) {
     return (
         <div>
-            <div className="flex items-center justify-center pb-2 mb-4 border-b border-border">
-                <h3 className="text-base font-medium">
-                    Regime Classification
-                </h3>
-            </div>
+
 
             {/* Column Headers */}
             <div className="flex gap-4 mb-3">

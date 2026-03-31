@@ -12,199 +12,116 @@ interface DataPoint {
 function calculateMAStreaks(maPeriod: string) {
     console.log(`\nCalculating streaks for ${maPeriod}-day MA...`);
 
-    // Load S&P 500 price data
-    const priceData = db.prepare(`
-        SELECT date, value
-        FROM time_series
-        WHERE asset_class = 'equities' AND series_name = 'US/GSPC' AND column_name = 'Value'
-        ORDER BY date ASC
-    `).all() as DataPoint[];
-
-    // Load MA data
-    const maSeriesName = `SP500-MA${maPeriod}`;
-    const maData = db.prepare(`
-        SELECT date, value
-        FROM time_series
-        WHERE asset_class = 'derived' AND series_name = ?
-        ORDER BY date ASC
-    `).all(maSeriesName) as DataPoint[];
-
-    // Load slope data
+    const slopeStreakSeriesName = `SP500-${maPeriod}MA-SlopeStreak`;
+    const priceAboveStreakSeriesName = `SP500-${maPeriod}MA-PriceAboveStreak`;
     const slopeSeriesName = `SP500-${maPeriod}MA-Slope`;
-    const slopeData = db.prepare(`
-        SELECT date, value
-        FROM time_series
-        WHERE asset_class = 'derived' AND series_name = ?
-        ORDER BY date ASC
-    `).all(slopeSeriesName) as DataPoint[];
+    const maSeriesName = `SP500-MA${maPeriod}`;
+    const assetClass = 'derived';
 
-    console.log(`Loaded ${priceData.length} price points, ${maData.length} MA points, ${slopeData.length} slope points`);
+    // Find the latest date already computed
+    const latestRow = db.prepare(`
+        SELECT MAX(date) as max_date FROM time_series
+        WHERE asset_class = ? AND series_name = ?
+    `).get(assetClass, slopeStreakSeriesName) as { max_date: string | null };
 
-    // Create maps for quick lookup
-    const priceMap = new Map(priceData.map(p => [p.date, p.value]));
-    const maMap = new Map(maData.map(p => [p.date, p.value]));
-    const slopeMap = new Map(slopeData.map(p => [p.date, p.value]));
+    const latestComputed = latestRow?.max_date;
 
-    // Get all dates that have all three values
-    const allDates = Array.from(new Set([...priceMap.keys(), ...maMap.keys(), ...slopeMap.keys()]))
-        .filter(date => priceMap.has(date) && maMap.has(date) && slopeMap.has(date))
-        .sort();
-
-    console.log(`Found ${allDates.length} dates with complete data`);
-
-    // Calculate streaks
-    const streakData: Array<{
-        date: string;
-        slopeStreak: number;
-        priceAboveStreak: number;
-    }> = [];
-
+    // Load the last streak values to continue counting
     let currentSlopeStreak = 0;
     let currentPriceAboveStreak = 0;
 
-    for (const date of allDates) {
-        const slope = slopeMap.get(date)!;
-        const price = priceMap.get(date)!;
-        const ma = maMap.get(date)!;
+    if (latestComputed) {
+        const lastSlopeStreak = db.prepare(`
+            SELECT value FROM time_series
+            WHERE asset_class = ? AND series_name = ? AND date = ?
+        `).get(assetClass, slopeStreakSeriesName, latestComputed) as { value: number } | undefined;
 
-        // Calculate slope streak
-        if (slope > 0) {
-            // Positive slope
-            if (currentSlopeStreak >= 0) {
-                currentSlopeStreak++;
-            } else {
-                currentSlopeStreak = 1; // Reset to 1 when switching from negative to positive
-            }
-        } else if (slope < 0) {
-            // Negative slope
-            if (currentSlopeStreak <= 0) {
-                currentSlopeStreak--;
-            } else {
-                currentSlopeStreak = -1; // Reset to -1 when switching from positive to negative
-            }
-        } else {
-            // Slope is exactly 0 - keep current streak
-            // (or you could reset to 0 if you prefer)
-        }
+        const lastPriceStreak = db.prepare(`
+            SELECT value FROM time_series
+            WHERE asset_class = ? AND series_name = ? AND date = ?
+        `).get(assetClass, priceAboveStreakSeriesName, latestComputed) as { value: number } | undefined;
 
-        // Calculate price above MA streak
-        if (price > ma) {
-            // Price above MA
-            if (currentPriceAboveStreak >= 0) {
-                currentPriceAboveStreak++;
-            } else {
-                currentPriceAboveStreak = 1; // Reset to 1 when switching from below to above
-            }
-        } else if (price < ma) {
-            // Price below MA
-            if (currentPriceAboveStreak <= 0) {
-                currentPriceAboveStreak--;
-            } else {
-                currentPriceAboveStreak = -1; // Reset to -1 when switching from above to below
-            }
-        } else {
-            // Price exactly equals MA - keep current streak
-        }
+        currentSlopeStreak = lastSlopeStreak?.value ?? 0;
+        currentPriceAboveStreak = lastPriceStreak?.value ?? 0;
 
-        streakData.push({
-            date,
-            slopeStreak: currentSlopeStreak,
-            priceAboveStreak: currentPriceAboveStreak
-        });
+        console.log(`  Incremental: resuming from ${latestComputed} (slopeStreak=${currentSlopeStreak}, priceStreak=${currentPriceAboveStreak})`);
+    } else {
+        console.log('  Full run: no existing data');
     }
 
-    console.log(`Calculated ${streakData.length} streak values`);
+    // Load only new data (dates after latestComputed)
+    const dateFilter = latestComputed ? 'AND p.date > ?' : '';
+    const params: string[] = [maSeriesName, slopeSeriesName];
+    if (latestComputed) params.push(latestComputed);
 
-    // Save slope streak data
-    const slopeStreakSeriesName = `SP500-${maPeriod}MA-SlopeStreak`;
-    const assetClass = 'derived';
+    const rows = db.prepare(`
+        SELECT p.date, p.value as price, ma.value as ma, sl.value as slope
+        FROM time_series p
+        JOIN time_series ma ON p.date = ma.date AND ma.asset_class = 'derived' AND ma.series_name = ?
+        JOIN time_series sl ON p.date = sl.date AND sl.asset_class = 'derived' AND sl.series_name = ?
+        WHERE p.asset_class = 'equities' AND p.series_name = 'US/GSPC' AND p.column_name = 'Value'
+        ${dateFilter}
+        ORDER BY p.date ASC
+    `).all(...params) as Array<{ date: string; price: number; ma: number; slope: number }>;
 
-    db.prepare(`
-        DELETE FROM time_series 
-        WHERE asset_class = ? AND series_name = ?
-    `).run(assetClass, slopeStreakSeriesName);
+    if (rows.length === 0) {
+        console.log('  ✓ Already up to date');
+        return;
+    }
 
-    const insertStmt1 = db.prepare(`
-        INSERT INTO time_series (asset_class, series_name, date, column_name, value)
+    console.log(`  Processing ${rows.length} new dates`);
+
+    const streakData: Array<{ date: string; slopeStreak: number; priceAboveStreak: number }> = [];
+
+    for (const row of rows) {
+        // Slope streak
+        if (row.slope > 0) {
+            currentSlopeStreak = currentSlopeStreak >= 0 ? currentSlopeStreak + 1 : 1;
+        } else if (row.slope < 0) {
+            currentSlopeStreak = currentSlopeStreak <= 0 ? currentSlopeStreak - 1 : -1;
+        }
+
+        // Price above MA streak
+        if (row.price > row.ma) {
+            currentPriceAboveStreak = currentPriceAboveStreak >= 0 ? currentPriceAboveStreak + 1 : 1;
+        } else if (row.price < row.ma) {
+            currentPriceAboveStreak = currentPriceAboveStreak <= 0 ? currentPriceAboveStreak - 1 : -1;
+        }
+
+        streakData.push({ date: row.date, slopeStreak: currentSlopeStreak, priceAboveStreak: currentPriceAboveStreak });
+    }
+
+    const insertStmt = db.prepare(`
+        INSERT OR REPLACE INTO time_series (asset_class, series_name, date, column_name, value)
         VALUES (?, ?, ?, 'value', ?)
     `);
 
-    const insertSlopeStreak = db.transaction((data: typeof streakData) => {
-        for (const point of data) {
-            insertStmt1.run(assetClass, slopeStreakSeriesName, point.date, point.slopeStreak);
+    db.transaction(() => {
+        for (const point of streakData) {
+            insertStmt.run(assetClass, slopeStreakSeriesName, point.date, point.slopeStreak);
+            insertStmt.run(assetClass, priceAboveStreakSeriesName, point.date, point.priceAboveStreak);
         }
-    });
-
-    insertSlopeStreak(streakData);
+    })();
 
     db.prepare(`
         INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, units, description)
         VALUES (?, ?, ?, ?, ?)
-    `).run(
-        assetClass,
-        slopeStreakSeriesName,
-        `${maPeriod}-Day MA Slope Streak`,
-        'days',
-        `Consecutive days with positive (>0) or negative (<0) slope for ${maPeriod}-day MA`
-    );
-
-    console.log(`Saved ${streakData.length} values to ${slopeStreakSeriesName}`);
-
-    // Save price above MA streak data
-    const priceAboveStreakSeriesName = `SP500-${maPeriod}MA-PriceAboveStreak`;
-
-    db.prepare(`
-        DELETE FROM time_series 
-        WHERE asset_class = ? AND series_name = ?
-    `).run(assetClass, priceAboveStreakSeriesName);
-
-    const insertStmt2 = db.prepare(`
-        INSERT INTO time_series (asset_class, series_name, date, column_name, value)
-        VALUES (?, ?, ?, 'value', ?)
-    `);
-
-    const insertPriceAboveStreak = db.transaction((data: typeof streakData) => {
-        for (const point of data) {
-            insertStmt2.run(assetClass, priceAboveStreakSeriesName, point.date, point.priceAboveStreak);
-        }
-    });
-
-    insertPriceAboveStreak(streakData);
+    `).run(assetClass, slopeStreakSeriesName, `${maPeriod}-Day MA Slope Streak`, 'days', `Consecutive days with positive or negative slope for ${maPeriod}-day MA`);
 
     db.prepare(`
         INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, units, description)
         VALUES (?, ?, ?, ?, ?)
-    `).run(
-        assetClass,
-        priceAboveStreakSeriesName,
-        `Price vs ${maPeriod}-Day MA Streak`,
-        'days',
-        `Consecutive days with price above (>0) or below (<0) the ${maPeriod}-day MA`
-    );
+    `).run(assetClass, priceAboveStreakSeriesName, `Price vs ${maPeriod}-Day MA Streak`, 'days', `Consecutive days with price above or below the ${maPeriod}-day MA`);
 
-    console.log(`Saved ${streakData.length} values to ${priceAboveStreakSeriesName}`);
-
-    // Show some statistics
-    const maxPositiveSlopeStreak = Math.max(...streakData.map(p => p.slopeStreak));
-    const maxNegativeSlopeStreak = Math.min(...streakData.map(p => p.slopeStreak));
-    const maxPositivePriceStreak = Math.max(...streakData.map(p => p.priceAboveStreak));
-    const maxNegativePriceStreak = Math.min(...streakData.map(p => p.priceAboveStreak));
-
-    console.log(`Statistics for ${maPeriod}-day MA streaks:`);
-    console.log(`  Max positive slope streak: ${maxPositiveSlopeStreak} days`);
-    console.log(`  Max negative slope streak: ${maxNegativeSlopeStreak} days`);
-    console.log(`  Max price above MA streak: ${maxPositivePriceStreak} days`);
-    console.log(`  Max price below MA streak: ${maxNegativePriceStreak} days`);
+    console.log(`  ✓ Inserted ${streakData.length} streak values`);
 }
 
-// Calculate streaks for all three MAs
-console.log('Starting MA streak calculation...');
+console.log('Starting incremental MA streak calculation...');
 
 try {
     calculateMAStreaks('50');
     calculateMAStreaks('200');
     calculateMAStreaks('500');
-
     console.log('\n✅ All MA streaks calculated successfully!');
 } catch (error) {
     console.error('Error calculating MA streaks:', error);

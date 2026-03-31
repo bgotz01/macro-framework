@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { calculateFlowTrendState } from '@/lib/regime-config/flow-trend-config';
 import { REGIME_METADATA, type RegimeFamily } from '@/lib/regime-state-machine';
-import { buildCustomTriggers, determineCustomRegime } from '@/lib/custom-regime-engine';
 import CustomRegimeModal, { DEFAULT_THRESHOLDS, type CustomThresholds } from './custom-regime-modal';
 import RegimeModal from './regime-modal';
 import TimelineSlider from './regime-timeline-slider';
@@ -48,8 +47,11 @@ export default function CustomRegimeParameters() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showInputVariables, setShowInputVariables] = useState(true);
+    const [showClassification, setShowClassification] = useState(false);
     const [thresholds, setThresholds] = useState<CustomThresholds>({ ...DEFAULT_THRESHOLDS });
     const [yieldCurveInversion, setYieldCurveInversion] = useState<any>(null);
+    const [showApplied, setShowApplied] = useState(false);
+    const [regimeState, setRegimeState] = useState<any>(null);
 
     // Load saved thresholds on mount
     useEffect(() => {
@@ -67,6 +69,8 @@ export default function CustomRegimeParameters() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(t),
         }).catch(() => { });
+        setShowApplied(true);
+        setTimeout(() => setShowApplied(false), 3000);
     };
 
     // Debounce slider
@@ -98,9 +102,14 @@ export default function CustomRegimeParameters() {
                     ? 'latest'
                     : `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
 
-                const [regimeDataResponse, yieldCurveInversionResponse] = await Promise.all([
+                const [regimeDataResponse, yieldCurveInversionResponse, customRegimeResponse] = await Promise.all([
                     fetch(`/api/regime-data?date=${dateParam}`),
-                    fetch(`/api/yield-curve-inversion?date=${dateParam}`)
+                    fetch(`/api/yield-curve-inversion?date=${dateParam}`),
+                    fetch('/api/custom-regime-state', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ thresholds, targetDate: dateParam }),
+                    })
                 ]);
 
                 if (!regimeDataResponse.ok) throw new Error('Failed to fetch regime data');
@@ -127,6 +136,10 @@ export default function CustomRegimeParameters() {
                 };
                 setData(regimeData);
 
+                if (customRegimeResponse.ok) {
+                    setRegimeState(await customRegimeResponse.json());
+                }
+
                 if (yieldCurveInversionResponse.ok) {
                     setYieldCurveInversion(await yieldCurveInversionResponse.json());
                 }
@@ -138,7 +151,7 @@ export default function CustomRegimeParameters() {
             }
         };
         fetchData();
-    }, [debouncedSliderValue, totalMonths]);
+    }, [debouncedSliderValue, totalMonths, thresholds]);
 
     // Check if thresholds differ from defaults
     const isCustom = JSON.stringify(thresholds) !== JSON.stringify(DEFAULT_THRESHOLDS);
@@ -198,8 +211,10 @@ export default function CustomRegimeParameters() {
         slope200MA: data.slope200MA.value
     };
 
-    const customTriggers = buildCustomTriggers(thresholds);
-    const customRegimeState = determineCustomRegime(null, conditions, displayDate, customTriggers);
+    // Use server-side regime state (walks full timeline with custom thresholds)
+    const customRegimeState = regimeState
+        ? { regime: regimeState.regime as RegimeFamily, entryDate: regimeState.entryDate, triggerReason: regimeState.triggerReason }
+        : { regime: 'Normal' as RegimeFamily, entryDate: displayDate, triggerReason: 'Loading...' };
 
     const regimeMetadata = REGIME_METADATA[customRegimeState.regime as RegimeFamily];
 
@@ -210,7 +225,7 @@ export default function CustomRegimeParameters() {
         regime: customRegimeState.regime,
         entryDate: customRegimeState.entryDate,
         currentDate: displayDate,
-        daysInRegime: 0,
+        daysInRegime: regimeState?.daysInRegime ?? 0,
         triggerReason: customRegimeState.triggerReason,
         conditions: {
             real3M: data.real3M.value,
@@ -257,6 +272,14 @@ export default function CustomRegimeParameters() {
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
                         Custom thresholds active
+                    </div>
+                )}
+                {showApplied && (
+                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium animate-fade-in">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Engine recalculated with new thresholds
                     </div>
                 )}
             </div>
@@ -322,12 +345,26 @@ export default function CustomRegimeParameters() {
                             )}
                         </div>
 
-                        <RegimeClassification
-                            data={data}
-                            liquidityRegime={liquidityRegime}
-                            valuationRegime={valuationRegime}
-                            flowTrendState={flowTrendState}
-                        />
+                        <div>
+                            <button
+                                onClick={() => setShowClassification(!showClassification)}
+                                className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                            >
+                                <span>Regime Classification</span>
+                                <svg className={`w-4 h-4 transition-transform ${showClassification ? 'rotate-180' : ''}`}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {showClassification && (
+                                <RegimeClassification
+                                    data={data}
+                                    liquidityRegime={liquidityRegime}
+                                    valuationRegime={valuationRegime}
+                                    flowTrendState={flowTrendState}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
 

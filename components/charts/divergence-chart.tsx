@@ -435,8 +435,8 @@ export default function DivergenceChart({
                             stroke={textColor}
                             tick={{ fill: textColor, fontSize: 12 }}
                             tickFormatter={(value) => {
-                                const date = new Date(value);
-                                return date.getFullYear().toString();
+                                const [y, m, d] = value.split('-').map(Number);
+                                return new Date(y, m - 1, d).getFullYear().toString();
                             }}
                             ticks={generateYearlyTicks(chartData)}
                         />
@@ -465,6 +465,10 @@ export default function DivergenceChart({
                                 color: isDark ? '#f9fafb' : '#1f2937'
                             }}
                             labelStyle={{ color: textColor }}
+                            labelFormatter={(label: any) => {
+                                const [y, m, d] = String(label).split('-').map(Number);
+                                return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                            }}
                             formatter={(value: any, name?: string) => {
                                 if (viewMode === 'percentile') {
                                     return `${Number(value).toFixed(1)}%`;
@@ -623,7 +627,7 @@ export default function DivergenceChart({
             {/* Latest Date */}
             {latestDate && (
                 <div className="mb-4 text-xs text-muted-foreground text-right">
-                    Latest data: {latestDate}
+                    Latest data: {(() => { const [y, m, d] = latestDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
                 </div>
             )}
             {/* Controls */}

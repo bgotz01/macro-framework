@@ -215,11 +215,14 @@ export default function CyclicalReturns({
                     <p className="text-sm text-muted-foreground">Rolling returns over time (percentage)</p>
                     {returnsData.length > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                            Latest data: {new Date(returnsData[returnsData.length - 1].date).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            })}
+                            Latest data: {(() => {
+                                const [y, m, d] = returnsData[returnsData.length - 1].date.split('-').map(Number);
+                                return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                });
+                            })()}
                         </p>
                     )}
                 </div>

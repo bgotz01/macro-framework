@@ -318,8 +318,15 @@ export default function FXChart({
         );
     };
 
+    const latestDate = data.length > 0 ? data[data.length - 1].date : null;
+
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
+            {latestDate && (
+                <div className="mb-4 text-xs text-muted-foreground text-right">
+                    Latest data: {(() => { const [y, m, d] = latestDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
+                </div>
+            )}
             {/* Controls */}
             <div className="mb-6 space-y-4">
                 {/* Mode Selector */}
@@ -347,7 +354,7 @@ export default function FXChart({
                             Ratio (S1 / S2)
                         </button>
                     </div>
-                </div>
+                </div >
 
                 {calculationMode === 'ratio' ? (
                     /* Ratio Mode: Two Series Selectors */
@@ -415,7 +422,8 @@ export default function FXChart({
                             </select>
                         </div>
                     </div>
-                )}
+                )
+                }
 
                 {/* Date Range Filter */}
                 <div className="space-y-3">
@@ -460,93 +468,95 @@ export default function FXChart({
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             {/* Chart */}
             {renderContent()}
 
             {/* Latest Data Display */}
-            {!loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
-                <div className="mt-6 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-card-foreground mb-3">
-                        Latest Data
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {calculationMode === 'single' && data.length > 0 && (
-                            <>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Value</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
-                                        {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
+            {
+                !loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
+                    <div className="mt-6 p-4 rounded-lg bg-muted/50">
+                        <h4 className="text-sm font-semibold text-card-foreground mb-3">
+                            Latest Data
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {calculationMode === 'single' && data.length > 0 && (
+                                <>
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">Current Value</div>
+                                        <div className="text-2xl font-bold text-card-foreground">
+                                            {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
-                                        {(() => {
-                                            // Find the most recent date in the data
-                                            const latestDate = data.reduce((latest, current) =>
-                                                current.date > latest ? current.date : latest, data[0].date
-                                            );
-                                            // Parse date as local date to avoid timezone issues
-                                            const [year, month, day] = latestDate.split('-').map(Number);
-                                            const localDate = new Date(year, month - 1, day);
-                                            return localDate.toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            });
-                                        })()}
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">As of</div>
+                                        <div className="text-lg font-semibold text-card-foreground">
+                                            {(() => {
+                                                // Find the most recent date in the data
+                                                const latestDate = data.reduce((latest, current) =>
+                                                    current.date > latest ? current.date : latest, data[0].date
+                                                );
+                                                // Parse date as local date to avoid timezone issues
+                                                const [year, month, day] = latestDate.split('-').map(Number);
+                                                const localDate = new Date(year, month - 1, day);
+                                                return localDate.toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                });
+                                            })()}
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Series</div>
-                                    <div className="text-sm font-medium text-card-foreground">
-                                        {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">Series</div>
+                                        <div className="text-sm font-medium text-card-foreground">
+                                            {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
+                                        </div>
                                     </div>
-                                </div>
-                            </>
-                        )}
-                        {calculationMode === 'ratio' && ratioData.length > 0 && (
-                            <>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
-                                        {ratioData[ratioData.length - 1].Value.toFixed(4)}
+                                </>
+                            )}
+                            {calculationMode === 'ratio' && ratioData.length > 0 && (
+                                <>
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
+                                        <div className="text-2xl font-bold text-card-foreground">
+                                            {ratioData[ratioData.length - 1].Value.toFixed(4)}
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
-                                        {(() => {
-                                            // Find the most recent date in the ratio data
-                                            const latestDate = ratioData.reduce((latest, current) =>
-                                                current.date > latest ? current.date : latest, ratioData[0].date
-                                            );
-                                            // Parse date as local date to avoid timezone issues
-                                            const [year, month, day] = latestDate.split('-').map(Number);
-                                            const localDate = new Date(year, month - 1, day);
-                                            return localDate.toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            });
-                                        })()}
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">As of</div>
+                                        <div className="text-lg font-semibold text-card-foreground">
+                                            {(() => {
+                                                // Find the most recent date in the ratio data
+                                                const latestDate = ratioData.reduce((latest, current) =>
+                                                    current.date > latest ? current.date : latest, ratioData[0].date
+                                                );
+                                                // Parse date as local date to avoid timezone issues
+                                                const [year, month, day] = latestDate.split('-').map(Number);
+                                                const localDate = new Date(year, month - 1, day);
+                                                return localDate.toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                });
+                                            })()}
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Calculation</div>
-                                    <div className="text-sm font-medium text-card-foreground">
-                                        {availableSeries1.find(s => s.series_name === series1)?.display_name || series1}
-                                        {' / '}
-                                        {availableSeries2.find(s => s.series_name === series2)?.display_name || series2}
+                                    <div>
+                                        <div className="text-xs text-muted-foreground mb-1">Calculation</div>
+                                        <div className="text-sm font-medium text-card-foreground">
+                                            {availableSeries1.find(s => s.series_name === series1)?.display_name || series1}
+                                            {' / '}
+                                            {availableSeries2.find(s => s.series_name === series2)?.display_name || series2}
+                                        </div>
                                     </div>
-                                </div>
-                            </>
-                        )}
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

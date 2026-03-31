@@ -12,67 +12,78 @@ interface MADataPoint {
 function calculateMASlope(maPeriod: string) {
     console.log(`\nCalculating slope for ${maPeriod}-day MA...`);
 
-    // Load MA data
+    const slopeSeriesName = `SP500-${maPeriod}MA-Slope`;
     const maSeriesName = `SP500-MA${maPeriod}`;
-    const maData = db.prepare(`
-        SELECT date, value
-        FROM time_series
-        WHERE asset_class = 'derived' AND series_name = ?
-        ORDER BY date ASC
-    `).all(maSeriesName) as MADataPoint[];
+    const assetClass = 'derived';
 
-    console.log(`Loaded ${maData.length} data points for ${maSeriesName}`);
+    // Find the latest date already computed
+    const latestRow = db.prepare(`
+        SELECT MAX(date) as max_date FROM time_series
+        WHERE asset_class = ? AND series_name = ?
+    `).get(assetClass, slopeSeriesName) as { max_date: string | null };
 
-    if (maData.length === 0) {
-        console.log(`No data found for ${maSeriesName}`);
+    const latestComputed = latestRow?.max_date;
+
+    // We need the previous day's MA value to compute slope for the first new day,
+    // so fetch one row before the cutoff
+    let maData: MADataPoint[];
+    if (latestComputed) {
+        maData = db.prepare(`
+            SELECT date, value
+            FROM time_series
+            WHERE asset_class = 'derived' AND series_name = ? AND date >= ?
+            ORDER BY date ASC
+        `).all(maSeriesName, latestComputed) as MADataPoint[];
+        console.log(`  Incremental: processing from ${latestComputed} (${maData.length} MA points loaded)`);
+    } else {
+        maData = db.prepare(`
+            SELECT date, value
+            FROM time_series
+            WHERE asset_class = 'derived' AND series_name = ?
+            ORDER BY date ASC
+        `).all(maSeriesName) as MADataPoint[];
+        console.log(`  Full run: ${maData.length} MA points loaded`);
+    }
+
+    if (maData.length < 2) {
+        console.log('  ✓ Already up to date (or not enough data)');
         return;
     }
 
-    // Calculate daily percentage change (slope)
+    // Calculate daily percentage change (slope) — skip index 0 since we need a previous value
+    // When incremental, index 0 is the latestComputed date (already saved), so we start from 1
     const slopeData: Array<{ date: string; slope: number }> = [];
+    const startIdx = latestComputed ? 1 : 1; // always start from 1
 
-    for (let i = 1; i < maData.length; i++) {
+    for (let i = startIdx; i < maData.length; i++) {
         const currentMA = maData[i].value;
         const previousMA = maData[i - 1].value;
-
-        // Calculate percentage change: (current - previous) / previous * 100
         const slope = ((currentMA - previousMA) / previousMA) * 100;
 
-        slopeData.push({
-            date: maData[i].date,
-            slope: slope
-        });
+        // Only insert rows that are actually new
+        if (!latestComputed || maData[i].date > latestComputed) {
+            slopeData.push({ date: maData[i].date, slope });
+        }
     }
 
-    console.log(`Calculated ${slopeData.length} slope values`);
+    if (slopeData.length === 0) {
+        console.log('  ✓ Already up to date');
+        return;
+    }
 
-    // Save to database
-    const slopeSeriesName = `SP500-${maPeriod}MA-Slope`;
-    const assetClass = 'derived';
+    console.log(`  Calculated ${slopeData.length} new slope values`);
 
-    // Delete existing data for this series
-    db.prepare(`
-        DELETE FROM time_series 
-        WHERE asset_class = ? AND series_name = ?
-    `).run(assetClass, slopeSeriesName);
-
-    // Insert new data
     const insertStmt = db.prepare(`
-        INSERT INTO time_series (asset_class, series_name, date, column_name, value)
+        INSERT OR REPLACE INTO time_series (asset_class, series_name, date, column_name, value)
         VALUES (?, ?, ?, 'value', ?)
     `);
 
-    const insertMany = db.transaction((data: typeof slopeData) => {
+    db.transaction((data: typeof slopeData) => {
         for (const point of data) {
             insertStmt.run(assetClass, slopeSeriesName, point.date, point.slope);
         }
-    });
+    })(slopeData);
 
-    insertMany(slopeData);
-
-    console.log(`Saved ${slopeData.length} slope values to ${slopeSeriesName}`);
-
-    // Add metadata
     db.prepare(`
         INSERT OR REPLACE INTO series_metadata (asset_class, series_name, display_name, units, description)
         VALUES (?, ?, ?, ?, ?)
@@ -84,27 +95,15 @@ function calculateMASlope(maPeriod: string) {
         `Daily percentage change in the ${maPeriod}-day moving average of S&P 500`
     );
 
-    console.log(`Added metadata for ${slopeSeriesName}`);
-
-    // Show some statistics
-    const avgSlope = slopeData.reduce((sum, p) => sum + p.slope, 0) / slopeData.length;
-    const maxSlope = Math.max(...slopeData.map(p => p.slope));
-    const minSlope = Math.min(...slopeData.map(p => p.slope));
-
-    console.log(`Statistics for ${maPeriod}-day MA Slope:`);
-    console.log(`  Average: ${avgSlope.toFixed(4)}% per day`);
-    console.log(`  Max: ${maxSlope.toFixed(4)}% per day`);
-    console.log(`  Min: ${minSlope.toFixed(4)}% per day`);
+    console.log(`  ✓ Inserted ${slopeData.length} slope values`);
 }
 
-// Calculate slopes for all three MAs
-console.log('Starting MA slope calculation...');
+console.log('Starting incremental MA slope calculation...');
 
 try {
     calculateMASlope('50');
     calculateMASlope('200');
     calculateMASlope('500');
-
     console.log('\n✅ All MA slopes calculated successfully!');
 } catch (error) {
     console.error('Error calculating MA slopes:', error);
