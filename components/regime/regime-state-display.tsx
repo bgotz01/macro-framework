@@ -8,12 +8,9 @@ import { REGIME_TRIGGERS } from '@/lib/regime-state-machine';
 
 // Map which metrics each regime uses in its triggers
 const REGIME_METRICS: Record<RegimeFamily, Set<string>> = {
-    'Deep Value': new Set(['rey']),
     'Broad Growth': new Set(['rey']),
-    'Fragile': new Set(['rey', 'real10Y', 'realM2']),
-    'Contraction': new Set(['rey', 'eyp', 'real10Y']),
     'Long Duration': new Set(['eyp', 'real10Y']),
-    'Overvaluation': new Set(['eyp']),
+    'Overvaluation': new Set(['eyp', 'rey']),
     'Crisis': new Set(['real10Y', 'realM2']),
     'Bond Stress': new Set(['real10Y', 'real3M']),
     'Liquidity Shock': new Set(['realM2']),
@@ -74,7 +71,7 @@ export default function RegimeStateDisplay({
     triggerDescriptions
 }: RegimeStateDisplayProps) {
     const metadata = REGIME_METADATA[regime];
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [tooltip, setTooltip] = useState<string | null>(null);
 
     // Build flags

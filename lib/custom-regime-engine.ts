@@ -3,7 +3,7 @@
  * Runs the regime state machine with user-defined thresholds
  */
 
-import type { CustomThresholds } from '@/components/regime/custom-regime-modal';
+import type { CustomThresholds, CustomRegimeDef } from '@/components/regime/custom-regime-modal';
 import type { CurrentConditions, RegimeFamily, RegimeState } from './regime-state-machine';
 import { REGIME_METADATA } from './regime-state-machine';
 
@@ -30,25 +30,10 @@ export function buildCustomTriggers(t: CustomThresholds): Record<string, Trigger
             exit: (c) => c.real10Y !== null && c.real10Y >= t.bondStress.exitReal10Y,
             reason: (c) => `Bond Stress: Real 10Y ${c.real10Y?.toFixed(2)}%, Real 3M ${c.real3M?.toFixed(2)}%`,
         },
-        'Contraction': {
-            entry: (c) => c.rey !== null && c.eyp !== null && c.real10Y !== null && c.rey <= t.contraction.entryRey && c.eyp <= t.contraction.entryEyp && c.real10Y <= t.contraction.entryReal10Y,
-            exit: (c) => c.rey !== null && c.rey >= t.contraction.exitRey,
-            reason: (c) => `Contraction: REY ${c.rey?.toFixed(2)}%, EYP ${c.eyp?.toFixed(2)}%`,
-        },
         'Overvaluation': {
-            entry: (c) => c.eyp !== null && c.eyp <= t.overvaluation.entry,
-            exit: (c) => c.eyp !== null && c.eyp >= t.overvaluation.exit,
-            reason: (c) => `Overvaluation: EYP ${c.eyp?.toFixed(2)}%`,
-        },
-        'Fragile': {
-            entry: (c) => c.rey !== null && c.real10Y !== null && c.realM2 !== null && c.rey <= t.fragile.entryRey && c.real10Y <= t.fragile.entryReal10Y && c.realM2 < t.fragile.entryRealM2,
-            exit: (c) => c.real10Y !== null && c.real10Y >= t.fragile.exitReal10Y,
-            reason: (c) => `Fragile: REY ${c.rey?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
-        },
-        'Deep Value': {
-            entry: (c) => c.rey !== null && c.rey >= t.deepValue.entry,
-            exit: (c) => c.rey !== null && c.rey < t.deepValue.exit,
-            reason: (c) => `Deep Value: REY ${c.rey?.toFixed(2)}%`,
+            entry: (c) => c.eyp !== null && c.rey !== null && (c.eyp <= t.overvaluation.entryEyp || c.rey <= t.overvaluation.entryRey),
+            exit: (c) => c.eyp !== null && c.rey !== null && c.eyp >= t.overvaluation.exitEyp && c.rey >= t.overvaluation.exitRey,
+            reason: (c) => `Overvaluation: EYP ${c.eyp?.toFixed(2)}%, REY ${c.rey?.toFixed(2)}%`,
         },
         'Broad Growth': {
             entry: (c) => c.rey !== null && c.rey >= t.broadGrowth.entry,
@@ -68,20 +53,52 @@ export function buildCustomTriggers(t: CustomThresholds): Record<string, Trigger
     };
 }
 
+function buildCustomRegimeTrigger(cr: CustomRegimeDef): TriggerConfig {
+    const evalSide = (side: CustomRegimeDef['entry'], logic: 'AND' | 'OR', c: CurrentConditions): boolean => {
+        const METRIC_MAP: Record<keyof CustomRegimeDef['entry'], number | null> = {
+            rey: c.rey, eyp: c.eyp, real10Y: c.real10Y, real3M: c.real3M, realM2: c.realM2,
+        };
+        const results = (Object.keys(side) as Array<keyof typeof side>)
+            .filter(k => side[k].enabled)
+            .map(k => {
+                const val = METRIC_MAP[k];
+                if (val === null) return false;
+                return side[k].op === 'lte' ? val <= side[k].value : val >= side[k].value;
+            });
+        if (results.length === 0) return false;
+        return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
+    };
+    return {
+        entry: (c) => evalSide(cr.entry, cr.entryLogic, c),
+        exit: (c) => evalSide(cr.exit, cr.exitLogic, c),
+        reason: () => `${cr.name}: custom regime triggered`,
+    };
+}
+
 const PRECEDENCE: RegimeFamily[] = [
-    'Liquidity Shock', 'Crisis', 'Bond Stress', 'Contraction',
-    'Overvaluation', 'Fragile', 'Deep Value', 'Broad Growth', 'Long Duration',
+    'Liquidity Shock', 'Crisis', 'Bond Stress',
+    'Overvaluation', 'Broad Growth', 'Long Duration',
 ];
 
 export function determineCustomRegime(
     currentState: RegimeState | null,
     conditions: CurrentConditions,
     currentDate: string,
-    triggers: Record<string, TriggerConfig>
+    triggers: Record<string, TriggerConfig>,
+    customRegimeDef?: CustomRegimeDef
 ): RegimeState {
     const currentRegime = currentState?.regime || null;
 
-    for (const regime of PRECEDENCE) {
+    // Build precedence with custom regime injected at the right position
+    const base = [...PRECEDENCE];
+    const customName = customRegimeDef?.name ?? '__custom__';
+    if (customRegimeDef) {
+        const pos = Math.max(0, Math.min(customRegimeDef.precedence - 1, base.length));
+        base.splice(pos, 0, customName as RegimeFamily);
+        triggers[customName] = buildCustomRegimeTrigger(customRegimeDef);
+    }
+
+    for (const regime of base) {
         const config = triggers[regime];
         if (!config) continue;
 
@@ -90,9 +107,13 @@ export function determineCustomRegime(
         const triggered = config.entry(conditions);
 
         if (triggered && regime !== currentRegime) {
-            const metadata = REGIME_METADATA[regime];
+            const metadata = REGIME_METADATA[regime as RegimeFamily] ?? {
+                description: customRegimeDef?.name ?? regime,
+                guidance: 'User-defined regime',
+                color: customRegimeDef?.color ?? '#a855f7',
+            };
             return {
-                regime,
+                regime: regime as RegimeFamily,
                 entryDate: currentDate,
                 triggerReason: config.reason(conditions),
                 description: metadata.description,

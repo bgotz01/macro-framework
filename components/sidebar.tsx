@@ -25,6 +25,10 @@ const sidebarData: SidebarCategory[] = [
         category: 'Overview',
         items: [
             {
+                title: 'Cockpit',
+                href: '/cockpit',
+            },
+            {
                 title: 'Guide',
                 href: '/guide',
             },
@@ -90,6 +94,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/context',
             },
             {
+                title: 'Regime Returns',
+                href: '/regime/returns',
+            },
+            {
                 title: 'Regime Historical',
                 href: '/regime-historical',
                 children: [
@@ -109,6 +117,26 @@ const sidebarData: SidebarCategory[] = [
         ],
     },
     {
+        category: 'Signals',
+        items: [
+            {
+                title: 'Signals',
+                href: '/signals',
+                children: [
+                    { title: 'System Stress', href: '/signals/system-stress' },
+                    { title: 'Real Earnings Yield', href: '/signals/real-earnings-yield' },
+                    { title: 'Equity Warning', href: '/signals/equity-warning' },
+                    { title: 'Equity Sell', href: '/signals/equity-sell' },
+                    { title: 'Equity Breakdown', href: '/signals/equity-breakdown' },
+                    { title: 'Equity Danger', href: '/signals/equity-danger' },
+                    { title: 'Growth Signal', href: '/signals/growth-regime' },
+                    { title: 'Equity Value', href: '/signals/equity-value' },
+                    { title: 'Normal', href: '/signals/normal' },
+                ],
+            },
+        ],
+    },
+    {
         category: 'Perspectives',
         items: [
             {
@@ -116,9 +144,9 @@ const sidebarData: SidebarCategory[] = [
                 href: '/framework',
                 children: [
                     { title: 'Process', href: '/framework/process' },
-                    { title: 'O1 Signal', href: '/framework/signal' },
-                    { title: 'O2 Swing', href: '/framework/swing' },
-                    { title: 'O3 Story', href: '/framework/story' },
+                    { title: 'O1 Signal', href: '/framework/o1-signal' },
+                    { title: 'O2 Swing', href: '/framework/o2-swing' },
+                    { title: 'O3 Story', href: '/framework/o3-story' },
 
                 ],
             },
@@ -158,22 +186,22 @@ const sidebarData: SidebarCategory[] = [
             {
                 title: 'Mechanics',
                 href: '/insights/mechanics',
+                children: [
+                    { title: 'Debt Reduction', href: '/insights/mechanics/debt-reduction' },
+                    { title: 'Inverted Yield Curve', href: '/insights/mechanics/inverted-yield-curve' },
+                ],
             },
             {
                 title: 'Major Money Events',
-                href: '/insights/major-events',
+                href: '/insights/major-events/1971-gold-depeg',
                 children: [
                     { title: '1971 Gold Depeg', href: '/insights/major-events/1971-gold-depeg' },
                     { title: '1970s Inflation Trap', href: '/insights/major-events/1970s-inflation' },
-                    { title: '2000 Low Rates', href: '/insights/major-events/2000-low-rates' },
-                    { title: '2006 Yield Curve', href: '/insights/major-events/2006-yield-curve' },
-                    { title: '2008 QE', href: '/insights/major-events/2008-qe' },
-                    { title: '2001 China joins WTO', href: '/insights/other-events/2001-china-wto' },
                 ],
             },
             {
                 title: 'Case Study',
-                href: '/case-study',
+                href: '/case-study/gold-flip',
                 children: [
                     { title: 'Gold Flip', href: '/case-study/gold-flip' },
                     { title: 'Oil Flip', href: '/case-study/oil-flip' },

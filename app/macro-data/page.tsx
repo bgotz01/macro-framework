@@ -33,10 +33,10 @@ export default function MacroDataPage() {
                     </div>
                     <div className="space-y-4">
                         {[
-                            { name: 'United States', desc: 'Fed policy, employment, inflation data', href: '/macro-data/us' },
-                            { name: 'Japan', desc: 'BOJ policy, demographics, trade data', href: '/macro-data/japan' },
-                            { name: 'United Kingdom', desc: 'BOE policy, Brexit impact, financial services', href: '/macro-data/uk' },
-                            { name: 'Canada', desc: 'BOC policy, commodities, housing market', href: '/macro-data/canada' }
+                            { name: 'Macro Dashboard', desc: 'Interactive overview of bond, FX, equity, macro, and money supply series', href: '/chart' },
+                            { name: 'Data Explorer', desc: 'Browse the SQLite dataset by asset class, series, and date range', href: '/chart/data' },
+                            { name: 'Percentile Analysis', desc: 'Review percentile context for valuation, inflation, yields, and related derived series', href: '/chart/percentile' },
+                            { name: 'Regime Cockpit', desc: 'See how the latest macro inputs roll into the current regime and active signals', href: '/cockpit' }
                         ].map((country) => (
                             <a
                                 key={country.href}
@@ -70,9 +70,9 @@ export default function MacroDataPage() {
                     </div>
                     <div className="space-y-4">
                         {[
-                            { name: 'Bond Yields', desc: 'Government bond yields across maturities', href: '/macro-data/bond-yields' },
-                            { name: 'Foreign Exchange', desc: 'Major currency pairs and cross rates', href: '/macro-data/fx' },
-                            { name: 'Equity Indexes', desc: 'Major stock market indices and sectors', href: '/macro-data/equity-indexes' }
+                            { name: 'Market Highlights', desc: 'Concentration, performance, and asset-class snapshots', href: '/markets/highlights' },
+                            { name: 'Annual Returns', desc: 'Long-run return tables across decades and cycle windows', href: '/markets/annual-returns' },
+                            { name: 'S&P 500 Analytics', desc: 'Index constituents, changes, and composition data', href: '/sp500' }
                         ].map((asset) => (
                             <a
                                 key={asset.href}
@@ -123,7 +123,7 @@ export default function MacroDataPage() {
                 </div>
 
                 <p className="text-xs text-muted-foreground mt-6 text-center">
-                    * Sample data for demonstration purposes. Real-time data integration coming soon.
+                    The dashboard above is backed by the local SQLite dataset; use the explorer and chart views for deeper series-level work.
                 </p>
             </div>
 

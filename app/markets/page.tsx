@@ -20,7 +20,7 @@ export default function DataPage() {
             <div className="grid md:grid-cols-2 gap-6">
                 {/* Highlights Card */}
                 <Link
-                    href="/data/highlights"
+                    href="/markets/highlights"
                     className="group p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200"
                 >
                     <div className="flex items-start justify-between mb-4">
@@ -63,7 +63,7 @@ export default function DataPage() {
 
                 {/* Annual Returns Card */}
                 <Link
-                    href="/data/annual-returns"
+                    href="/markets/annual-returns"
                     className="group p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200"
                 >
                     <div className="flex items-start justify-between mb-4">
@@ -106,7 +106,7 @@ export default function DataPage() {
 
                 {/* S&P 500 Card */}
                 <Link
-                    href="/data/sp500"
+                    href="/sp500"
                     className="group p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200"
                 >
                     <div className="flex items-start justify-between mb-4">

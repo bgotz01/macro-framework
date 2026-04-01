@@ -131,10 +131,10 @@ export default function MarketCyclesSection() {
                     ← Back to Foundation
                 </Link>
                 <Link
-                    href="/thesis/foundation/economic-indicators"
+                    href="/cycles"
                     className="text-blue-600 hover:text-blue-800"
                 >
-                    Next: Economic Indicators →
+                    Next: Cycle Library →
                 </Link>
             </div>
         </div>

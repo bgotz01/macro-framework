@@ -39,19 +39,9 @@ function buildTriggers(t: any) {
             reason: (c: Conditions) => `Contraction: REY ${c.rey?.toFixed(2)}%, EYP ${c.eyp?.toFixed(2)}%`,
         },
         'Overvaluation': {
-            entry: (c: Conditions) => c.eyp !== null && c.eyp <= t.overvaluation.entry,
-            exit: (c: Conditions) => c.eyp !== null && c.eyp >= t.overvaluation.exit,
-            reason: (c: Conditions) => `Overvaluation: EYP ${c.eyp?.toFixed(2)}%`,
-        },
-        'Fragile': {
-            entry: (c: Conditions) => c.rey !== null && c.real10Y !== null && c.realM2 !== null && c.rey <= t.fragile.entryRey && c.real10Y <= t.fragile.entryReal10Y && c.realM2 < t.fragile.entryRealM2,
-            exit: (c: Conditions) => c.real10Y !== null && c.real10Y >= t.fragile.exitReal10Y,
-            reason: (c: Conditions) => `Fragile: REY ${c.rey?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
-        },
-        'Deep Value': {
-            entry: (c: Conditions) => c.rey !== null && c.rey >= t.deepValue.entry,
-            exit: (c: Conditions) => c.rey !== null && c.rey < t.deepValue.exit,
-            reason: (c: Conditions) => `Deep Value: REY ${c.rey?.toFixed(2)}%`,
+            entry: (c: Conditions) => c.eyp !== null && c.rey !== null && (c.eyp <= t.overvaluation.entryEyp || c.rey <= t.overvaluation.entryRey),
+            exit: (c: Conditions) => c.eyp !== null && c.rey !== null && c.eyp >= t.overvaluation.exitEyp && c.rey >= t.overvaluation.exitRey,
+            reason: (c: Conditions) => `Overvaluation: EYP ${c.eyp?.toFixed(2)}%, REY ${c.rey?.toFixed(2)}%`,
         },
         'Broad Growth': {
             entry: (c: Conditions) => c.rey !== null && c.rey >= t.broadGrowth.entry,
@@ -72,18 +62,48 @@ function buildTriggers(t: any) {
 }
 
 const PRECEDENCE = [
-    'Liquidity Shock', 'Crisis', 'Bond Stress', 'Contraction',
-    'Overvaluation', 'Fragile', 'Deep Value', 'Broad Growth', 'Long Duration',
+    'Liquidity Shock', 'Crisis', 'Bond Stress',
+    'Overvaluation', 'Broad Growth', 'Long Duration',
 ];
 
-function walkTimeline(rows: Array<{ date: string } & Conditions>, triggers: any): RegimeResult {
+function buildCustomTrigger(cr: any) {
+    const evalSide = (side: any, logic: string, c: Conditions): boolean => {
+        const map: Record<string, number | null> = {
+            rey: c.rey, eyp: c.eyp, real10Y: c.real10Y, real3M: c.real3M, realM2: c.realM2,
+        };
+        const results = Object.keys(side)
+            .filter(k => side[k].enabled)
+            .map(k => {
+                const val = map[k];
+                if (val === null) return false;
+                return side[k].op === 'lte' ? val <= side[k].value : val >= side[k].value;
+            });
+        if (results.length === 0) return false;
+        return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
+    };
+    return {
+        entry: (c: Conditions) => evalSide(cr.entry, cr.entryLogic, c),
+        exit: (c: Conditions) => evalSide(cr.exit, cr.exitLogic, c),
+        reason: () => `${cr.name}: custom regime triggered`,
+    };
+}
+
+function walkTimeline(rows: Array<{ date: string } & Conditions>, triggers: any, customRegimeDef?: any): RegimeResult {
+    // Build precedence with custom regime injected
+    const base = [...PRECEDENCE];
+    if (customRegimeDef) {
+        const pos = Math.max(0, Math.min((customRegimeDef.precedence ?? 5) - 1, base.length));
+        base.splice(pos, 0, customRegimeDef.name);
+        triggers[customRegimeDef.name] = buildCustomTrigger(customRegimeDef);
+    }
+
     let current = null as RegimeResult | null;
 
     for (const row of rows) {
         const currentRegime = current ? current.regime : null;
         let nextRegime: RegimeResult | null = null;
 
-        for (const regime of PRECEDENCE) {
+        for (const regime of base) {
             const config = triggers[regime];
             if (!config) continue;
 
@@ -167,7 +187,7 @@ export async function POST(request: NextRequest) {
         }));
 
         const triggers = buildTriggers(thresholds);
-        const result = walkTimeline(mapped, triggers);
+        const result = walkTimeline(mapped, triggers, thresholds.customRegime);
 
         // Calculate months in regime
         let monthsInRegime = 0;

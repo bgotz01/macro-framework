@@ -2,28 +2,68 @@
 
 import { useState, useEffect } from 'react';
 
+export interface CustomRegimeDef {
+    name: string;
+    color: string;
+    precedence: number; // 1 = highest, inserted into the order at this position
+    entryLogic: 'AND' | 'OR';
+    exitLogic: 'AND' | 'OR';
+    entry: {
+        rey: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        eyp: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        real10Y: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        real3M: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        realM2: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+    };
+    exit: {
+        rey: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        eyp: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        real10Y: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        real3M: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+        realM2: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+    };
+}
+
 export interface CustomThresholds {
-    deepValue: { entry: number; exit: number };
     broadGrowth: { entry: number; exit: number };
-    fragile: { entryRey: number; entryReal10Y: number; entryRealM2: number; exitReal10Y: number };
-    contraction: { entryRey: number; entryEyp: number; entryReal10Y: number; exitRey: number };
     longDuration: { entryEyp: number; entryReal10Y: number; exitEypHigh: number; exitEypLow: number };
-    overvaluation: { entry: number; exit: number };
+    overvaluation: { entryEyp: number; entryRey: number; exitEyp: number; exitRey: number };
     crisis: { entryReal10Y: number; entryRealM2: number; exitReal10Y: number; exitRealM2: number };
     bondStress: { entryReal10Y: number; entryReal3M: number; exitReal10Y: number };
     liquidityShock: { entry: number; exit: number };
+    customRegime: CustomRegimeDef;
 }
 
+const DEFAULT_CUSTOM_REGIME: CustomRegimeDef = {
+    name: 'Custom',
+    color: '#06b6d4',
+    precedence: 5,
+    entryLogic: 'AND',
+    exitLogic: 'AND',
+    entry: {
+        rey: { enabled: false, op: 'gte', value: 50 },
+        eyp: { enabled: false, op: 'gte', value: 50 },
+        real10Y: { enabled: true, op: 'gte', value: 50 },
+        real3M: { enabled: false, op: 'gte', value: 50 },
+        realM2: { enabled: false, op: 'gte', value: 50 },
+    },
+    exit: {
+        rey: { enabled: false, op: 'lte', value: 40 },
+        eyp: { enabled: false, op: 'lte', value: 40 },
+        real10Y: { enabled: true, op: 'lte', value: 40 },
+        real3M: { enabled: false, op: 'lte', value: 40 },
+        realM2: { enabled: false, op: 'lte', value: 40 },
+    },
+};
+
 export const DEFAULT_THRESHOLDS: CustomThresholds = {
-    deepValue: { entry: 6, exit: 4 },
     broadGrowth: { entry: 3, exit: 1 },
-    fragile: { entryRey: 0, entryReal10Y: 0, entryRealM2: 10, exitReal10Y: 1 },
-    contraction: { entryRey: 0, entryEyp: 0, entryReal10Y: 0, exitRey: 2 },
     longDuration: { entryEyp: 0, entryReal10Y: 1, exitEypHigh: 0, exitEypLow: -2.5 },
-    overvaluation: { entry: -2.5, exit: 0 },
+    overvaluation: { entryEyp: -2.5, entryRey: -0.5, exitEyp: 0, exitRey: 0.5 },
     crisis: { entryReal10Y: -1, entryRealM2: 5, exitReal10Y: 0.5, exitRealM2: 7 },
     bondStress: { entryReal10Y: -0.5, entryReal3M: -1, exitReal10Y: 0.25 },
     liquidityShock: { entry: 10, exit: 8 },
+    customRegime: DEFAULT_CUSTOM_REGIME,
 };
 
 interface Props {
@@ -77,7 +117,48 @@ function RegimeSection({ title, color, children }: {
     );
 }
 
-type Tab = 'liquidity' | 'valuation' | 'deterioration';
+const CUSTOM_METRICS: { key: keyof CustomRegimeDef['entry']; label: string }[] = [
+    { key: 'rey', label: 'REY (Real EY 5yr)' },
+    { key: 'eyp', label: 'EYP (EY Premium 5yr)' },
+    { key: 'real10Y', label: 'Real 10Y' },
+    { key: 'real3M', label: 'Real 3M' },
+    { key: 'realM2', label: 'Real M2 YoY' },
+];
+
+function CondRow({ side, metric, label, cond, onChange }: {
+    side: 'entry' | 'exit';
+    metric: keyof CustomRegimeDef['entry'];
+    label: string;
+    cond: { enabled: boolean; op: 'lte' | 'gte'; value: number };
+    onChange: (patch: Partial<{ enabled: boolean; op: 'lte' | 'gte'; value: number }>) => void;
+}) {
+    const [localVal, setLocalVal] = useState(String(cond.value));
+    useEffect(() => { setLocalVal(String(cond.value)); }, [cond.value]);
+
+    return (
+        <div className={`flex items-center gap-2 py-1.5 border-b border-border/20 last:border-0 ${!cond.enabled ? 'opacity-40' : ''}`}>
+            <input type="checkbox" checked={cond.enabled} onChange={e => onChange({ enabled: e.target.checked })} className="rounded" />
+            <span className="text-xs text-muted-foreground w-36 flex-shrink-0">{label}</span>
+            <select value={cond.op} onChange={e => onChange({ op: e.target.value as 'lte' | 'gte' })}
+                disabled={!cond.enabled}
+                className="text-xs bg-muted border border-border rounded px-1.5 py-1 focus:outline-none">
+                <option value="lte">≤</option>
+                <option value="gte">≥</option>
+            </select>
+            <input
+                type="number" step="0.25"
+                value={localVal}
+                onChange={e => setLocalVal(e.target.value)}
+                onBlur={() => { const v = parseFloat(localVal); if (!isNaN(v)) onChange({ value: v }); }}
+                disabled={!cond.enabled}
+                className="w-20 px-2 py-1 text-xs rounded border border-border bg-muted text-right focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <span className="text-xs text-muted-foreground">%</span>
+        </div>
+    );
+}
+
+type Tab = 'liquidity' | 'valuation' | 'deterioration' | 'custom';
 
 export default function CustomRegimeModal({ thresholds, onApply }: Props) {
     const [isOpen, setIsOpen] = useState(false);
@@ -138,6 +219,7 @@ export default function CustomRegimeModal({ thresholds, onApply }: Props) {
                                 { key: 'liquidity' as Tab, label: 'Liquidity', desc: 'Real rates & money supply' },
                                 { key: 'valuation' as Tab, label: 'Valuation', desc: 'Earnings yield & equity premium' },
                                 { key: 'deterioration' as Tab, label: 'Deterioration', desc: 'Cross-dimension stress' },
+                                { key: 'custom' as Tab, label: 'Custom', desc: 'User-defined regime' },
                             ]).map(tab => (
                                 <button
                                     key={tab.key}
@@ -188,11 +270,6 @@ export default function CustomRegimeModal({ thresholds, onApply }: Props) {
                                         Regimes driven by real earnings yield (REY) and earnings yield premium vs bonds (EYP).
                                     </p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <RegimeSection title="Deep Value" color="#15803d">
-                                            <ThresholdRow label="Entry: REY ≥" value={draft.deepValue.entry} onChange={v => update('deepValue', 'entry', v)} />
-                                            <ThresholdRow label="Exit: REY <" value={draft.deepValue.exit} onChange={v => update('deepValue', 'exit', v)} />
-                                        </RegimeSection>
-
                                         <RegimeSection title="Broad Growth" color="#22c55e">
                                             <ThresholdRow label="Entry: REY ≥" value={draft.broadGrowth.entry} onChange={v => update('broadGrowth', 'entry', v)} />
                                             <ThresholdRow label="Exit: REY <" value={draft.broadGrowth.exit} onChange={v => update('broadGrowth', 'exit', v)} />
@@ -206,8 +283,10 @@ export default function CustomRegimeModal({ thresholds, onApply }: Props) {
                                         </RegimeSection>
 
                                         <RegimeSection title="Overvaluation" color="#eab308">
-                                            <ThresholdRow label="Entry: EYP ≤" value={draft.overvaluation.entry} onChange={v => update('overvaluation', 'entry', v)} />
-                                            <ThresholdRow label="Exit: EYP ≥" value={draft.overvaluation.exit} onChange={v => update('overvaluation', 'exit', v)} />
+                                            <ThresholdRow label="Entry: EYP ≤" value={draft.overvaluation.entryEyp} onChange={v => update('overvaluation', 'entryEyp', v)} />
+                                            <ThresholdRow label="Entry: REY ≤" value={draft.overvaluation.entryRey} onChange={v => update('overvaluation', 'entryRey', v)} />
+                                            <ThresholdRow label="Exit: EYP ≥" value={draft.overvaluation.exitEyp} onChange={v => update('overvaluation', 'exitEyp', v)} />
+                                            <ThresholdRow label="Exit: REY ≥" value={draft.overvaluation.exitRey} onChange={v => update('overvaluation', 'exitRey', v)} />
                                         </RegimeSection>
                                     </div>
                                 </div>
@@ -219,22 +298,99 @@ export default function CustomRegimeModal({ thresholds, onApply }: Props) {
                                         Cross-dimension regimes where both valuation and liquidity conditions deteriorate together.
                                     </p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <RegimeSection title="Fragile" color="#f97316">
-                                            <ThresholdRow label="Entry: REY ≤" value={draft.fragile.entryRey} onChange={v => update('fragile', 'entryRey', v)} />
-                                            <ThresholdRow label="Entry: Real 10Y ≤" value={draft.fragile.entryReal10Y} onChange={v => update('fragile', 'entryReal10Y', v)} />
-                                            <ThresholdRow label="Entry: Real M2 <" value={draft.fragile.entryRealM2} onChange={v => update('fragile', 'entryRealM2', v)} />
-                                            <ThresholdRow label="Exit: Real 10Y ≥" value={draft.fragile.exitReal10Y} onChange={v => update('fragile', 'exitReal10Y', v)} />
-                                        </RegimeSection>
-
-                                        <RegimeSection title="Contraction" color="#dc2626">
-                                            <ThresholdRow label="Entry: REY ≤" value={draft.contraction.entryRey} onChange={v => update('contraction', 'entryRey', v)} />
-                                            <ThresholdRow label="Entry: EYP ≤" value={draft.contraction.entryEyp} onChange={v => update('contraction', 'entryEyp', v)} />
-                                            <ThresholdRow label="Entry: Real 10Y ≤" value={draft.contraction.entryReal10Y} onChange={v => update('contraction', 'entryReal10Y', v)} />
-                                            <ThresholdRow label="Exit: REY ≥" value={draft.contraction.exitRey} onChange={v => update('contraction', 'exitRey', v)} />
-                                        </RegimeSection>
                                     </div>
                                 </div>
                             )}
+
+                            {activeTab === 'custom' && (() => {
+                                const cr = draft.customRegime;
+                                const updateCR = (patch: Partial<CustomRegimeDef>) =>
+                                    setDraft(prev => ({ ...prev, customRegime: { ...prev.customRegime, ...patch } }));
+                                const updateCond = (side: 'entry' | 'exit', metric: keyof CustomRegimeDef['entry'], patch: Partial<{ enabled: boolean; op: 'lte' | 'gte'; value: number }>) =>
+                                    setDraft(prev => ({
+                                        ...prev,
+                                        customRegime: {
+                                            ...prev.customRegime,
+                                            [side]: { ...prev.customRegime[side], [metric]: { ...prev.customRegime[side][metric], ...patch } }
+                                        }
+                                    }));
+
+                                return (
+                                    <div className="space-y-5">
+                                        {/* Identity */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs text-muted-foreground block mb-1">Regime Name</label>
+                                                <input type="text" value={cr.name} onChange={e => updateCR({ name: e.target.value })}
+                                                    className="w-full px-3 py-1.5 text-sm rounded border border-border bg-muted focus:outline-none focus:ring-1 focus:ring-primary" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-muted-foreground block mb-1">Color</label>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="color" value={cr.color} onChange={e => updateCR({ color: e.target.value })}
+                                                        className="w-10 h-8 rounded border border-border cursor-pointer" />
+                                                    <span className="text-xs font-mono text-muted-foreground">{cr.color}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Precedence */}
+                                        <div>
+                                            <label className="text-xs text-muted-foreground block mb-1">
+                                                Precedence position <span className="text-muted-foreground/60">(1 = highest priority, 8 = lowest)</span>
+                                            </label>
+                                            <div className="flex items-center gap-3">
+                                                <input type="range" min={1} max={8} value={cr.precedence}
+                                                    onChange={e => updateCR({ precedence: parseInt(e.target.value) })}
+                                                    className="flex-1" />
+                                                <span className="text-sm font-mono w-6 text-center">{cr.precedence}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Entry conditions */}
+                                        <div className="p-3 rounded-lg border border-border bg-card">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h4 className="text-sm font-semibold text-green-600 dark:text-green-400">Entry Conditions</h4>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-xs text-muted-foreground">Logic:</span>
+                                                    {(['AND', 'OR'] as const).map(l => (
+                                                        <button key={l} onClick={() => updateCR({ entryLogic: l })}
+                                                            className={`text-xs px-2 py-0.5 rounded ${cr.entryLogic === l ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                            {l}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {CUSTOM_METRICS.map(m => (
+                                                <CondRow key={m.key} side="entry" metric={m.key} label={m.label}
+                                                    cond={cr.entry[m.key]}
+                                                    onChange={patch => updateCond('entry', m.key, patch)} />
+                                            ))}
+                                        </div>
+
+                                        {/* Exit conditions */}
+                                        <div className="p-3 rounded-lg border border-border bg-card">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h4 className="text-sm font-semibold text-red-600 dark:text-red-400">Exit Conditions</h4>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-xs text-muted-foreground">Logic:</span>
+                                                    {(['AND', 'OR'] as const).map(l => (
+                                                        <button key={l} onClick={() => updateCR({ exitLogic: l })}
+                                                            className={`text-xs px-2 py-0.5 rounded ${cr.exitLogic === l ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                            {l}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {CUSTOM_METRICS.map(m => (
+                                                <CondRow key={m.key} side="exit" metric={m.key} label={m.label}
+                                                    cond={cr.exit[m.key]}
+                                                    onChange={patch => updateCond('exit', m.key, patch)} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Footer */}

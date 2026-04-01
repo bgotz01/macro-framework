@@ -35,6 +35,17 @@ npx tsx scripts/calculate-sp500-ma-slope.ts
 npx tsx scripts/calculate-sp500-ma-stats.ts
 npx tsx scripts/calculate-ma-percentiles.ts
 
+
+DERIVED
+# 1. Push Earnings-Yield-5yr into percentile_analysis (it's in time_series but not percentile_analysis for Feb)
+npx tsx scripts/add-earnings-yield-5yr.ts
+
+# 2. Rebuild all derived percentiles (EYP-5yr, REY-5yr, Real-10Y, Real-3M, Yield Curve, etc.)
+npx tsx scripts/create-derived-percentiles.ts
+
+npx tsx scripts/build-regime-timeline.ts
+
+
 ```
 
 

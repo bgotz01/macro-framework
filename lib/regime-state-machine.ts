@@ -14,90 +14,74 @@
 // ============================================================================
 // Edit these values to change when regimes activate and deactivate
 
+// Single source of truth for all threshold values
+const T = {
+    broadGrowth: { entryREY: 3, exitREY: 1 },
+    longDuration: { entryEYP: 0, entryReal10Y: 1, exitEYP_hi: 0, exitEYP_lo: -2.5 },
+    overvaluation: { entryEYP: -2.5, entryREY: -0.5, exitEYP: 0, exitREY: 0.5 },
+    crisis: { entryReal10Y: -1, entryRealM2: 5, exitReal10Y: 0.5, exitRealM2: 7 },
+    bondStress: { entryReal10Y: -0.5, entryReal3M: -1, exitReal10Y: 0.25 },
+    liquidityShock: { entryRealM2: 10, exitRealM2: 8 },
+} as const;
+
+const fmt = (v: number) => `${v}%`;
+const op = (dir: 'gte' | 'lte') => dir === 'gte' ? '≥' : '≤';
+const cond = (label: string, dir: 'gte' | 'lte', val: number) => `${label} ${op(dir)} ${fmt(val)}`;
+
 export const REGIME_TRIGGERS = {
-    'Deep Value': {
-        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= 6,
-        exit: (c: CurrentConditions) => c.rey !== null && c.rey < 4,
-        reason: (c: CurrentConditions) => `Deep Value: Real Earnings Yield ${c.rey?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY ≥ 6%',
-        exitDescription: 'Exit: REY ≤ 4%'
-    },
     'Broad Growth': {
-        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= 3,
-        exit: (c: CurrentConditions) => c.rey !== null && c.rey < 1,
+        entry: (c: CurrentConditions) => c.rey !== null && c.rey >= T.broadGrowth.entryREY,
+        exit: (c: CurrentConditions) => c.rey !== null && c.rey < T.broadGrowth.exitREY,
         reason: (c: CurrentConditions) => `Broad Growth: Real Earnings Yield ${c.rey?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY ≥ 3%',
-        exitDescription: 'Exit: REY ≤ 1%'
-    },
-    'Fragile': {
-        entry: (c: CurrentConditions) =>
-            c.rey !== null && c.real10Y !== null && c.realM2 !== null &&
-            c.rey <= 0 && c.real10Y <= 0 && c.realM2 < 10,
-        exit: (c: CurrentConditions) =>
-            c.real10Y !== null && c.real10Y >= 1,
-        reason: (c: CurrentConditions) => `Fragile: Real earnings negative (REY ${c.rey?.toFixed(2)}%), financial repression (Real 10Y ${c.real10Y?.toFixed(2)}%), slowing liquidity (Real M2 ${c.realM2?.toFixed(1)}%)`,
-        entryDescription: 'Entry: REY ≤ 0% AND Real 10Y ≤ 0% AND Real M2 ≤ 10%',
-        exitDescription: 'Exit: Real 10Y ≥ 1%'
-    },
-    'Contraction': {
-        entry: (c: CurrentConditions) =>
-            c.rey !== null && c.eyp !== null && c.real10Y !== null &&
-            c.rey <= 0 && c.eyp <= 0 && c.real10Y <= 0,
-        exit: (c: CurrentConditions) => c.rey !== null && c.rey >= 2,
-        reason: (c: CurrentConditions) => `Contraction: REY ${c.rey?.toFixed(2)}%, EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
-        entryDescription: 'Entry: REY ≤ 0% AND EYP ≤ 0% AND Real 10Y ≤ 0%',
-        exitDescription: 'Exit: REY ≥ 2%'
+        entryDescription: `Entry: ${cond('REY', 'gte', T.broadGrowth.entryREY)}`,
+        exitDescription: `Exit: REY < ${fmt(T.broadGrowth.exitREY)}`,
     },
     'Long Duration': {
-        entry: (c: CurrentConditions) => c.eyp !== null && c.real10Y !== null && c.eyp <= 0 && c.real10Y >= 1,
-        exit: (c: CurrentConditions) => c.eyp !== null && (c.eyp >= 0 || c.eyp <= -2.5),
+        entry: (c: CurrentConditions) => c.eyp !== null && c.real10Y !== null && c.eyp <= T.longDuration.entryEYP && c.real10Y >= T.longDuration.entryReal10Y,
+        exit: (c: CurrentConditions) => c.eyp !== null && (c.eyp >= T.longDuration.exitEYP_hi || c.eyp <= T.longDuration.exitEYP_lo),
         reason: (c: CurrentConditions) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
-        entryDescription: 'Entry: EYP ≤ 0% AND Real 10Y ≥ 1%',
-        exitDescription: 'Exit: EYP ≥ 0% OR EYP ≤ -2.5%'
+        entryDescription: `Entry: ${cond('EYP', 'lte', T.longDuration.entryEYP)} AND ${cond('Real 10Y', 'gte', T.longDuration.entryReal10Y)}`,
+        exitDescription: `Exit: EYP ${op('gte')} ${fmt(T.longDuration.exitEYP_hi)} OR EYP ${op('lte')} ${fmt(T.longDuration.exitEYP_lo)}`,
     },
     'Overvaluation': {
-        entry: (c: CurrentConditions) => c.eyp !== null && c.eyp <= -2.5,
-        exit: (c: CurrentConditions) => c.eyp !== null && c.eyp >= 0,
-        reason: (c: CurrentConditions) => `Overvaluation: Extreme equity unattractiveness (EYP ${c.eyp?.toFixed(2)}%)`,
-        entryDescription: 'Entry: EYP ≤ -2.5%',
-        exitDescription: 'Exit: EYP ≥ 0%'
+        entry: (c: CurrentConditions) => c.eyp !== null && c.rey !== null && (c.eyp <= T.overvaluation.entryEYP || c.rey <= T.overvaluation.entryREY),
+        exit: (c: CurrentConditions) => c.eyp !== null && c.rey !== null && c.eyp >= T.overvaluation.exitEYP && c.rey >= T.overvaluation.exitREY,
+        reason: (c: CurrentConditions) => `Overvaluation: EYP ${c.eyp?.toFixed(2)}%, REY ${c.rey?.toFixed(2)}%`,
+        entryDescription: `Entry: ${cond('EYP', 'lte', T.overvaluation.entryEYP)} OR ${cond('REY', 'lte', T.overvaluation.entryREY)}`,
+        exitDescription: `Exit: ${cond('EYP', 'gte', T.overvaluation.exitEYP)} AND ${cond('REY', 'gte', T.overvaluation.exitREY)}`,
     },
     'Crisis': {
         entry: (c: CurrentConditions) =>
             c.real10Y !== null && c.realM2 !== null &&
-            c.real10Y <= -1 && c.realM2 <= 5,
+            c.real10Y <= T.crisis.entryReal10Y && c.realM2 <= T.crisis.entryRealM2,
         exit: (c: CurrentConditions) =>
-            c.real10Y !== null && c.realM2 !== null && (c.real10Y >= 0.5 || c.realM2 >= 7),
+            c.real10Y !== null && c.realM2 !== null && (c.real10Y >= T.crisis.exitReal10Y || c.realM2 >= T.crisis.exitRealM2),
         reason: (c: CurrentConditions) => `Crisis: Real 10Y ${c.real10Y?.toFixed(2)}%, Real M2 ${c.realM2?.toFixed(1)}%`,
-        entryDescription: 'Entry: Real 10Y ≤ -1% AND Real M2 ≤ 5%',
-        exitDescription: 'Exit: Real 10Y ≥ 0.5% OR Real M2 ≥ 7%'
+        entryDescription: `Entry: ${cond('Real 10Y', 'lte', T.crisis.entryReal10Y)} AND ${cond('Real M2', 'lte', T.crisis.entryRealM2)}`,
+        exitDescription: `Exit: ${cond('Real 10Y', 'gte', T.crisis.exitReal10Y)} OR ${cond('Real M2', 'gte', T.crisis.exitRealM2)}`,
     },
     'Bond Stress': {
         entry: (c: CurrentConditions) =>
-            c.real10Y !== null && c.real3M !== null && c.real10Y <= -0.5 && c.real3M <= -1,
-        exit: (c: CurrentConditions) =>
-            c.real10Y !== null && c.real10Y >= 0.25,
+            c.real10Y !== null && c.real3M !== null && c.real10Y <= T.bondStress.entryReal10Y && c.real3M <= T.bondStress.entryReal3M,
+        exit: (c: CurrentConditions) => c.real10Y !== null && c.real10Y >= T.bondStress.exitReal10Y,
         reason: (c: CurrentConditions) => `Bond Stress: Real 10Y ${c.real10Y?.toFixed(2)}%, Real 3M ${c.real3M?.toFixed(2)}%`,
-        entryDescription: 'Entry: Real 10Y ≤ -0.5% AND Real 3M ≤ -1%',
-        exitDescription: 'Exit: Real 10Y ≥ 0.25%'
+        entryDescription: `Entry: ${cond('Real 10Y', 'lte', T.bondStress.entryReal10Y)} AND ${cond('Real 3M', 'lte', T.bondStress.entryReal3M)}`,
+        exitDescription: `Exit: ${cond('Real 10Y', 'gte', T.bondStress.exitReal10Y)}`,
     },
     'Liquidity Shock': {
-        entry: (c: CurrentConditions) =>
-            c.realM2 !== null && c.realM2 >= 10,
-        exit: (c: CurrentConditions) =>
-            c.realM2 !== null && c.realM2 <= 8,
+        entry: (c: CurrentConditions) => c.realM2 !== null && c.realM2 >= T.liquidityShock.entryRealM2,
+        exit: (c: CurrentConditions) => c.realM2 !== null && c.realM2 <= T.liquidityShock.exitRealM2,
         reason: (c: CurrentConditions) => `Liquidity Shock: Real M2 ${c.realM2?.toFixed(1)}%`,
-        entryDescription: 'Entry: Real M2 ≥ 10%',
-        exitDescription: 'Exit: Real M2 ≤ 8%'
+        entryDescription: `Entry: ${cond('Real M2', 'gte', T.liquidityShock.entryRealM2)}`,
+        exitDescription: `Exit: ${cond('Real M2', 'lte', T.liquidityShock.exitRealM2)}`,
     },
     'Normal': {
-        // Normal has no entry/exit triggers - it's the default state
         entry: () => false,
         exit: () => false,
         reason: () => 'Balanced conditions - no extreme triggers',
         entryDescription: 'Default state when no outlier triggers are active',
-        exitDescription: ''
-    }
+        exitDescription: '',
+    },
 } as const;
 
 // ============================================================================
@@ -137,12 +121,9 @@ function canTransition(
 // ============================================================================
 
 export type RegimeFamily =
-    | 'Deep Value'
     | 'Broad Growth'
-    | 'Contraction'
     | 'Long Duration'
     | 'Overvaluation'
-    | 'Fragile'
     | 'Crisis'
     | 'Bond Stress'
     | 'Liquidity Shock'
@@ -188,25 +169,10 @@ export interface RegimeTransition {
 // ============================================================================
 
 export const REGIME_METADATA: Record<RegimeFamily, { description: string; guidance: string; color: string }> = {
-    'Deep Value': {
-        description: 'Deep value - extreme pessimism, post-crash accumulation',
-        guidance: 'Equities extremely cheap - long-term bull markets often start here',
-        color: '#15803d' // dark green
-    },
     'Broad Growth': {
         description: 'Strong real earnings environment - healthy equity expansion',
         guidance: 'Earnings growing faster than inflation - lean into quality growth',
         color: '#22c55e' // green
-    },
-    'Fragile': {
-        description: 'Macro deterioration - real earnings negative under financial repression with slowing liquidity',
-        guidance: 'Conditions are deteriorating - watch for transition into contraction or crisis',
-        color: '#f97316' // orange
-    },
-    'Contraction': {
-        description: 'Real earnings and valuations collapsing with financial repression',
-        guidance: 'Severe deterioration - preserve capital, favor quality defensives',
-        color: '#dc2626' // dark red
     },
     'Long Duration': {
         description: 'Equities overvalued relative to bonds - duration growth',
@@ -231,7 +197,7 @@ export const REGIME_METADATA: Record<RegimeFamily, { description: string; guidan
     'Liquidity Shock': {
         description: 'Financial repression with high money growth - liquidity shock',
         guidance: 'Massive liquidity injection - speculative assets thrive',
-        color: '#fbbf24' // yellow/gold
+        color: '#a855f7' // purple
     },
     'Normal': {
         description: 'Balanced conditions - no extreme triggers active',
@@ -295,10 +261,7 @@ export function determineNextRegime(
         'Liquidity Shock',
         'Crisis',
         'Bond Stress',
-        'Contraction',
         'Overvaluation',
-        'Fragile',
-        'Deep Value',
         'Broad Growth',
         'Long Duration'
     ];

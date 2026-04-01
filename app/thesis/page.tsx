@@ -26,41 +26,41 @@ export default function ThesisHome() {
                 </div>
 
                 <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-                    <h3 className="text-lg font-semibold mb-3">Chapter 2: Market Regimes</h3>
+                    <h3 className="text-lg font-semibold mb-3">Guide</h3>
                     <p className="text-gray-600 mb-4">
-                        How to identify and navigate different economic and market environments.
+                        The operating system view of regimes, playbooks, and outlier-driven decisions.
                     </p>
                     <Link
-                        href="/thesis/market-regimes"
+                        href="/guide"
                         className="text-blue-600 hover:text-blue-800 font-medium"
                     >
-                        Read Chapter →
+                        Open Guide →
                     </Link>
                 </div>
 
                 <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-                    <h3 className="text-lg font-semibold mb-3">Chapter 3: Cycles & Timing</h3>
+                    <h3 className="text-lg font-semibold mb-3">Cycles</h3>
                     <p className="text-gray-600 mb-4">
-                        Understanding long-term cycles and their impact on asset allocation.
+                        Explore the long-wave, business, debt, and credit cycle pages that are already live.
                     </p>
                     <Link
-                        href="/thesis/cycles-timing"
+                        href="/cycles"
                         className="text-blue-600 hover:text-blue-800 font-medium"
                     >
-                        Read Chapter →
+                        Explore Cycles →
                     </Link>
                 </div>
 
                 <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
-                    <h3 className="text-lg font-semibold mb-3">Chapter 4: Implementation</h3>
+                    <h3 className="text-lg font-semibold mb-3">Cockpit</h3>
                     <p className="text-gray-600 mb-4">
-                        Practical application of the framework in portfolio construction.
+                        Jump from the thesis into the live regime, signal, and market-state dashboard.
                     </p>
                     <Link
-                        href="/thesis/implementation"
+                        href="/cockpit"
                         className="text-blue-600 hover:text-blue-800 font-medium"
                     >
-                        Read Chapter →
+                        Open Cockpit →
                     </Link>
                 </div>
             </div>

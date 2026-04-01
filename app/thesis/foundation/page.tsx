@@ -71,22 +71,22 @@ export default function FoundationChapter() {
                     </Link>
 
                     <Link
-                        href="/thesis/foundation/economic-indicators"
+                        href="/guide"
                         className="block p-4 bg-white rounded border hover:shadow-md transition-shadow"
                     >
-                        <h4 className="font-semibold text-gray-900">Economic Indicators</h4>
+                        <h4 className="font-semibold text-gray-900">Guide</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                            Key metrics for regime identification
+                            The operating system and interpretation layer for the framework
                         </p>
                     </Link>
 
                     <Link
-                        href="/thesis/foundation/asset-classes"
+                        href="/cycles"
                         className="block p-4 bg-white rounded border hover:shadow-md transition-shadow"
                     >
-                        <h4 className="font-semibold text-gray-900">Asset Classes</h4>
+                        <h4 className="font-semibold text-gray-900">Cycle Library</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                            How different assets behave in various regimes
+                            Browse the live cycle pages linked into the broader framework
                         </p>
                     </Link>
                 </div>
@@ -100,10 +100,10 @@ export default function FoundationChapter() {
                     ← Previous: Introduction
                 </Link>
                 <Link
-                    href="/thesis/market-regimes"
+                    href="/guide"
                     className="text-blue-600 hover:text-blue-800"
                 >
-                    Next: Market Regimes →
+                    Next: Guide →
                 </Link>
             </div>
         </div>

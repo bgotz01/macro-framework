@@ -16,7 +16,7 @@ interface RegimeInfo {
 const REGIMES: RegimeInfo[] = [
     {
         name: 'Liquidity Shock',
-        color: '#fbbf24',
+        color: '#a855f7',
         description: 'Massive money supply growth - liquidity shock',
         entry: 'Real M2 ≥ 10%',
         exit: 'Real M2 < 8%',
@@ -39,42 +39,18 @@ const REGIMES: RegimeInfo[] = [
         guidance: 'Severe financial repression - rotate to gold as bonds are unattractive'
     },
     {
-        name: 'Contraction',
-        color: '#dc2626',
-        description: 'Real earnings and valuations collapsing with financial repression',
-        entry: 'REY < 0% AND EYP < 0% AND Real 10Y < 0%',
-        exit: 'REY > 2%',
-        guidance: 'Severe deterioration - preserve capital, favor quality defensives'
-    },
-    {
         name: 'Overvaluation',
         color: '#eab308',
         description: 'Extreme equity unattractiveness - equities far below risk-free rate',
-        entry: 'EYP < -2.5%',
-        exit: 'EYP > 0%',
+        entry: 'EYP < -2.5% OR REY < -0.5%',
+        exit: 'EYP > 0% AND REY > 0.5%',
         guidance: 'Rotate away from equities: favor bonds if Real 10Y > 0%, favor gold if Real 10Y < 0%'
-    },
-    {
-        name: 'Fragile',
-        color: '#f97316',
-        description: 'Macro deterioration - real earnings negative under financial repression with slowing liquidity',
-        entry: 'REY < 0% AND Real 10Y < 0% AND Real M2 < 10%',
-        exit: 'Real 10Y ≥ 1%',
-        guidance: 'Conditions are deteriorating - watch for transition into contraction or crisis'
-    },
-    {
-        name: 'Deep Value',
-        color: '#15803d',
-        description: 'Deep value - extreme pessimism, post-crash accumulation',
-        entry: 'REY > 6%',
-        exit: 'REY < 4%',
-        guidance: 'Equities extremely cheap - long-term bull markets often start here'
     },
     {
         name: 'Long Duration',
         color: '#3b82f6',
         description: 'Equities overvalued relative to bonds - duration growth',
-        entry: 'EYP < 0% AND Real 10Y > 2%',
+        entry: 'EYP < 0% AND Real 10Y > 1%',
         exit: 'EYP ≥ 0% OR EYP ≤ -2.5%',
         guidance: 'Negative equity yield premium - investors buying duration/growth'
     },
@@ -222,7 +198,7 @@ function OverviewContent() {
                     </div>
                     <div className="p-3 rounded-lg bg-muted/50">
                         <h4 className="font-semibold mb-1">Valuation Regimes</h4>
-                        <p className="text-sm text-muted-foreground">Deep Value, Broad Growth, Long Duration, Overvaluation - based on REY and EYP</p>
+                        <p className="text-sm text-muted-foreground">Broad Growth, Long Duration, Overvaluation - based on REY and EYP</p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/50">
                         <h4 className="font-semibold mb-1">Deterioration Regimes</h4>
@@ -268,7 +244,7 @@ function LiquidityRegimesContent() {
 
 function ValuationRegimesContent() {
     const valuationRegimes = REGIMES.filter(r =>
-        ['Deep Value', 'Broad Growth', 'Long Duration', 'Overvaluation'].includes(r.name)
+        ['Broad Growth', 'Long Duration', 'Overvaluation'].includes(r.name)
     );
 
     return (
@@ -309,7 +285,7 @@ function AllRegimesContent() {
             </section>
 
             <div className="space-y-4">
-                {REGIMES.filter(r => !['Liquidity Shock', 'Crisis', 'Bond Stress', 'Deep Value', 'Broad Growth', 'Long Duration', 'Overvaluation'].includes(r.name)).map((regime) => (
+                {REGIMES.filter(r => !['Liquidity Shock', 'Crisis', 'Bond Stress', 'Broad Growth', 'Long Duration', 'Overvaluation'].includes(r.name)).map((regime) => (
                     <RegimeCard key={regime.name} regime={regime} />
                 ))}
             </div>
@@ -318,16 +294,13 @@ function AllRegimesContent() {
 }
 
 const PRECEDENCE_ORDER = [
-    { rank: 1, name: 'Liquidity Shock', color: '#fbbf24', metric: 'Real M2', reason: 'Massive liquidity injection overrides all other conditions — speculative dynamics dominate' },
+    { rank: 1, name: 'Liquidity Shock', color: '#a855f7', metric: 'Real M2', reason: 'Massive liquidity injection overrides all other conditions — speculative dynamics dominate' },
     { rank: 2, name: 'Crisis', color: '#991b1b', metric: 'Real 10Y + Real M2', reason: 'Severe financial repression with tight money — system-level stress takes priority' },
     { rank: 3, name: 'Bond Stress', color: '#ea580c', metric: 'Real 10Y + Real 3M', reason: 'Deep negative real rates across the curve — bonds structurally broken' },
-    { rank: 4, name: 'Contraction', color: '#dc2626', metric: 'REY + EYP + Real 10Y', reason: 'Real earnings, valuations, and rates all collapsing simultaneously' },
-    { rank: 5, name: 'Overvaluation', color: '#eab308', metric: 'EYP', reason: 'Extreme equity unattractiveness vs bonds — valuation risk dominates' },
-    { rank: 6, name: 'Fragile', color: '#f97316', metric: 'REY + Real 10Y + Real M2', reason: 'Deteriorating conditions — early warning before contraction or crisis' },
-    { rank: 7, name: 'Deep Value', color: '#15803d', metric: 'REY', reason: 'Extreme cheapness — post-crash accumulation opportunity' },
-    { rank: 8, name: 'Broad Growth', color: '#22c55e', metric: 'REY', reason: 'Strong real earnings — healthy equity expansion environment' },
-    { rank: 9, name: 'Long Duration', color: '#3b82f6', metric: 'EYP + Real 10Y', reason: 'Equities overvalued but functioning — duration/growth regime' },
-    { rank: 10, name: 'Normal', color: '#6b7280', metric: '—', reason: 'Default fallback when no outlier triggers are active' },
+    { rank: 4, name: 'Overvaluation', color: '#eab308', metric: 'EYP + REY', reason: 'Extreme equity unattractiveness vs bonds or negative real earnings — valuation risk dominates' },
+    { rank: 5, name: 'Broad Growth', color: '#22c55e', metric: 'REY', reason: 'Strong real earnings — healthy equity expansion environment' },
+    { rank: 6, name: 'Long Duration', color: '#3b82f6', metric: 'EYP + Real 10Y', reason: 'Equities overvalued but functioning — duration/growth regime' },
+    { rank: 7, name: 'Normal', color: '#6b7280', metric: '—', reason: 'Default fallback when no outlier triggers are active' },
 ];
 
 function PrecedenceContent() {

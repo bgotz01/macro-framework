@@ -15,35 +15,8 @@ const thesisNavigation = [
         href: '/thesis/foundation',
         sections: [
             { title: 'Market Cycles', href: '/thesis/foundation/market-cycles' },
-            { title: 'Economic Indicators', href: '/thesis/foundation/economic-indicators' },
-            { title: 'Asset Classes', href: '/thesis/foundation/asset-classes' }
-        ]
-    },
-    {
-        title: 'Chapter 2: Market Regimes',
-        href: '/thesis/market-regimes',
-        sections: [
-            { title: 'Regime Identification', href: '/thesis/market-regimes/identification' },
-            { title: 'Transition Signals', href: '/thesis/market-regimes/transitions' },
-            { title: 'Historical Analysis', href: '/thesis/market-regimes/historical' }
-        ]
-    },
-    {
-        title: 'Chapter 3: Cycles & Timing',
-        href: '/thesis/cycles-timing',
-        sections: [
-            { title: 'Long-term Cycles', href: '/thesis/cycles-timing/long-term' },
-            { title: 'Seasonal Patterns', href: '/thesis/cycles-timing/seasonal' },
-            { title: 'Timing Models', href: '/thesis/cycles-timing/models' }
-        ]
-    },
-    {
-        title: 'Chapter 4: Implementation',
-        href: '/thesis/implementation',
-        sections: [
-            { title: 'Portfolio Construction', href: '/thesis/implementation/portfolio' },
-            { title: 'Risk Management', href: '/thesis/implementation/risk' },
-            { title: 'Case Studies', href: '/thesis/implementation/cases' }
+            { title: 'Guide', href: '/guide' },
+            { title: 'Cycle Library', href: '/cycles' }
         ]
     }
 ]

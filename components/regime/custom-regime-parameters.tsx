@@ -6,10 +6,11 @@ import { REGIME_METADATA, type RegimeFamily } from '@/lib/regime-state-machine';
 import CustomRegimeModal, { DEFAULT_THRESHOLDS, type CustomThresholds } from './custom-regime-modal';
 import RegimeModal from './regime-modal';
 import TimelineSlider from './regime-timeline-slider';
+import RegimeTimelineBarChart from '@/components/charts/regime-timeline-bar-chart';
 import RegimeStateDisplay from './regime-state-display';
 import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
-import RegimeClassificationSidebar from './regime-classification-sidebar';
+import RegimeProximity from './regime-proximity';
 import { emptyMetric } from './regime-parameters-utils';
 import type { RegimeData } from './regime-parameters-types';
 import {
@@ -19,12 +20,9 @@ import {
 
 function buildTriggerDescriptions(regime: RegimeFamily, t: CustomThresholds): { entryDescription: string; exitDescription: string } {
     const map: Record<string, { entryDescription: string; exitDescription: string }> = {
-        'Deep Value': { entryDescription: `Entry: REY ≥ ${t.deepValue.entry}%`, exitDescription: `Exit: REY < ${t.deepValue.exit}%` },
         'Broad Growth': { entryDescription: `Entry: REY ≥ ${t.broadGrowth.entry}%`, exitDescription: `Exit: REY < ${t.broadGrowth.exit}%` },
-        'Fragile': { entryDescription: `Entry: REY ≤ ${t.fragile.entryRey}% AND Real 10Y ≤ ${t.fragile.entryReal10Y}% AND Real M2 < ${t.fragile.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.fragile.exitReal10Y}%` },
-        'Contraction': { entryDescription: `Entry: REY ≤ ${t.contraction.entryRey}% AND EYP ≤ ${t.contraction.entryEyp}% AND Real 10Y ≤ ${t.contraction.entryReal10Y}%`, exitDescription: `Exit: REY ≥ ${t.contraction.exitRey}%` },
         'Long Duration': { entryDescription: `Entry: EYP ≤ ${t.longDuration.entryEyp}% AND Real 10Y ≥ ${t.longDuration.entryReal10Y}%`, exitDescription: `Exit: EYP ≥ ${t.longDuration.exitEypHigh}% OR EYP ≤ ${t.longDuration.exitEypLow}%` },
-        'Overvaluation': { entryDescription: `Entry: EYP ≤ ${t.overvaluation.entry}%`, exitDescription: `Exit: EYP ≥ ${t.overvaluation.exit}%` },
+        'Overvaluation': { entryDescription: `Entry: EYP ≤ ${t.overvaluation.entryEyp}% OR REY ≤ ${t.overvaluation.entryRey}%`, exitDescription: `Exit: EYP ≥ ${t.overvaluation.exitEyp}% AND REY ≥ ${t.overvaluation.exitRey}%` },
         'Crisis': { entryDescription: `Entry: Real 10Y ≤ ${t.crisis.entryReal10Y}% AND Real M2 ≤ ${t.crisis.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.crisis.exitReal10Y}% OR Real M2 ≥ ${t.crisis.exitRealM2}%` },
         'Bond Stress': { entryDescription: `Entry: Real 10Y ≤ ${t.bondStress.entryReal10Y}% AND Real 3M ≤ ${t.bondStress.entryReal3M}%`, exitDescription: `Exit: Real 10Y ≥ ${t.bondStress.exitReal10Y}%` },
         'Liquidity Shock': { entryDescription: `Entry: Real M2 ≥ ${t.liquidityShock.entry}%`, exitDescription: `Exit: Real M2 ≤ ${t.liquidityShock.exit}%` },
@@ -46,18 +44,29 @@ export default function CustomRegimeParameters() {
     const [initialLoading, setInitialLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [showInputVariables, setShowInputVariables] = useState(true);
+    const [showInputVariables, setShowInputVariables] = useState(false);
     const [showClassification, setShowClassification] = useState(false);
+    const [showProximity, setShowProximity] = useState(true);
     const [thresholds, setThresholds] = useState<CustomThresholds>({ ...DEFAULT_THRESHOLDS });
     const [yieldCurveInversion, setYieldCurveInversion] = useState<any>(null);
     const [showApplied, setShowApplied] = useState(false);
     const [regimeState, setRegimeState] = useState<any>(null);
 
-    // Load saved thresholds on mount
+    // Load saved thresholds on mount — deep merge with defaults to handle schema additions
     useEffect(() => {
         fetch('/api/custom-thresholds')
             .then(r => r.json())
-            .then(saved => { if (saved) setThresholds(saved); })
+            .then(saved => {
+                if (saved) {
+                    const merged: CustomThresholds = Object.fromEntries(
+                        Object.entries(DEFAULT_THRESHOLDS).map(([key, defaultVal]) => [
+                            key,
+                            { ...defaultVal, ...(saved[key] ?? {}) }
+                        ])
+                    ) as CustomThresholds;
+                    setThresholds(merged);
+                }
+            })
             .catch(() => { });
     }, []);
 
@@ -303,78 +312,90 @@ export default function CustomRegimeParameters() {
                 />
             </div>
 
+            {/* Active Regime State — above timeline */}
+            {regimeMetadata && (
+                <div className="mb-6">
+                    <RegimeStateDisplay
+                        regime={displayRegimeState.regime}
+                        entryDate={displayRegimeState.entryDate}
+                        currentDate={displayRegimeState.currentDate}
+                        daysInRegime={displayRegimeState.daysInRegime}
+                        triggerReason={displayRegimeState.triggerReason}
+                        description={regimeMetadata.description}
+                        guidance={regimeMetadata.guidance}
+                        color={regimeMetadata.color}
+                        conditions={displayRegimeState.conditions}
+                        yieldCurveInversion={yieldCurveInversion}
+                        triggerDescriptions={triggerDescriptions}
+                    />
+                </div>
+            )}
+
             <TimelineSlider
                 sliderValue={sliderValue} totalMonths={totalMonths}
                 startYear={startYear} currentYear={currentYear}
                 displayDate={displayDate} onSliderChange={setSliderValue}
             />
 
-            {/* Active Regime + Sidebar */}
-            <div className="flex gap-4 items-start mt-6">
-                <div className="flex-1 min-w-0">
-                    {regimeMetadata && (
-                        <RegimeStateDisplay
-                            regime={displayRegimeState.regime}
-                            entryDate={displayRegimeState.entryDate}
-                            currentDate={displayRegimeState.currentDate}
-                            daysInRegime={displayRegimeState.daysInRegime}
-                            triggerReason={displayRegimeState.triggerReason}
-                            description={regimeMetadata.description}
-                            guidance={regimeMetadata.guidance}
-                            color={regimeMetadata.color}
-                            conditions={displayRegimeState.conditions}
-                            yieldCurveInversion={yieldCurveInversion}
-                            triggerDescriptions={triggerDescriptions}
-                        />
+            <RegimeTimelineBarChart compact />
+
+            {/* Regime Proximity — below active regime */}
+            <div className="mt-6">
+                <button
+                    onClick={() => setShowProximity(!showProximity)}
+                    className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                >
+                    <span>Regime Proximity</span>
+                    <svg className={`w-4 h-4 transition-transform ${showProximity ? 'rotate-180' : ''}`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                {showProximity && (
+                    <RegimeProximity
+                        data={data}
+                        currentRegime={displayRegimeState?.regime}
+                    />
+                )}
+            </div>
+
+            {/* Input Variables + Classification */}
+            <div className="space-y-6 mt-6">
+                <div>
+                    <button
+                        onClick={() => setShowInputVariables(!showInputVariables)}
+                        className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                    >
+                        <span>Input Variables</span>
+                        <svg className={`w-4 h-4 transition-transform ${showInputVariables ? 'rotate-180' : ''}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    {showInputVariables && (
+                        <RegimeInputVariables data={data} isUpdating={isUpdating} />
                     )}
-
-                    <div className="space-y-6 mt-6">
-                        <div>
-                            <button
-                                onClick={() => setShowInputVariables(!showInputVariables)}
-                                className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
-                            >
-                                <span>Input Variables</span>
-                                <svg className={`w-4 h-4 transition-transform ${showInputVariables ? 'rotate-180' : ''}`}
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            {showInputVariables && (
-                                <RegimeInputVariables data={data} isUpdating={isUpdating} />
-                            )}
-                        </div>
-
-                        <div>
-                            <button
-                                onClick={() => setShowClassification(!showClassification)}
-                                className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
-                            >
-                                <span>Regime Classification</span>
-                                <svg className={`w-4 h-4 transition-transform ${showClassification ? 'rotate-180' : ''}`}
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            {showClassification && (
-                                <RegimeClassification
-                                    data={data}
-                                    liquidityRegime={liquidityRegime}
-                                    valuationRegime={valuationRegime}
-                                    flowTrendState={flowTrendState}
-                                />
-                            )}
-                        </div>
-                    </div>
                 </div>
 
-                <div className="flex-shrink-0">
-                    <RegimeClassificationSidebar
-                        data={data}
-                        liquidityRegime={liquidityRegime}
-                        valuationRegime={valuationRegime}
-                        flowTrendState={flowTrendState}
-                    />
+                <div>
+                    <button
+                        onClick={() => setShowClassification(!showClassification)}
+                        className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                    >
+                        <span>Regime Classification</span>
+                        <svg className={`w-4 h-4 transition-transform ${showClassification ? 'rotate-180' : ''}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    {showClassification && (
+                        <RegimeClassification
+                            data={data}
+                            liquidityRegime={liquidityRegime}
+                            valuationRegime={valuationRegime}
+                            flowTrendState={flowTrendState}
+                        />
+                    )}
                 </div>
             </div>
         </div>

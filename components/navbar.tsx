@@ -6,6 +6,13 @@ import { ThemeToggle } from './theme-toggle';
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const navItems = [
+        { href: '/macro-data', label: 'Macro Data' },
+        { href: '/chart', label: 'Charts' },
+        { href: '/sp500', label: 'S&P 500' },
+        { href: '/framework', label: 'Framework' },
+        { href: '/insights/mechanics', label: 'Mechanics' }
+    ];
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -31,13 +38,7 @@ export default function Navbar() {
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-1">
-                        {[
-                            { href: '/macro-data', label: 'Macro Data' },
-                            { href: '/stocks', label: 'Stocks' },
-                            { href: '/framework', label: 'Framework' },
-                            { href: '/major-events', label: 'Major Events' },
-                            { href: '/other-events', label: 'Other Events' }
-                        ].map((item) => (
+                        {navItems.map((item) => (
                             <Link
                                 key={item.href}
                                 href={item.href}
@@ -90,13 +91,7 @@ export default function Navbar() {
                 {isMenuOpen && (
                     <div className="md:hidden py-6 border-t border-border/40 animate-fade-in">
                         <div className="flex flex-col space-y-2">
-                            {[
-                                { href: '/macro-data', label: 'Macro Data' },
-                                { href: '/stocks', label: 'Stocks' },
-                                { href: '/framework', label: 'Framework' },
-                                { href: '/major-events', label: 'Major Events' },
-                                { href: '/other-events', label: 'Other Events' }
-                            ].map((item) => (
+                            {navItems.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}

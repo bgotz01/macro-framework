@@ -10,7 +10,7 @@ export default function GuidePage() {
 
             <div className="grid gap-6">
                 <Link
-                    href="/guide/debt-reduction"
+                    href="/insights/mechanics/debt-reduction"
                     className="block bg-card border rounded-lg p-6 hover:border-primary transition-colors"
                 >
                     <h2 className="text-2xl font-bold mb-2">The Two Release Valves</h2>
@@ -20,7 +20,7 @@ export default function GuidePage() {
                 </Link>
 
                 <Link
-                    href="/guide/inverted-yield-curve"
+                    href="/insights/mechanics/inverted-yield-curve"
                     className="block bg-card border rounded-lg p-6 hover:border-primary transition-colors"
                 >
                     <h2 className="text-2xl font-bold mb-2">The Inverted Yield Curve</h2>
