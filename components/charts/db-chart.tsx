@@ -66,13 +66,14 @@ export default function DBChart({
 
     // Spread/Ratio calculation state
     const [calculationMode, setCalculationMode] = useState<'none' | 'spread' | 'ratio'>('none');
-    const [spreadAssetClass1, setSpreadAssetClass1] = useState<AssetClass>('economic');
-    const [spreadAssetClass2, setSpreadAssetClass2] = useState<AssetClass>('bonds');
-    const [spreadSeries1, setSpreadSeries1] = useState<string>('');
-    const [spreadSeries2, setSpreadSeries2] = useState<string>('');
+    const [spreadAssetClass1, setSpreadAssetClass1] = useState<AssetClass>('commodities');
+    const [spreadAssetClass2, setSpreadAssetClass2] = useState<AssetClass>('equities');
+    const [spreadSeries1, setSpreadSeries1] = useState<string>('GC=F');
+    const [spreadSeries2, setSpreadSeries2] = useState<string>('DJI');
     const [availableSpreadSeries1, setAvailableSpreadSeries1] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [availableSpreadSeries2, setAvailableSpreadSeries2] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [spreadData, setSpreadData] = useState<ChartDataPoint[]>([]);
+    const [filteredSpreadData, setFilteredSpreadData] = useState<ChartDataPoint[]>([]);
 
     // Load available series when asset class changes
     useEffect(() => {
@@ -120,7 +121,7 @@ export default function DBChart({
                 }));
                 setAvailableSpreadSeries1(seriesWithNames);
 
-                // Auto-select first series
+                // Auto-select first series only if no default is set
                 if (seriesWithNames.length > 0 && !spreadSeries1) {
                     setSpreadSeries1(seriesWithNames[0].series_name);
                 }
@@ -151,7 +152,7 @@ export default function DBChart({
                 }));
                 setAvailableSpreadSeries2(seriesWithNames);
 
-                // Auto-select first series
+                // Auto-select first series only if no default is set
                 if (seriesWithNames.length > 0 && !spreadSeries2) {
                     setSpreadSeries2(seriesWithNames[0].series_name);
                 }
@@ -241,6 +242,54 @@ export default function DBChart({
 
         setFilteredData(filtered);
     }, [data, datePreset, customStartDate, customEndDate]);
+
+    // Filter spread data based on date range
+    useEffect(() => {
+        if (spreadData.length === 0) {
+            setFilteredSpreadData([]);
+            return;
+        }
+
+        let filtered = [...spreadData];
+
+        if (datePreset === 'all') {
+            setFilteredSpreadData(filtered);
+            return;
+        }
+
+        let startDate: string | null = null;
+        let endDate: string | null = null;
+
+        if (datePreset === 'custom') {
+            startDate = customStartDate;
+            endDate = customEndDate;
+        } else if (datePreset === '5y') {
+            const now = new Date();
+            const fiveYearsAgo = new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+            startDate = fiveYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '10y') {
+            const now = new Date();
+            const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+            startDate = tenYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else {
+            const preset = DATE_PRESETS.find(p => p.value === datePreset);
+            if (preset && 'start' in preset && preset.start && preset.end) {
+                startDate = preset.start;
+                endDate = preset.end;
+            }
+        }
+
+        if (startDate) {
+            filtered = filtered.filter(d => d.date >= startDate!);
+        }
+        if (endDate) {
+            filtered = filtered.filter(d => d.date <= endDate!);
+        }
+
+        setFilteredSpreadData(filtered);
+    }, [spreadData, datePreset, customStartDate, customEndDate]);
 
     // Calculate spread/ratio when calculation mode is enabled
     useEffect(() => {
@@ -350,7 +399,7 @@ export default function DBChart({
 
         // Use calculated data if calculation mode is enabled, otherwise use regular data
         const sourceData = calculationMode !== 'none' ? spreadData : data;
-        const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
+        const sourceFilteredData = calculationMode !== 'none' ? filteredSpreadData : filteredData;
         const chartData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
         const noDataInRange = datePreset !== 'all' && sourceFilteredData.length === 0;
 
@@ -506,6 +555,24 @@ export default function DBChart({
                                 </select>
                             </div>
                         </div>
+                        {/* Flip button - only show in ratio mode */}
+                        {calculationMode === 'ratio' && (
+                            <div className="flex justify-center">
+                                <button
+                                    onClick={() => {
+                                        setSpreadAssetClass1(spreadAssetClass2);
+                                        setSpreadAssetClass2(spreadAssetClass1);
+                                        setSpreadSeries1(spreadSeries2);
+                                        setSpreadSeries2(spreadSeries1);
+                                    }}
+                                    title="Flip ratio (S2 / S1)"
+                                    className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 bg-muted text-muted-foreground hover:bg-muted/80"
+                                >
+                                    ⇅
+                                </button>
+                            </div>
+                        )}
+
                         <div className="flex gap-4">
                             <div className="flex-1">
                                 <label className="block text-sm font-medium text-card-foreground mb-2">
@@ -642,7 +709,7 @@ export default function DBChart({
                         <p className="text-muted-foreground">
                             {(() => {
                                 const sourceData = calculationMode !== 'none' ? spreadData : data;
-                                const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
+                                const sourceFilteredData = calculationMode !== 'none' ? filteredSpreadData : filteredData;
                                 const displayData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
                                 return (
                                     <>
@@ -662,7 +729,7 @@ export default function DBChart({
                         <p className="text-muted-foreground">
                             {(() => {
                                 const sourceData = calculationMode !== 'none' ? spreadData : data;
-                                const sourceFilteredData = calculationMode !== 'none' ? spreadData : filteredData;
+                                const sourceFilteredData = calculationMode !== 'none' ? filteredSpreadData : filteredData;
                                 const displayData = sourceFilteredData.length > 0 ? sourceFilteredData : sourceData;
                                 return displayData.length > 0
                                     ? `${displayData[0]?.date} to ${displayData[displayData.length - 1]?.date}`

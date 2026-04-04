@@ -15,8 +15,8 @@ export default function DataPage() {
     const [allSeries, setAllSeries] = useState<SeriesInfo[]>([]);
     const [filteredSeries, setFilteredSeries] = useState<SeriesInfo[]>([]);
 
-    const [selectedAssetClass, setSelectedAssetClass] = useState<string>('');
-    const [selectedSeries, setSelectedSeries] = useState<string>('');
+    const [selectedAssetClass, setSelectedAssetClass] = useState<string>('equities');
+    const [selectedSeries, setSelectedSeries] = useState<string>('US/GSPC');
     const [selectedColumn, setSelectedColumn] = useState<string>('Value');
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
@@ -29,7 +29,10 @@ export default function DataPage() {
         if (selectedAssetClass) {
             const filtered = allSeries.filter(s => s.asset_class === selectedAssetClass);
             setFilteredSeries(filtered);
-            setSelectedSeries('');
+            // Only reset series if it doesn't belong to the new asset class
+            if (selectedSeries && !filtered.find(s => s.series_name === selectedSeries)) {
+                setSelectedSeries('');
+            }
         } else {
             setFilteredSeries(allSeries);
         }
@@ -50,8 +53,8 @@ export default function DataPage() {
     };
 
     const handleReset = () => {
-        setSelectedAssetClass('');
-        setSelectedSeries('');
+        setSelectedAssetClass('equities');
+        setSelectedSeries('US/GSPC');
         setSelectedColumn('Value');
         setStartDate('');
         setEndDate('');

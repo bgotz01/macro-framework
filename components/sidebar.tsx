@@ -67,7 +67,7 @@ const sidebarData: SidebarCategory[] = [
                 href: '/markets',
                 children: [
                     { title: 'Highlights', href: '/markets/highlights' },
-                    { title: 'Annual Returns', href: '/markets/annual-returns' },
+                    { title: 'US Annual Returns', href: '/markets/us-annual-returns' },
                     { title: 'Annual Filter', href: '/markets/annual-filter' },
 
                     { title: 'FAANG', href: '/markets/faang' },
