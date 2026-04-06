@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DataServiceNew } from '@/lib/data-service-new';
 
-// Disable caching for this route
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET(
     request: NextRequest,
@@ -34,7 +32,7 @@ export async function GET(
                 seriesInfo: seriesInfo
             }, {
                 headers: {
-                    'Cache-Control': 'no-store, max-age=0',
+                    'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
                 }
             });
         }
@@ -53,7 +51,7 @@ export async function GET(
 
         return NextResponse.json(data, {
             headers: {
-                'Cache-Control': 'no-store, max-age=0',
+                'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
             }
         });
     } catch (error) {

@@ -114,6 +114,7 @@ interface LunarReturnsTableProps {
 
 export default function LunarReturnsTable({ data, indexName }: LunarReturnsTableProps) {
     const [returns, setReturns] = useState<YearReturn[]>([]);
+    const [selectedZodiac, setSelectedZodiac] = useState<string>('All');
 
     useEffect(() => {
         if (data.length > 0) {
@@ -231,6 +232,16 @@ export default function LunarReturnsTable({ data, indexName }: LunarReturnsTable
 
     const stats = calculateStats();
 
+    const filteredReturns = selectedZodiac === 'All'
+        ? returns
+        : returns.filter(r => getZodiacAnimal(parseInt(r.year)) === selectedZodiac);
+
+    const filteredAvg = filteredReturns.length > 0
+        ? filteredReturns.reduce((sum, r) => sum + r.return, 0) / filteredReturns.length
+        : null;
+
+    const filteredWins = filteredReturns.filter(r => r.return > 0).length;
+
     return (
         <div className="space-y-6">
             {/* Stats Card */}
@@ -276,7 +287,24 @@ export default function LunarReturnsTable({ data, indexName }: LunarReturnsTable
 
             {/* Table */}
             <div>
-                <h2 className="text-2xl font-bold mb-4">Lunar Year Returns</h2>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold">Lunar Year Returns</h2>
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <span className="text-sm text-muted-foreground">Filter by Zodiac:</span>
+                        {['All', ...ZODIAC_ANIMALS].map(animal => (
+                            <button
+                                key={animal}
+                                onClick={() => setSelectedZodiac(animal)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${selectedZodiac === animal
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                            >
+                                {animal === 'All' ? 'All' : `${getZodiacEmoji(animal)} ${animal}`}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -290,7 +318,7 @@ export default function LunarReturnsTable({ data, indexName }: LunarReturnsTable
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/30">
-                                {returns.map((ret) => {
+                                {filteredReturns.map((ret) => {
                                     const yearNum = parseInt(ret.year);
                                     const zodiacAnimal = getZodiacAnimal(yearNum);
                                     const zodiacEmoji = getZodiacEmoji(zodiacAnimal);
@@ -326,6 +354,19 @@ export default function LunarReturnsTable({ data, indexName }: LunarReturnsTable
                                     );
                                 })}
                             </tbody>
+                            {filteredAvg !== null && (
+                                <tfoot className="border-t-2 border-border bg-muted/50">
+                                    <tr>
+                                        <td className="px-4 py-3 font-semibold text-muted-foreground" colSpan={2}>
+                                            Avg ({filteredReturns.length} years, {filteredWins}W / {filteredReturns.length - filteredWins}L)
+                                        </td>
+                                        <td className={`px-4 py-3 text-right font-bold ${getReturnColor(filteredAvg)}`}>
+                                            {formatPercent(filteredAvg)}
+                                        </td>
+                                        <td colSpan={2} />
+                                    </tr>
+                                </tfoot>
+                            )}
                         </table>
                     </div>
                 </div>

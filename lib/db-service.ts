@@ -29,6 +29,8 @@ export interface SeriesInfo {
 class DatabaseService {
     private db: Database.Database | null = null;
     private dbPath: string;
+    private seriesCache = new Map<string, SeriesInfo[]>();
+    private preparedStatements = new Map<string, Database.Statement>();
 
     constructor() {
         this.dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
@@ -37,58 +39,59 @@ class DatabaseService {
     private getDB(): Database.Database {
         if (!this.db) {
             this.db = new Database(this.dbPath, { readonly: true });
+            // Enable WAL mode for better read performance
+            this.db.pragma('journal_mode = WAL');
+            this.db.pragma('cache_size = -64000'); // 64MB cache
         }
         return this.db;
     }
 
+    private prepare(sql: string): Database.Statement {
+        if (!this.preparedStatements.has(sql)) {
+            this.preparedStatements.set(sql, this.getDB().prepare(sql));
+        }
+        return this.preparedStatements.get(sql)!;
+    }
+
     // Get all available series for an asset class
     getSeriesByAssetClass(assetClass: string): SeriesInfo[] {
+        if (this.seriesCache.has(assetClass)) {
+            return this.seriesCache.get(assetClass)!;
+        }
+
         const db = this.getDB();
 
         const query = `
-            SELECT DISTINCT 
-                ts.asset_class,
-                ts.series_name,
-                ts.column_name,
-                COALESCE(sm.display_name, ts.series_name) as display_name,
-                sm.units,
-                sm.geography,
-                sm.currency
-            FROM time_series ts
-            LEFT JOIN series_metadata sm 
-                ON ts.asset_class = sm.asset_class 
-                AND ts.series_name = sm.series_name
-            WHERE ts.asset_class = ?
-            ORDER BY ts.series_name, ts.column_name
+            SELECT 
+                asset_class,
+                series_name,
+                COALESCE(display_name, series_name) as display_name,
+                units,
+                geography,
+                currency
+            FROM series_metadata
+            WHERE asset_class = ?
+            ORDER BY display_name
         `;
 
-        const rows = db.prepare(query).all(assetClass) as any[];
+        const rows = this.prepare(query).all(assetClass) as any[];
 
-        // Group by series_name
-        const seriesMap = new Map<string, SeriesInfo>();
+        const result = rows.map(row => ({
+            asset_class: row.asset_class,
+            series_name: row.series_name,
+            display_name: row.display_name,
+            columns: ['Value'],
+            units: row.units,
+            geography: row.geography,
+            currency: row.currency
+        }));
 
-        for (const row of rows) {
-            if (!seriesMap.has(row.series_name)) {
-                seriesMap.set(row.series_name, {
-                    asset_class: row.asset_class,
-                    series_name: row.series_name,
-                    display_name: row.display_name,
-                    columns: [],
-                    units: row.units,
-                    geography: row.geography,
-                    currency: row.currency
-                });
-            }
-            seriesMap.get(row.series_name)!.columns.push(row.column_name);
-        }
-
-        return Array.from(seriesMap.values());
+        this.seriesCache.set(assetClass, result);
+        return result;
     }
 
     // Load data for a specific series
     loadSeries(assetClass: string, seriesName: string, columns?: string[]): ChartData {
-        const db = this.getDB();
-
         let query = `
             SELECT date, column_name, value
             FROM time_series
@@ -104,7 +107,7 @@ class DatabaseService {
 
         query += ` ORDER BY date ASC`;
 
-        const rows = db.prepare(query).all(...params) as any[];
+        const rows = this.prepare(query).all(...params) as any[];
 
         // Transform to chart format
         const dataMap = new Map<string, DataPoint>();
@@ -177,15 +180,13 @@ class DatabaseService {
 
     // Get date range for a series
     getDateRange(assetClass: string, seriesName: string): { min: string; max: string } | null {
-        const db = this.getDB();
-
         const query = `
             SELECT MIN(date) as min, MAX(date) as max
             FROM time_series
             WHERE asset_class = ? AND series_name = ?
         `;
 
-        const result = db.prepare(query).get(assetClass, seriesName) as any;
+        const result = this.prepare(query).get(assetClass, seriesName) as any;
 
         if (!result || !result.min) {
             return null;

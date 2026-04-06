@@ -64,6 +64,7 @@ VALUE_COLUMN = "Close"
 #   CL=F     - Crude Oil Futures
 #   SI=F     - Silver Futures
 #
+#
 # Currencies:
 #   EURUSD=X - Euro/USD
 #   GBPUSD=X - British Pound/USD

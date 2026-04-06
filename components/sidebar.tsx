@@ -29,8 +29,12 @@ const sidebarData: SidebarCategory[] = [
                 href: '/cockpit',
             },
             {
-                title: 'Guide',
-                href: '/guide',
+                title: 'Asset Returns',
+                href: '/asset-returns',
+            },
+            {
+                title: 'OS Framework',
+                href: '/os-framework',
             },
             {
                 title: 'Wealth Distribution',
@@ -73,6 +77,14 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'FAANG', href: '/markets/faang' },
                     { title: 'Crude Oil', href: '/markets/crude-oil' },
                 ],
+            },
+            {
+                title: 'Hedge Funds',
+                href: '/hedge-funds',
+            },
+            {
+                title: 'CFTC',
+                href: '/cftc',
             },
 
         ],
