@@ -403,7 +403,7 @@ export default function EquitiesChart({
 
     // Compute 200-day and 50-day moving averages over filteredData
     const ma200Data = (() => {
-        const sourceData = calculationMode === 'ratio' ? ratioData : filteredData;
+        const sourceData = filteredData;
         return sourceData.map((point, i) => {
             const win200 = sourceData.slice(Math.max(0, i - 199), i + 1);
             const win50 = sourceData.slice(Math.max(0, i - 49), i + 1);
@@ -437,7 +437,9 @@ export default function EquitiesChart({
             );
         }
 
-        if (data.length === 0) {
+        const sourceData = calculationMode === 'ratio' ? ratioData : data;
+
+        if (sourceData.length === 0) {
             return (
                 <div className="flex items-center justify-center" style={{ height }}>
                     <p className="text-muted-foreground">No data available</p>
@@ -445,7 +447,6 @@ export default function EquitiesChart({
             );
         }
 
-        const sourceData = calculationMode === 'ratio' ? ratioData : data;
         const chartData = filteredData.length > 0 ? filteredData : sourceData;
         const noDataInRange = datePreset !== 'all' && filteredData.length === 0;
 

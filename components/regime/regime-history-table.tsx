@@ -40,35 +40,17 @@ export default function RegimeHistoryTable() {
     }, []);
 
     const getRegimeColor = (regime: string): string => {
-        const normalized = regime.toLowerCase();
-
-        // Green regimes: Broad Growth, Liquidity Shock, Long Duration
-        if (normalized.includes('growth') ||
-            normalized.includes('liquidity') ||
-            normalized.includes('long duration')) {
-            return 'border-l-green-500';
-        }
-
-        // Red regimes: Crisis, Contraction
-        if (normalized.includes('crisis') ||
-            normalized.includes('contraction')) {
-            return 'border-l-red-500';
-        }
-
-        // Orange for Fragile, Overvaluation, and Bond Stress
-        if (normalized.includes('fragile') ||
-            normalized.includes('overvaluation') ||
-            normalized.includes('bond stress')) {
-            return 'border-l-orange-500';
-        }
-
-        // Green for Deep Value
-        if (normalized.includes('deep value')) {
-            return 'border-l-green-500';
-        }
-
-        // Blue for Normal and others
-        return 'border-l-blue-500';
+        const colors: Record<string, string> = {
+            'broad growth': 'border-l-green-500',
+            'long duration': 'border-l-blue-500',
+            'overvaluation': 'border-l-yellow-500',
+            'crisis': 'border-l-red-900',
+            'bond stress': 'border-l-orange-600',
+            'liquidity shock': 'border-l-purple-500',
+            'liquidity contraction': 'border-l-orange-500',
+            'normal': 'border-l-gray-500',
+        };
+        return colors[regime.toLowerCase()] ?? 'border-l-gray-400';
     };
 
     if (loading) {

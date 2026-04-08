@@ -17,11 +17,12 @@
 // Single source of truth for all threshold values
 const T = {
     broadGrowth: { entryREY: 3, exitREY: 1 },
-    longDuration: { entryEYP: 0, entryReal10Y: 1, exitEYP_hi: 0, exitEYP_lo: -2.5, exitREY: -0.5 },
+    longDuration: { entryEYP: 0, entryReal10Y: 1, entryREY: 0, exitEYP_hi: 0, exitEYP_lo: -2.5, exitREY: -0.5 },
     overvaluation: { entryEYP: -2.5, entryREY: -0.5, exitEYP: 0, exitREY: 0.5 },
     crisis: { entryReal10Y: -1, entryRealM2: 5, exitReal10Y: 0.5, exitRealM2: 7 },
     bondStress: { entryReal10Y: -0.5, entryReal3M: -1, exitReal10Y: 0.25 },
     liquidityShock: { entryRealM2: 10, exitRealM2: 8 },
+    liquidityContraction: { entryRealM2: 0, entryEYP: 0, exitRealM2: 0, exitEYP: 0 },
 } as const;
 
 const fmt = (v: number) => `${v}%`;
@@ -37,10 +38,10 @@ export const REGIME_TRIGGERS = {
         exitDescription: `Exit: REY < ${fmt(T.broadGrowth.exitREY)}`,
     },
     'Long Duration': {
-        entry: (c: CurrentConditions) => c.eyp !== null && c.real10Y !== null && c.eyp <= T.longDuration.entryEYP && c.real10Y >= T.longDuration.entryReal10Y,
+        entry: (c: CurrentConditions) => c.eyp !== null && c.real10Y !== null && c.rey !== null && c.eyp <= T.longDuration.entryEYP && c.real10Y >= T.longDuration.entryReal10Y && c.rey >= T.longDuration.entryREY,
         exit: (c: CurrentConditions) => c.eyp !== null && c.rey !== null && (c.eyp >= T.longDuration.exitEYP_hi || c.eyp <= T.longDuration.exitEYP_lo || c.rey <= T.longDuration.exitREY),
         reason: (c: CurrentConditions) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
-        entryDescription: `Entry: ${cond('EYP', 'lte', T.longDuration.entryEYP)} AND ${cond('Real 10Y', 'gte', T.longDuration.entryReal10Y)}`,
+        entryDescription: `Entry: ${cond('EYP', 'lte', T.longDuration.entryEYP)} AND ${cond('Real 10Y', 'gte', T.longDuration.entryReal10Y)} AND ${cond('REY', 'gte', T.longDuration.entryREY)}`,
         exitDescription: `Exit: EYP ${op('gte')} ${fmt(T.longDuration.exitEYP_hi)} OR EYP ${op('lte')} ${fmt(T.longDuration.exitEYP_lo)} OR REY < ${fmt(T.longDuration.exitREY)}`,
     },
     'Overvaluation': {
@@ -74,6 +75,13 @@ export const REGIME_TRIGGERS = {
         reason: (c: CurrentConditions) => `Liquidity Shock: Real M2 ${c.realM2?.toFixed(1)}%`,
         entryDescription: `Entry: ${cond('Real M2', 'gte', T.liquidityShock.entryRealM2)}`,
         exitDescription: `Exit: ${cond('Real M2', 'lte', T.liquidityShock.exitRealM2)}`,
+    },
+    'Liquidity Contraction': {
+        entry: (c: CurrentConditions) => c.realM2 !== null && c.eyp !== null && c.realM2 < T.liquidityContraction.entryRealM2 && c.eyp < T.liquidityContraction.entryEYP,
+        exit: (c: CurrentConditions) => c.realM2 !== null && c.eyp !== null && (c.realM2 >= T.liquidityContraction.exitRealM2 || c.eyp >= T.liquidityContraction.exitEYP),
+        reason: (c: CurrentConditions) => `Liquidity Contraction: Real M2 ${c.realM2?.toFixed(1)}%, EYP ${c.eyp?.toFixed(2)}%`,
+        entryDescription: `Entry: Real M2 < 0% AND EYP < 0%`,
+        exitDescription: `Exit: Real M2 ≥ 0% OR EYP ≥ 0%`,
     },
     'Normal': {
         entry: () => false,
@@ -127,6 +135,7 @@ export type RegimeFamily =
     | 'Crisis'
     | 'Bond Stress'
     | 'Liquidity Shock'
+    | 'Liquidity Contraction'
     | 'Normal';
 
 export interface RegimeState {
@@ -199,6 +208,11 @@ export const REGIME_METADATA: Record<RegimeFamily, { description: string; guidan
         guidance: 'Massive liquidity injection - speculative assets thrive',
         color: '#a855f7' // purple
     },
+    'Liquidity Contraction': {
+        description: 'Money supply contracting with equities overvalued vs bonds - dual pressure',
+        guidance: 'Tightening liquidity and negative equity premium - reduce risk, favor cash and short duration',
+        color: '#f97316' // orange
+    },
     'Normal': {
         description: 'Balanced conditions - no extreme triggers active',
         guidance: 'Standard market environment - maintain diversified positioning',
@@ -263,7 +277,8 @@ export function determineNextRegime(
         'Bond Stress',
         'Overvaluation',
         'Broad Growth',
-        'Long Duration'
+        'Long Duration',
+        'Liquidity Contraction'
     ];
 
     const currentRegime = currentState?.regime || null;

@@ -16,6 +16,7 @@ export const REGIME_COLORS: Record<string, string> = {
     'Crisis': '#991b1b',
     'Bond Stress': '#ea580c',
     'Liquidity Shock': '#a855f7',
+    'Liquidity Contraction': '#f97316',
     'Normal': '#6b7280',
 };
 

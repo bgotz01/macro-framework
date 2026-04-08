@@ -13,6 +13,7 @@ const REGIME_METRICS: Record<RegimeFamily, Set<string>> = {
     'Crisis': new Set(['real10Y', 'realM2']),
     'Bond Stress': new Set(['real10Y', 'real3M']),
     'Liquidity Shock': new Set(['realM2']),
+    'Liquidity Contraction': new Set(['realM2', 'eyp']),
     'Normal': new Set([])
 };
 

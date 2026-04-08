@@ -50,7 +50,7 @@ const REGIMES: RegimeInfo[] = [
         name: 'Long Duration',
         color: '#3b82f6',
         description: 'Equities overvalued relative to bonds - duration growth',
-        entry: 'EYP < 0% AND Real 10Y > 1%',
+        entry: 'EYP ≤ 0% AND Real 10Y ≥ 1% AND REY > 0%',
         exit: 'EYP ≥ 0% OR EYP ≤ -2.5% OR REY < -0.5%',
         guidance: 'Negative equity yield premium - investors buying duration/growth'
     },
@@ -61,6 +61,14 @@ const REGIMES: RegimeInfo[] = [
         entry: 'REY > 3%',
         exit: 'REY < 1%',
         guidance: 'Earnings growing faster than inflation - lean into quality growth'
+    },
+    {
+        name: 'Liquidity Contraction',
+        color: '#f97316',
+        description: 'Money supply contracting with equities overvalued vs bonds - dual pressure',
+        entry: 'Real M2 < 0% AND EYP < 0%',
+        exit: 'Real M2 ≥ 0% OR EYP ≥ 0%',
+        guidance: 'Tightening liquidity and negative equity premium - reduce risk, favor cash and short duration'
     },
     {
         name: 'Normal',
@@ -300,7 +308,8 @@ const PRECEDENCE_ORDER = [
     { rank: 4, name: 'Overvaluation', color: '#eab308', metric: 'EYP + REY', reason: 'Extreme equity unattractiveness vs bonds or negative real earnings — valuation risk dominates' },
     { rank: 5, name: 'Broad Growth', color: '#22c55e', metric: 'REY', reason: 'Strong real earnings — healthy equity expansion environment' },
     { rank: 6, name: 'Long Duration', color: '#3b82f6', metric: 'EYP + Real 10Y', reason: 'Equities overvalued but functioning — duration/growth regime' },
-    { rank: 7, name: 'Normal', color: '#6b7280', metric: '—', reason: 'Default fallback when no outlier triggers are active' },
+    { rank: 7, name: 'Liquidity Contraction', color: '#f97316', metric: 'Real M2 + EYP', reason: 'Money supply shrinking with equities overvalued vs bonds — dual pressure on risk assets' },
+    { rank: 8, name: 'Normal', color: '#6b7280', metric: '—', reason: 'Default fallback when no outlier triggers are active' },
 ];
 
 function PrecedenceContent() {

@@ -23,11 +23,12 @@ import {
 function buildTriggerDescriptions(regime: RegimeFamily, t: CustomThresholds): { entryDescription: string; exitDescription: string } {
     const map: Record<string, { entryDescription: string; exitDescription: string }> = {
         'Broad Growth': { entryDescription: `Entry: REY ≥ ${t.broadGrowth.entry}%`, exitDescription: `Exit: REY < ${t.broadGrowth.exit}%` },
-        'Long Duration': { entryDescription: `Entry: EYP ≤ ${t.longDuration.entryEyp}% AND Real 10Y ≥ ${t.longDuration.entryReal10Y}%`, exitDescription: `Exit: EYP ≥ ${t.longDuration.exitEypHigh}% OR EYP ≤ ${t.longDuration.exitEypLow}% OR REY < ${t.longDuration.exitRey}%` },
+        'Long Duration': { entryDescription: `Entry: EYP ≤ ${t.longDuration.entryEyp}% AND Real 10Y ≥ ${t.longDuration.entryReal10Y}% AND REY ≥ ${t.longDuration.entryRey}%`, exitDescription: `Exit: EYP ≥ ${t.longDuration.exitEypHigh}% OR EYP ≤ ${t.longDuration.exitEypLow}% OR REY < ${t.longDuration.exitRey}%` },
         'Overvaluation': { entryDescription: `Entry: EYP ≤ ${t.overvaluation.entryEyp}% OR REY ≤ ${t.overvaluation.entryRey}%`, exitDescription: `Exit: EYP ≥ ${t.overvaluation.exitEyp}% AND REY ≥ ${t.overvaluation.exitRey}%` },
         'Crisis': { entryDescription: `Entry: Real 10Y ≤ ${t.crisis.entryReal10Y}% AND Real M2 ≤ ${t.crisis.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.crisis.exitReal10Y}% OR Real M2 ≥ ${t.crisis.exitRealM2}%` },
         'Bond Stress': { entryDescription: `Entry: Real 10Y ≤ ${t.bondStress.entryReal10Y}% AND Real 3M ≤ ${t.bondStress.entryReal3M}%`, exitDescription: `Exit: Real 10Y ≥ ${t.bondStress.exitReal10Y}%` },
         'Liquidity Shock': { entryDescription: `Entry: Real M2 ≥ ${t.liquidityShock.entry}%`, exitDescription: `Exit: Real M2 ≤ ${t.liquidityShock.exit}%` },
+        'Liquidity Contraction': { entryDescription: `Entry: Real M2 < 0% AND EYP < 0%`, exitDescription: `Exit: Real M2 ≥ 0% OR EYP ≥ 0%` },
         'Normal': { entryDescription: 'Default state when no outlier triggers are active', exitDescription: '' },
     };
     return map[regime] || map['Normal'];

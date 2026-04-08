@@ -34,6 +34,12 @@ interface RegimeReturnStats {
     periods: PeriodDetail[];
 }
 
+const ASSETS = [
+    { key: 'sp500', label: 'S&P 500', subtitle: '1960–Present' },
+    { key: 'nasdaq', label: 'Nasdaq 100', subtitle: '1985–Present' },
+    { key: 'gold', label: 'Gold', subtitle: '1975–Present' },
+];
+
 function formatReturn(val: number | null): string {
     if (val === null) return '—';
     return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
@@ -144,24 +150,34 @@ function PeriodTable({ periods, regime }: { periods: PeriodDetail[]; regime: str
 }
 
 export default function RegimeReturnsPage() {
-    const [data, setData] = useState<RegimeReturnStats[]>([]);
+    const [activeAsset, setActiveAsset] = useState('sp500');
+    const [dataByAsset, setDataByAsset] = useState<Record<string, RegimeReturnStats[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [expandedRegime, setExpandedRegime] = useState<string | null>(null);
     const [statType, setStatType] = useState<'avg' | 'median'>('avg');
 
     useEffect(() => {
-        fetch('/api/regime-returns')
+        setLoading(true);
+        setError(null);
+        if (dataByAsset[activeAsset]) {
+            setLoading(false);
+            return;
+        }
+        fetch(`/api/regime-returns?asset=${activeAsset}`)
             .then(res => res.json())
             .then(json => {
-                setData(json.regimeReturns);
+                setDataByAsset(prev => ({ ...prev, [activeAsset]: json.regimeReturns }));
                 setLoading(false);
             })
             .catch(err => {
                 setError(err.message);
                 setLoading(false);
             });
-    }, []);
+    }, [activeAsset]);
+
+    const data = dataByAsset[activeAsset] ?? [];
+    const activeAssetMeta = ASSETS.find(a => a.key === activeAsset)!;
 
     if (loading) {
         return (
@@ -195,12 +211,28 @@ export default function RegimeReturnsPage() {
                     className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
                     style={{ letterSpacing: '0.2em' }}
                 >
-                    S&P 500 Returns by Market Regime • 1960–Present
+                    {activeAssetMeta.label} Returns by Market Regime • {activeAssetMeta.subtitle}
                 </p>
                 <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                    How did the S&P 500 perform during each regime, and what were forward returns
+                    How did {activeAssetMeta.label} perform during each regime, and what were forward returns
                     from the point of regime entry?
                 </p>
+            </div>
+
+            {/* Asset tabs */}
+            <div className="flex gap-1 mb-6 p-1 rounded-lg bg-muted/50 w-fit">
+                {ASSETS.map(a => (
+                    <button
+                        key={a.key}
+                        onClick={() => { setActiveAsset(a.key); setExpandedRegime(null); }}
+                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${activeAsset === a.key
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                    >
+                        {a.label}
+                    </button>
+                ))}
             </div>
 
             {/* Stat type toggle */}
@@ -221,61 +253,78 @@ export default function RegimeReturnsPage() {
                 </div>
             </div>
 
-            {/* Summary table */}
-            <div className="rounded-xl border border-border bg-card mb-8">
-                <SummaryTable data={data} statType={statType} />
-            </div>
+            {loading ? (
+                <div className="flex items-center justify-center py-24">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                </div>
+            ) : error ? (
+                <div className="text-center text-red-500 py-12">Error: {error}</div>
+            ) : (
+                <>
 
-            {/* Expandable detail sections */}
-            <div className="space-y-3">
-                {data.map((r) => (
-                    <div key={r.regime} className="rounded-xl border border-border bg-card overflow-hidden">
-                        <button
-                            onClick={() => setExpandedRegime(expandedRegime === r.regime ? null : r.regime)}
-                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
-                        >
-                            <div className="flex items-center gap-3">
-                                <RegimeTag regime={r.regime} />
-                                <span className="text-sm text-muted-foreground">
-                                    {r.occurrences} occurrence{r.occurrences !== 1 ? 's' : ''}
-                                </span>
-                                {r.minDuringReturn !== null && r.maxDuringReturn !== null && (
-                                    <span className="text-xs text-muted-foreground">
-                                        Range: <span className={returnColor(r.minDuringReturn)}>{formatReturn(r.minDuringReturn)}</span>
-                                        {' to '}
-                                        <span className={returnColor(r.maxDuringReturn)}>{formatReturn(r.maxDuringReturn)}</span>
-                                    </span>
+                    {/* Summary table */}
+                    <div className="rounded-xl border border-border bg-card mb-8">
+                        <SummaryTable data={data} statType={statType} />
+                    </div>
+
+                    {/* Expandable detail sections */}
+                    <div className="space-y-3">
+                        {data.map((r) => (
+                            <div key={r.regime} className="rounded-xl border border-border bg-card overflow-hidden">
+                                <button
+                                    onClick={() => setExpandedRegime(expandedRegime === r.regime ? null : r.regime)}
+                                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <RegimeTag regime={r.regime} />
+                                        <span className="text-sm text-muted-foreground">
+                                            {r.occurrences} occurrence{r.occurrences !== 1 ? 's' : ''}
+                                        </span>
+                                        {r.minDuringReturn !== null && r.maxDuringReturn !== null && (
+                                            <span className="text-xs text-muted-foreground">
+                                                Range: <span className={returnColor(r.minDuringReturn)}>{formatReturn(r.minDuringReturn)}</span>
+                                                {' to '}
+                                                <span className={returnColor(r.maxDuringReturn)}>{formatReturn(r.maxDuringReturn)}</span>
+                                            </span>
+                                        )}
+                                    </div>
+                                    <svg
+                                        className={`w-4 h-4 text-muted-foreground transition-transform ${expandedRegime === r.regime ? 'rotate-180' : ''}`}
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {expandedRegime === r.regime && (
+                                    <div className="border-t border-border">
+                                        <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground">
+                                            {REGIME_METADATA[r.regime as RegimeFamily]?.description}
+                                        </div>
+                                        <PeriodTable periods={r.periods} regime={r.regime} />
+                                    </div>
                                 )}
                             </div>
-                            <svg
-                                className={`w-4 h-4 text-muted-foreground transition-transform ${expandedRegime === r.regime ? 'rotate-180' : ''}`}
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        {expandedRegime === r.regime && (
-                            <div className="border-t border-border">
-                                <div className="px-4 py-2 bg-muted/20 text-xs text-muted-foreground">
-                                    {REGIME_METADATA[r.regime as RegimeFamily]?.description}
-                                </div>
-                                <PeriodTable periods={r.periods} regime={r.regime} />
-                            </div>
-                        )}
+                        ))}
                     </div>
-                ))}
-            </div>
 
-            {/* Methodology note */}
-            <div className="mt-8 p-4 rounded-lg bg-muted/30 border border-border/50 text-xs text-muted-foreground">
-                <p className="font-semibold mb-1">Methodology</p>
-                <p>
-                    Returns are calculated using S&P 500 daily closing prices. &quot;During Regime&quot; measures the total return
-                    from regime entry to exit. Forward returns (1Y/3Y/5Y) are measured from the regime entry date.
-                    Regime periods are identified from the persistent state machine timeline (1960–present).
-                    Forward returns may be null for recent periods where insufficient time has elapsed.
-                </p>
-            </div>
+                    {/* Methodology note */}
+                    <div className="mt-8 p-4 rounded-lg bg-muted/30 border border-border/50 text-xs text-muted-foreground">
+                        <p className="font-semibold mb-1">Methodology</p>
+                        <p className="mb-2">
+                            Returns are calculated using {activeAssetMeta.label} daily closing prices. &quot;During Regime&quot; measures the total return
+                            from regime entry to exit. Forward returns (1Y/3Y/5Y) are measured from the regime entry date.
+                            Regime periods are identified from the persistent state machine timeline (1960–present).
+                            Forward returns may be null for recent periods where insufficient time has elapsed.
+                        </p>
+                        <p>
+                            <span className="font-semibold">Entry &amp; exit dates</span> are month-end dates (e.g. Apr 30, 2020).
+                            Regime classification is based on monthly macro data — a regime change detected in April uses April&apos;s
+                            month-end readings, which are estimable by month-end even if official data releases follow shortly after.
+                            Entry and exit prices are the closest daily close to that month-end date (within a 10-day window).
+                        </p>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

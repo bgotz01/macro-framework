@@ -119,7 +119,17 @@ function findForwardPrice(prices: Map<string, number>, startDate: string, years:
     return result ? result.price : null;
 }
 
-export async function GET() {
+const ASSET_CONFIG: Record<string, { assetClass: string; seriesName: string; label: string }> = {
+    sp500: { assetClass: 'equities', seriesName: 'US/GSPC', label: 'S&P 500' },
+    nasdaq: { assetClass: 'equities', seriesName: 'NDX', label: 'Nasdaq 100' },
+    gold: { assetClass: 'commodities', seriesName: 'GC=F', label: 'Gold' },
+};
+
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const assetKey = searchParams.get('asset') ?? 'sp500';
+    const assetConfig = ASSET_CONFIG[assetKey] ?? ASSET_CONFIG.sp500;
+
     try {
         const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
         const db = new Database(dbPath, { readonly: true });
@@ -131,13 +141,13 @@ export async function GET() {
             ORDER BY date ASC
         `).all() as RegimeRow[];
 
-        // 2. Get S&P 500 daily prices
+        // 2. Get asset daily prices
         const priceRows = db.prepare(`
             SELECT date, value
             FROM time_series
-            WHERE asset_class = 'equities' AND series_name = 'US/GSPC' AND column_name = 'Value'
+            WHERE asset_class = ? AND series_name = ? AND column_name = 'Value'
             ORDER BY date ASC
-        `).all() as PriceRow[];
+        `).all(assetConfig.assetClass, assetConfig.seriesName) as PriceRow[];
 
         db.close();
 
@@ -266,7 +276,7 @@ export async function GET() {
         // Sort by occurrences descending
         results.sort((a, b) => b.occurrences - a.occurrences);
 
-        return NextResponse.json({ regimeReturns: results });
+        return NextResponse.json({ regimeReturns: results, asset: assetKey, assetLabel: assetConfig.label });
     } catch (error) {
         console.error('Error calculating regime returns:', error);
         return NextResponse.json(

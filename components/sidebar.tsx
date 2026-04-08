@@ -102,6 +102,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime-active',
             },
             {
+                title: 'Regime Historical',
+                href: '/regime/historical',
+            },
+            {
                 title: 'Trend Pressure',
                 href: '/trend-pressure',
             },
@@ -114,10 +118,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime/returns',
             },
             {
-                title: 'Regime Historical',
-                href: '/regime-historical',
+                title: 'Regime Examples',
+                href: '/regime-examples',
                 children: [
-                    { title: 'Long Duration', href: '/regime-historical/long-duration' },
+                    { title: 'Long Duration', href: '/regime-examples/long-duration' },
                 ],
             },
             {
