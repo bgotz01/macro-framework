@@ -35,6 +35,7 @@ export default function RegimeParameters() {
     const [data, setData] = useState<RegimeData | null>(null);
     const [regimeState, setRegimeState] = useState<any>(null);
     const [yieldCurveInversion, setYieldCurveInversion] = useState<any>(null);
+    const [percentileChanges, setPercentileChanges] = useState<Record<string, { label: string; delta: number | null }>>({});
     const [initialLoading, setInitialLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -80,10 +81,11 @@ export default function RegimeParameters() {
                     : `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
 
                 // Fetch both regime data and regime state in parallel
-                const [regimeDataResponse, regimeStateResponse, yieldCurveInversionResponse] = await Promise.all([
+                const [regimeDataResponse, regimeStateResponse, yieldCurveInversionResponse, percentileChangesResponse] = await Promise.all([
                     fetch(`/api/regime-data?date=${dateParam}`),
                     fetch(`/api/regime-state?date=${dateParam}`),
-                    fetch(`/api/yield-curve-inversion?date=${dateParam}`)
+                    fetch(`/api/yield-curve-inversion?date=${dateParam}`),
+                    fetch(`/api/percentile-changes?date=${dateParam}`),
                 ]);
 
                 if (!regimeDataResponse.ok) {
@@ -125,6 +127,10 @@ export default function RegimeParameters() {
                 if (yieldCurveInversionResponse.ok) {
                     const yieldCurveInversionData = await yieldCurveInversionResponse.json();
                     setYieldCurveInversion(yieldCurveInversionData);
+                }
+
+                if (percentileChangesResponse.ok) {
+                    setPercentileChanges(await percentileChangesResponse.json());
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -353,6 +359,10 @@ export default function RegimeParameters() {
                         color={regimeMetadata.color}
                         conditions={displayRegimeState.conditions}
                         yieldCurveInversion={yieldCurveInversion}
+                        percentileFlags={Object.values(percentileChanges)
+                            .filter(item => item.delta !== null && Math.abs(item.delta) > 10)
+                            .map(item => ({ label: item.label, delta: item.delta as number }))
+                        }
                     />
                 </div>
             )}

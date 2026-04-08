@@ -18,6 +18,7 @@ interface EquitiesChartProps {
     initialStartDate?: string;
     initialEndDate?: string;
     hideControls?: boolean;
+    lockAssetClass?: boolean;
 }
 
 interface ChartDataPoint {
@@ -79,7 +80,8 @@ export default function EquitiesChart({
     initialSeries = '',
     initialStartDate = '',
     initialEndDate = '',
-    hideControls = false
+    hideControls = false,
+    lockAssetClass = false
 }: EquitiesChartProps) {
     const [assetClass, setAssetClass] = useState<EquityAssetClass>(initialAssetClass);
     const [availableSeries, setAvailableSeries] = useState<SeriesInfo[]>([]);
@@ -111,7 +113,7 @@ export default function EquitiesChart({
     useEffect(() => {
         const loadSeries = async () => {
             try {
-                const response = await fetch(`/api/data/${assetClass}`);
+                const response = await fetch(`/api/data/${assetClass}`, { cache: 'no-store' });
                 if (!response.ok) {
                     throw new Error('Failed to load series list');
                 }
@@ -651,22 +653,24 @@ export default function EquitiesChart({
                     ) : (
                         /* Single Series Mode: Asset Class and Series Selector */
                         <div className="flex gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-card-foreground mb-2">
-                                    Asset Class
-                                </label>
-                                <select
-                                    value={assetClass}
-                                    onChange={(e) => setAssetClass(e.target.value as EquityAssetClass)}
-                                    className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                                >
-                                    {ASSET_CLASSES.map(ac => (
-                                        <option key={ac.value} value={ac.value}>
-                                            {ac.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            {!lockAssetClass && (
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-card-foreground mb-2">
+                                        Asset Class
+                                    </label>
+                                    <select
+                                        value={assetClass}
+                                        onChange={(e) => setAssetClass(e.target.value as EquityAssetClass)}
+                                        className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                    >
+                                        {ASSET_CLASSES.map(ac => (
+                                            <option key={ac.value} value={ac.value}>
+                                                {ac.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             <div className="flex-1">
                                 <label className="block text-sm font-medium text-card-foreground mb-2">

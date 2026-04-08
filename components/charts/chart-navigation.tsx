@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export type ChartType = 'yields' | 'economics' | 'equities' | 'valuations' | 'fx' | 'returns' | 'volatility' | 'stocks' | 'percentile' | 'divergence' | 'all';
+export type ChartType = 'yields' | 'economics' | 'equities' | 'commodities' | 'valuations' | 'fx' | 'returns' | 'volatility' | 'stocks' | 'percentile' | 'divergence' | 'all';
 
 const CHART_TYPES: Array<{ value: ChartType; label: string; description: string }> = [
     { value: 'yields', label: 'Yields & Rates', description: 'Bond yields, Fed Funds, CPI, and yield spreads' },
     { value: 'economics', label: 'Economic Data', description: 'GDP, debt, money supply, and consumption' },
     { value: 'equities', label: 'Equities & Markets', description: 'Stock indices, commodities, and volatility' },
+    { value: 'commodities', label: 'Commodities', description: 'Crude oil, gold, silver, copper, grains, and natural gas' },
     { value: 'valuations', label: 'Valuations', description: 'P/E ratios and valuation metrics' },
     { value: 'fx', label: 'FX & Currencies', description: 'Currency pairs and exchange rates' },
     { value: 'returns', label: 'Cyclical Returns', description: '2Y, 5Y, and 10Y rolling returns for markets' },

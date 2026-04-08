@@ -32,7 +32,42 @@ COMMODITY_TICKERS = {
         "yahoo": "SI=F",
         "name": "Silver Futures",
         "path": "data/commodities/SI=F.csv"
-    }
+    },
+    "HG=F": {
+        "yahoo": "HG=F",
+        "name": "Copper Futures",
+        "path": "data/commodities/HG=F.csv"
+    },
+    "NG=F": {
+        "yahoo": "NG=F",
+        "name": "Natural Gas Futures",
+        "path": "data/commodities/NG=F.csv"
+    },
+    "RB=F": {
+        "yahoo": "RB=F",
+        "name": "Gasoline RBOB Futures",
+        "path": "data/commodities/RB=F.csv"
+    },
+    "HO=F": {
+        "yahoo": "HO=F",
+        "name": "Heating Oil Futures",
+        "path": "data/commodities/HO=F.csv"
+    },
+    "ZC=F": {
+        "yahoo": "ZC=F",
+        "name": "Corn Futures",
+        "path": "data/commodities/ZC=F.csv"
+    },
+    "ZW=F": {
+        "yahoo": "ZW=F",
+        "name": "Wheat Futures",
+        "path": "data/commodities/ZW=F.csv"
+    },
+    "ZS=F": {
+        "yahoo": "ZS=F",
+        "name": "Soybean Futures",
+        "path": "data/commodities/ZS=F.csv"
+    },
 }
 
 def fetch_commodity_data(ticker_info: dict, ticker_key: str) -> bool:

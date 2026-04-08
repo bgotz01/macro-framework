@@ -50,7 +50,7 @@ function buildTriggers(t: any) {
         },
         'Long Duration': {
             entry: (c: Conditions) => c.eyp !== null && c.real10Y !== null && c.eyp <= t.longDuration.entryEyp && c.real10Y >= t.longDuration.entryReal10Y,
-            exit: (c: Conditions) => c.eyp !== null && (c.eyp >= t.longDuration.exitEypHigh || c.eyp <= t.longDuration.exitEypLow),
+            exit: (c: Conditions) => c.eyp !== null && c.rey !== null && (c.eyp >= t.longDuration.exitEypHigh || c.eyp <= t.longDuration.exitEypLow || c.rey <= t.longDuration.exitRey),
             reason: (c: Conditions) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
         },
         'Normal': {

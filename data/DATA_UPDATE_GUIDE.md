@@ -8,7 +8,12 @@ This application tracks multiple asset classes with data sourced from Yahoo Fina
 
 ## Quick Start - Update All Data (Incremental Only)
 
+
 ```bash
+#update all consecutively:
+bash scripts/update-all.sh
+
+
 # 1. Update all data from Yahoo Finance (recommended)
 python scripts/batch_update_all.py
 

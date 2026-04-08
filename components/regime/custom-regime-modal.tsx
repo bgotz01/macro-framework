@@ -26,7 +26,7 @@ export interface CustomRegimeDef {
 
 export interface CustomThresholds {
     broadGrowth: { entry: number; exit: number };
-    longDuration: { entryEyp: number; entryReal10Y: number; exitEypHigh: number; exitEypLow: number };
+    longDuration: { entryEyp: number; entryReal10Y: number; exitEypHigh: number; exitEypLow: number; exitRey: number };
     overvaluation: { entryEyp: number; entryRey: number; exitEyp: number; exitRey: number };
     crisis: { entryReal10Y: number; entryRealM2: number; exitReal10Y: number; exitRealM2: number };
     bondStress: { entryReal10Y: number; entryReal3M: number; exitReal10Y: number };
@@ -58,7 +58,7 @@ const DEFAULT_CUSTOM_REGIME: CustomRegimeDef = {
 
 export const DEFAULT_THRESHOLDS: CustomThresholds = {
     broadGrowth: { entry: 3, exit: 1 },
-    longDuration: { entryEyp: 0, entryReal10Y: 1, exitEypHigh: 0, exitEypLow: -2.5 },
+    longDuration: { entryEyp: 0, entryReal10Y: 1, exitEypHigh: 0, exitEypLow: -2.5, exitRey: -0.5 },
     overvaluation: { entryEyp: -2.5, entryRey: -0.5, exitEyp: 0, exitRey: 0.5 },
     crisis: { entryReal10Y: -1, entryRealM2: 5, exitReal10Y: 0.5, exitRealM2: 7 },
     bondStress: { entryReal10Y: -0.5, entryReal3M: -1, exitReal10Y: 0.25 },
@@ -85,9 +85,15 @@ function ThresholdRow({ label, value, onChange, suffix = '%' }: {
         onChange(isNaN(parsed) ? 0 : parsed);
     };
 
+    const labelColor = label.startsWith('Entry')
+        ? 'text-green-600 dark:text-green-400'
+        : label.startsWith('Exit')
+            ? 'text-red-600 dark:text-red-400'
+            : 'text-muted-foreground';
+
     return (
         <div className="flex items-center justify-between gap-3">
-            <label className="text-xs text-muted-foreground whitespace-nowrap">{label}</label>
+            <label className={`text-xs whitespace-nowrap font-medium ${labelColor}`}>{label}</label>
             <div className="flex items-center gap-1">
                 <input
                     type="number"
@@ -280,6 +286,7 @@ export default function CustomRegimeModal({ thresholds, onApply }: Props) {
                                             <ThresholdRow label="Entry: Real 10Y ≥" value={draft.longDuration.entryReal10Y} onChange={v => update('longDuration', 'entryReal10Y', v)} />
                                             <ThresholdRow label="Exit: EYP ≥" value={draft.longDuration.exitEypHigh} onChange={v => update('longDuration', 'exitEypHigh', v)} />
                                             <ThresholdRow label="Exit: EYP ≤" value={draft.longDuration.exitEypLow} onChange={v => update('longDuration', 'exitEypLow', v)} />
+                                            <ThresholdRow label="Exit: REY <" value={draft.longDuration.exitRey} onChange={v => update('longDuration', 'exitRey', v)} />
                                         </RegimeSection>
 
                                         <RegimeSection title="Overvaluation" color="#eab308">

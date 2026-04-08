@@ -19,7 +19,7 @@ import time
 DB_PATH = "data/macro-data.db"
 
 # Date range - for incremental updates only
-START_DATE = "2026-03-01"
+START_DATE = "2026-04-01"
 END_DATE = datetime.now().strftime("%Y-%m-%d")
 
 # Yahoo Finance ticker mappings
@@ -36,6 +36,13 @@ TICKER_MAPPINGS = {
     "CL=F": "CL=F",             # Crude Oil
     "GC=F": "GC=F",             # Gold
     "SI=F": "SI=F",             # Silver
+    "HG=F": "HG=F",             # Copper
+    "NG=F": "NG=F",             # Natural Gas
+    "RB=F": "RB=F",             # Gasoline RBOB
+    "HO=F": "HO=F",             # Heating Oil
+    "ZC=F": "ZC=F",             # Corn
+    "ZW=F": "ZW=F",             # Wheat
+    "ZS=F": "ZS=F",             # Soybeans
     
     # Crypto
     "BTCUSD": "BTC-USD",        # Bitcoin

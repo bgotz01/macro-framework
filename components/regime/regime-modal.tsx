@@ -51,7 +51,7 @@ const REGIMES: RegimeInfo[] = [
         color: '#3b82f6',
         description: 'Equities overvalued relative to bonds - duration growth',
         entry: 'EYP < 0% AND Real 10Y > 1%',
-        exit: 'EYP ≥ 0% OR EYP ≤ -2.5%',
+        exit: 'EYP ≥ 0% OR EYP ≤ -2.5% OR REY < -0.5%',
         guidance: 'Negative equity yield premium - investors buying duration/growth'
     },
     {

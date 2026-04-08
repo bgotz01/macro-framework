@@ -37,6 +37,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/os-framework',
             },
             {
+                title: 'Architecture',
+                href: '/architecture',
+            },
+            {
                 title: 'Wealth Distribution',
                 href: '/wealth-distribution',
             },

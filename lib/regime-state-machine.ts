@@ -17,7 +17,7 @@
 // Single source of truth for all threshold values
 const T = {
     broadGrowth: { entryREY: 3, exitREY: 1 },
-    longDuration: { entryEYP: 0, entryReal10Y: 1, exitEYP_hi: 0, exitEYP_lo: -2.5 },
+    longDuration: { entryEYP: 0, entryReal10Y: 1, exitEYP_hi: 0, exitEYP_lo: -2.5, exitREY: -0.5 },
     overvaluation: { entryEYP: -2.5, entryREY: -0.5, exitEYP: 0, exitREY: 0.5 },
     crisis: { entryReal10Y: -1, entryRealM2: 5, exitReal10Y: 0.5, exitRealM2: 7 },
     bondStress: { entryReal10Y: -0.5, entryReal3M: -1, exitReal10Y: 0.25 },
@@ -38,10 +38,10 @@ export const REGIME_TRIGGERS = {
     },
     'Long Duration': {
         entry: (c: CurrentConditions) => c.eyp !== null && c.real10Y !== null && c.eyp <= T.longDuration.entryEYP && c.real10Y >= T.longDuration.entryReal10Y,
-        exit: (c: CurrentConditions) => c.eyp !== null && (c.eyp >= T.longDuration.exitEYP_hi || c.eyp <= T.longDuration.exitEYP_lo),
+        exit: (c: CurrentConditions) => c.eyp !== null && c.rey !== null && (c.eyp >= T.longDuration.exitEYP_hi || c.eyp <= T.longDuration.exitEYP_lo || c.rey <= T.longDuration.exitREY),
         reason: (c: CurrentConditions) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
         entryDescription: `Entry: ${cond('EYP', 'lte', T.longDuration.entryEYP)} AND ${cond('Real 10Y', 'gte', T.longDuration.entryReal10Y)}`,
-        exitDescription: `Exit: EYP ${op('gte')} ${fmt(T.longDuration.exitEYP_hi)} OR EYP ${op('lte')} ${fmt(T.longDuration.exitEYP_lo)}`,
+        exitDescription: `Exit: EYP ${op('gte')} ${fmt(T.longDuration.exitEYP_hi)} OR EYP ${op('lte')} ${fmt(T.longDuration.exitEYP_lo)} OR REY < ${fmt(T.longDuration.exitREY)}`,
     },
     'Overvaluation': {
         entry: (c: CurrentConditions) => c.eyp !== null && c.rey !== null && (c.eyp <= T.overvaluation.entryEYP || c.rey <= T.overvaluation.entryREY),

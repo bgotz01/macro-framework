@@ -5,12 +5,14 @@ import { calculateFlowTrendState } from '@/lib/regime-config/flow-trend-config';
 import { REGIME_METADATA, type RegimeFamily } from '@/lib/regime-state-machine';
 import CustomRegimeModal, { DEFAULT_THRESHOLDS, type CustomThresholds } from './custom-regime-modal';
 import RegimeModal from './regime-modal';
+import RegimeFlagsModal from './regime-flags-modal';
 import TimelineSlider from './regime-timeline-slider';
 import RegimeTimelineBarChart from '@/components/charts/regime-timeline-bar-chart';
 import RegimeStateDisplay from './regime-state-display';
 import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
 import RegimeProximity from './regime-proximity';
+import RegimePercentileChanges from './regime-percentile-changes';
 import { emptyMetric } from './regime-parameters-utils';
 import type { RegimeData } from './regime-parameters-types';
 import {
@@ -21,7 +23,7 @@ import {
 function buildTriggerDescriptions(regime: RegimeFamily, t: CustomThresholds): { entryDescription: string; exitDescription: string } {
     const map: Record<string, { entryDescription: string; exitDescription: string }> = {
         'Broad Growth': { entryDescription: `Entry: REY ≥ ${t.broadGrowth.entry}%`, exitDescription: `Exit: REY < ${t.broadGrowth.exit}%` },
-        'Long Duration': { entryDescription: `Entry: EYP ≤ ${t.longDuration.entryEyp}% AND Real 10Y ≥ ${t.longDuration.entryReal10Y}%`, exitDescription: `Exit: EYP ≥ ${t.longDuration.exitEypHigh}% OR EYP ≤ ${t.longDuration.exitEypLow}%` },
+        'Long Duration': { entryDescription: `Entry: EYP ≤ ${t.longDuration.entryEyp}% AND Real 10Y ≥ ${t.longDuration.entryReal10Y}%`, exitDescription: `Exit: EYP ≥ ${t.longDuration.exitEypHigh}% OR EYP ≤ ${t.longDuration.exitEypLow}% OR REY < ${t.longDuration.exitRey}%` },
         'Overvaluation': { entryDescription: `Entry: EYP ≤ ${t.overvaluation.entryEyp}% OR REY ≤ ${t.overvaluation.entryRey}%`, exitDescription: `Exit: EYP ≥ ${t.overvaluation.exitEyp}% AND REY ≥ ${t.overvaluation.exitRey}%` },
         'Crisis': { entryDescription: `Entry: Real 10Y ≤ ${t.crisis.entryReal10Y}% AND Real M2 ≤ ${t.crisis.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.crisis.exitReal10Y}% OR Real M2 ≥ ${t.crisis.exitRealM2}%` },
         'Bond Stress': { entryDescription: `Entry: Real 10Y ≤ ${t.bondStress.entryReal10Y}% AND Real 3M ≤ ${t.bondStress.entryReal3M}%`, exitDescription: `Exit: Real 10Y ≥ ${t.bondStress.exitReal10Y}%` },
@@ -45,12 +47,14 @@ export default function CustomRegimeParameters() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showInputVariables, setShowInputVariables] = useState(false);
+    const [showPercentileChanges, setShowPercentileChanges] = useState(false);
     const [showClassification, setShowClassification] = useState(false);
     const [showProximity, setShowProximity] = useState(true);
     const [thresholds, setThresholds] = useState<CustomThresholds>({ ...DEFAULT_THRESHOLDS });
     const [yieldCurveInversion, setYieldCurveInversion] = useState<any>(null);
     const [showApplied, setShowApplied] = useState(false);
     const [regimeState, setRegimeState] = useState<any>(null);
+    const [percentileChanges, setPercentileChanges] = useState<Record<string, { label: string; delta: number | null }>>({});
 
     // Load saved thresholds on mount — deep merge with defaults to handle schema additions
     useEffect(() => {
@@ -111,14 +115,15 @@ export default function CustomRegimeParameters() {
                     ? 'latest'
                     : `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
 
-                const [regimeDataResponse, yieldCurveInversionResponse, customRegimeResponse] = await Promise.all([
+                const [regimeDataResponse, yieldCurveInversionResponse, customRegimeResponse, percentileChangesResponse] = await Promise.all([
                     fetch(`/api/regime-data?date=${dateParam}`),
                     fetch(`/api/yield-curve-inversion?date=${dateParam}`),
                     fetch('/api/custom-regime-state', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ thresholds, targetDate: dateParam }),
-                    })
+                    }),
+                    fetch(`/api/percentile-changes?date=${dateParam}`),
                 ]);
 
                 if (!regimeDataResponse.ok) throw new Error('Failed to fetch regime data');
@@ -151,6 +156,10 @@ export default function CustomRegimeParameters() {
 
                 if (yieldCurveInversionResponse.ok) {
                     setYieldCurveInversion(await yieldCurveInversionResponse.json());
+                }
+
+                if (percentileChangesResponse.ok) {
+                    setPercentileChanges(await percentileChangesResponse.json());
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -274,6 +283,7 @@ export default function CustomRegimeParameters() {
                 <div className="flex gap-2">
                     <CustomRegimeModal thresholds={thresholds} onApply={handleApplyThresholds} />
                     <RegimeModal />
+                    <RegimeFlagsModal />
                 </div>
                 {isCustom && (
                     <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
@@ -327,6 +337,10 @@ export default function CustomRegimeParameters() {
                         conditions={displayRegimeState.conditions}
                         yieldCurveInversion={yieldCurveInversion}
                         triggerDescriptions={triggerDescriptions}
+                        percentileFlags={Object.values(percentileChanges)
+                            .filter(item => item.delta !== null && Math.abs(item.delta) > 10)
+                            .map(item => ({ label: item.label, delta: item.delta as number }))
+                        }
                     />
                 </div>
             )}
@@ -341,16 +355,33 @@ export default function CustomRegimeParameters() {
 
             {/* Regime Proximity — below active regime */}
             <div className="mt-6">
-                <button
-                    onClick={() => setShowProximity(!showProximity)}
-                    className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
-                >
-                    <span>Regime Proximity</span>
-                    <svg className={`w-4 h-4 transition-transform ${showProximity ? 'rotate-180' : ''}`}
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
+                <div className="flex items-center justify-center gap-2 pb-2 mb-3 border-b border-border">
+                    <button
+                        onClick={() => setShowProximity(!showProximity)}
+                        className="text-base font-medium hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                        <span>Regime Proximity</span>
+                        <svg className={`w-4 h-4 transition-transform ${showProximity ? 'rotate-180' : ''}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div className="relative group">
+                        <svg className="w-4 h-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 p-3 rounded-lg bg-popover border border-border shadow-lg text-xs text-muted-foreground leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                            <p className="font-semibold text-foreground mb-1.5">How proximity is calculated</p>
+                            <p className="mb-1.5">Each regime has entry conditions (e.g. REY ≥ 3%). For each condition, proximity measures how close the current metric value is to its trigger threshold, scaled 0–100% within a defined approach range.</p>
+                            <p className="mb-1.5">When a regime has multiple conditions:</p>
+                            <ul className="space-y-0.5 mb-1.5">
+                                <li><span className="text-foreground font-medium">AND logic</span> — overall = minimum across conditions (the bottleneck)</li>
+                                <li><span className="text-foreground font-medium">OR logic</span> — overall = maximum across conditions (any one suffices)</li>
+                            </ul>
+                            <p>100% means the threshold is met or exceeded. Click a regime row to see per-condition breakdowns.</p>
+                        </div>
+                    </div>
+                </div>
                 {showProximity && (
                     <RegimeProximity
                         data={data}
@@ -374,6 +405,29 @@ export default function CustomRegimeParameters() {
                     </button>
                     {showInputVariables && (
                         <RegimeInputVariables data={data} isUpdating={isUpdating} />
+                    )}
+                </div>
+
+                <div>
+                    <button
+                        onClick={() => setShowPercentileChanges(!showPercentileChanges)}
+                        className="w-full text-base font-medium text-center pb-2 mb-3 border-b border-border hover:text-primary transition-colors flex items-center justify-center gap-2"
+                    >
+                        <span>Percentile Changes</span>
+                        <svg className={`w-4 h-4 transition-transform ${showPercentileChanges ? 'rotate-180' : ''}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    {showPercentileChanges && (
+                        <RegimePercentileChanges date={
+                            debouncedSliderValue === totalMonths
+                                ? 'latest'
+                                : (() => {
+                                    const { year, month } = getDateFromSlider(debouncedSliderValue);
+                                    return `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
+                                })()
+                        } />
                     )}
                 </div>
 

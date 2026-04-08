@@ -11,10 +11,12 @@ DB_FILE = "data/macro-data.db"
 ASSET_CLASS = "commodities"
 
 COMMODITIES = [
-    { "ticker": "HG=F",  "display": "Copper",    "units": "usd_per_lb"     },
-    { "ticker": "ZC=F",  "display": "Corn",       "units": "usd_per_bushel" },
-    { "ticker": "ZW=F",  "display": "Wheat",      "units": "usd_per_bushel" },
-    { "ticker": "ZS=F",  "display": "Soybeans",   "units": "usd_per_bushel" },
+    { "ticker": "HG=F",  "display": "Copper",          "units": "usd_per_lb"     },
+    { "ticker": "ZC=F",  "display": "Corn",             "units": "usd_per_bushel" },
+    { "ticker": "ZW=F",  "display": "Wheat",            "units": "usd_per_bushel" },
+    { "ticker": "ZS=F",  "display": "Soybeans",         "units": "usd_per_bushel" },
+    { "ticker": "RB=F",  "display": "Gasoline RBOB",    "units": "usd_per_gallon" },
+    { "ticker": "HO=F",  "display": "Heating Oil",      "units": "usd_per_gallon" },
 ]
 
 def import_commodity(cursor, ticker: str, display: str, units: str):
