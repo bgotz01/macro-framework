@@ -1,5 +1,6 @@
 import RegimeTimelineBarChart from '@/components/charts/regime-timeline-bar-chart';
 import RegimeHistoryTable from '@/components/regime/regime-history-table';
+import RegimeReturns from '@/components/regime/regime-returns';
 import { Suspense } from 'react';
 
 export default function RegimeHistoricalPage() {
@@ -15,6 +16,10 @@ export default function RegimeHistoricalPage() {
                 <Suspense fallback={<div className="text-center py-12">Loading regime history...</div>}>
                     <RegimeHistoryTable />
                 </Suspense>
+            </div>
+
+            <div className="mb-16">
+                <RegimeReturns />
             </div>
         </div>
     );

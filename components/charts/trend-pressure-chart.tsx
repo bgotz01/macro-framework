@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
     ComposedChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer, ReferenceLine
@@ -63,8 +63,10 @@ const SCORE_COLOR = '#f59e0b';
 export default function TrendPressureChart({ height = 450 }: TrendPressureChartProps) {
     const [raw, setRaw] = useState<DataPoint[]>([]);
     const [loading, setLoading] = useState(true);
+    const [fetching, setFetching] = useState(false);
     const [datePreset, setDatePreset] = useState<string>('10y');
     const [ma, setMa] = useState<'200' | '500'>('200');
+    const [index, setIndex] = useState<'sp500' | 'ndx'>('sp500');
     const [viewMode, setViewMode] = useState<ViewMode>('percentile');
     const [scoreMetrics, setScoreMetrics] = useState<Set<string>>(
         new Set(METRICS.map(m => m.percentileKey as string))
@@ -76,13 +78,15 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
     const { theme } = useTheme();
 
     useEffect(() => {
-        setLoading(true);
-        fetch(`/api/trend-pressure-history?ma=${ma}`)
+        const isFirst = raw.length === 0;
+        if (isFirst) setLoading(true);
+        else setFetching(true);
+        fetch(`/api/trend-pressure-history?ma=${ma}&index=${index}`)
             .then(r => r.json())
             .then(json => setRaw(json.data || []))
             .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [ma]);
+            .finally(() => { setLoading(false); setFetching(false); });
+    }, [ma, index]);
 
     const data = useMemo(() => {
         // Compute 20D MA for each metric's percentile
@@ -97,7 +101,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                 slope_pct_ma20: ma20('slope_percentile'),
             };
         });
-        if (viewMode !== 'percentile') return withMA;
+        // Always compute score (percentile-based composite) regardless of view mode
         const active = METRICS.filter(m => scoreMetrics.has(m.percentileKey as string));
         if (!active.length) return withMA;
         const withScore = withMA.map(d => {
@@ -110,7 +114,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
             const avg = win.reduce((s, r) => s + (r.trend_pressure_score ?? 0), 0) / win.length;
             return { ...d, score_ma20: parseFloat(avg.toFixed(2)) };
         });
-    }, [raw, scoreMetrics, viewMode]);
+    }, [raw, scoreMetrics]);
 
     const toggleScore = (key: string) => {
         setScoreMetrics(prev => {
@@ -141,7 +145,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
         });
     };
 
-    const getFiltered = () => {
+    const filtered = useMemo(() => {
         if (!data.length) return [];
         if (datePreset === 'all') return data;
         const preset = DATE_PRESETS.find(p => p.value === datePreset);
@@ -152,9 +156,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
         const cutoff = new Date();
         cutoff.setFullYear(cutoff.getFullYear() - years);
         return data.filter(d => d.date >= cutoff.toISOString().split('T')[0]);
-    };
-
-    const filtered = getFiltered();
+    }, [data, datePreset]);
 
     const yearlyTicks = filtered
         .filter((d, i) => {
@@ -169,7 +171,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
     const textColor = isDark ? '#9ca3af' : '#6b7280';
     const latest = filtered[filtered.length - 1];
 
-    const CustomTooltip = ({ active, payload }: any) => {
+    const tooltipContent = useCallback(({ active, payload }: any) => {
         if (!active || !payload?.length) return null;
         const d = payload[0].payload as DataPoint;
         const [y, m, dy] = d.date.split('-').map(Number);
@@ -177,7 +179,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
         return (
             <div className="bg-background border-2 border-border rounded-lg p-3 shadow-lg text-sm space-y-1">
                 <p className="font-semibold">{date}</p>
-                {viewMode === 'percentile' && showScore && (
+                {showScore && (
                     <p><span style={{ color: SCORE_COLOR }}>Score:</span> {d.trend_pressure_score?.toFixed(1)}</p>
                 )}
                 {viewMode === 'percentile' && showScoreMA20 && d.score_ma20 != null && (
@@ -208,21 +210,33 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                 })}
             </div>
         );
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showScore, showScoreMA20, viewMode, visibleMetrics, visibleMA20s]);
 
     if (loading) {
         return <div className="p-6 rounded-xl border bg-card text-center text-muted-foreground">Loading...</div>;
     }
-
     return (
         <div className="p-6 rounded-xl border bg-card">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h3 className="text-lg font-semibold">Trend Pressure Score</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                        Average of selected {ma}MA percentiles
-                    </p>
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold">Trend Pressure Score</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Average of selected {ma}MA percentiles{fetching && <span className="ml-2 opacity-60">updating…</span>}
+                        </p>
+                    </div>
+                    {latest && (
+                        <div>
+                            <div className="text-2xl font-bold" style={{ color: SCORE_COLOR }}>
+                                {latest.trend_pressure_score?.toFixed(1)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                Score %ile · {(() => { const [y, m, d] = latest.date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
@@ -255,92 +269,113 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                             </button>
                         ))}
                     </div>
-                    {latest && viewMode === 'percentile' && (
-                        <div className="text-right">
-                            <div className="text-2xl font-bold" style={{ color: SCORE_COLOR }}>
-                                {latest.trend_pressure_score?.toFixed(1)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                {(() => { const [y, m, d] = latest.date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
-                            </div>
-                        </div>
-                    )}
+                    <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+                        {(['sp500', 'ndx'] as const).map(idx => (
+                            <button
+                                type="button"
+                                key={idx}
+                                onClick={() => setIndex(idx)}
+                                className={`px-3 py-1.5 transition-colors ${index === idx
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-background text-muted-foreground hover:bg-muted'
+                                    }`}
+                            >
+                                {idx === 'sp500' ? 'S&P 500' : 'NDX 100'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* Show Lines row — metrics left, 20D MAs right */}
-            <div className="flex items-center gap-2 mb-2">
+            {/* Show Lines row */}
+            <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Show Lines:</span>
-                <button
-                    type="button"
-                    onClick={() => setShowScore(s => !s)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                    style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
-                >
-                    Score
-                </button>
-                {METRICS.map(m => {
-                    const active = visibleMetrics.has(m.percentileKey as string);
-                    return (
+                <div className="flex items-center gap-2 flex-1 flex-wrap">
+                    {viewMode === 'percentile' && (
                         <button
                             type="button"
-                            key={m.label}
-                            onClick={() => toggleVisible(m.percentileKey as string)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                            style={{ backgroundColor: active ? m.color : 'transparent' }}
-                        >
-                            {m.label}
-                        </button>
-                    );
-                })}
-                {viewMode === 'percentile' && (
-                    <>
-                        <div className="w-px h-4 bg-border mx-1" />
-                        <span className="text-xs text-muted-foreground shrink-0">20D MA:</span>
-                        <button
-                            type="button"
-                            onClick={() => setShowScoreMA20(s => !s)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScoreMA20 ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                            style={{ backgroundColor: showScoreMA20 ? '#fcd34d' : 'transparent' }}
+                            onClick={() => setShowScore(s => !s)}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                            style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
                         >
                             Score
                         </button>
+                    )}
+                    {viewMode === 'value' && (
+                        <button
+                            type="button"
+                            onClick={() => setShowScore(s => !s)}
+                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                            style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
+                            title="Percentile score shown on right axis"
+                        >
+                            Score %ile →
+                        </button>
+                    )}
+                    {METRICS.map(m => {
+                        const active = visibleMetrics.has(m.percentileKey as string);
+                        return (
+                            <button
+                                type="button"
+                                key={m.label}
+                                onClick={() => toggleVisible(m.percentileKey as string)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                style={{ backgroundColor: active ? m.color : 'transparent' }}
+                            >
+                                {m.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                {viewMode === 'percentile' && (
+                    <div className="flex items-center gap-2 ml-auto">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">In Score:</span>
                         {METRICS.map(m => {
-                            const active = visibleMA20s.has(m.ma20Key as string);
+                            const active = scoreMetrics.has(m.percentileKey as string);
                             return (
                                 <button
                                     type="button"
-                                    key={`${m.label}-ma20`}
-                                    onClick={() => toggleMA20(m.ma20Key as string)}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                                    style={{ backgroundColor: active ? m.ma20Color : 'transparent' }}
+                                    key={m.label}
+                                    onClick={() => toggleScore(m.percentileKey as string)}
+                                    className={`px-3 py-1 rounded-full text-xs font-medium border-2 transition-all ${active ? 'text-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}
+                                    style={{ borderColor: active ? SCORE_COLOR : undefined, backgroundColor: 'transparent' }}
                                 >
                                     {m.label}
                                 </button>
                             );
                         })}
-                    </>
+                    </div>
                 )}
             </div>
 
-            {/* In Score row */}
-            <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">In Score:</span>
-                {METRICS.map(m => {
-                    const active = scoreMetrics.has(m.percentileKey as string);
-                    return (
-                        <button
-                            type="button"
-                            key={m.label}
-                            onClick={() => toggleScore(m.percentileKey as string)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border-2 transition-all ${active ? 'text-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}
-                            style={{ borderColor: active ? SCORE_COLOR : undefined, backgroundColor: 'transparent' }}
-                        >
-                            {m.label}
-                        </button>
-                    );
-                })}
-            </div>
+            {/* 20D MA row — percentile mode only */}
+            {viewMode === 'percentile' && (
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">20D MA:</span>
+                    <button
+                        type="button"
+                        onClick={() => setShowScoreMA20(s => !s)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScoreMA20 ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                        style={{ backgroundColor: showScoreMA20 ? '#fcd34d' : 'transparent' }}
+                    >
+                        Score
+                    </button>
+                    {METRICS.map(m => {
+                        const active = visibleMA20s.has(m.ma20Key as string);
+                        return (
+                            <button
+                                type="button"
+                                key={`${m.label}-ma20`}
+                                onClick={() => toggleMA20(m.ma20Key as string)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                style={{ backgroundColor: active ? m.ma20Color : 'transparent' }}
+                            >
+                                {m.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* Date presets */}
             <div className="flex flex-wrap gap-2 mb-5">
@@ -380,7 +415,22 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                             style: { fill: textColor }
                         }}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    {viewMode === 'value' && showScore && (
+                        <YAxis
+                            yAxisId="score"
+                            orientation="right"
+                            stroke={SCORE_COLOR}
+                            tick={{ fontSize: 11, fill: SCORE_COLOR }}
+                            domain={[0, 100]}
+                            label={{
+                                value: 'Score %ile',
+                                angle: 90,
+                                position: 'insideRight',
+                                style: { fill: SCORE_COLOR }
+                            }}
+                        />
+                    )}
+                    <Tooltip content={tooltipContent} />
                     <Legend />
 
                     {viewMode === 'percentile' && (
@@ -424,8 +474,8 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                         />
                     ))}
 
-                    {/* Composite score line — percentile mode only */}
-                    {viewMode === 'percentile' && showScore && (
+                    {/* Composite score line */}
+                    {showScore && (
                         <Line
                             type="monotone"
                             dataKey="trend_pressure_score"
@@ -434,6 +484,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                             dot={false}
                             name="Trend Pressure Score"
                             connectNulls
+                            yAxisId={viewMode === 'value' ? 'score' : undefined}
                         />
                     )}
 
@@ -453,11 +504,17 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                 </ComposedChart>
             </ResponsiveContainer>
 
-            {viewMode === 'percentile' && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                    Score = simple average of {Array.from(scoreMetrics).map(k => METRICS.find(m => m.percentileKey === k)?.label).filter(Boolean).join(', ')} percentiles
+            <div className="mt-3 text-xs text-muted-foreground space-y-1 border-t border-border pt-3">
+                <p>
+                    <span className="font-medium text-foreground">Score</span> = simple average of the {Array.from(scoreMetrics).map(k => METRICS.find(m => m.percentileKey === k)?.label).filter(Boolean).join(', ')} percentiles (0–100). Always percentile-based regardless of view mode.{viewMode === 'value' && ' Plotted on the right axis.'}
                 </p>
-            )}
+                <p>
+                    <span className="font-medium text-foreground">Divergence</span> = % gap between price and its {ma}MA &nbsp;·&nbsp;
+                    <span className="font-medium text-foreground">Days Above MA</span> = consecutive days price has stayed above the {ma}MA &nbsp;·&nbsp;
+                    <span className="font-medium text-foreground">MA Slope</span> = rate of change of the {ma}MA itself
+                </p>
+                <p>Each metric is ranked against its full history to produce a percentile. The score reflects how stretched trend conditions are relative to the past.</p>
+            </div>
         </div>
     );
 }

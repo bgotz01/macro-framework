@@ -79,14 +79,6 @@ const REGIME_PROXIMITY_DEFS: RegimeProximityDef[] = [
         ],
         logic: 'AND',
     },
-    {
-        regime: 'Liquidity Contraction',
-        conditions: [
-            { metric: 'Real M2', dataKey: 'realM2', threshold: 0, direction: 'lte', range: 5 },
-            { metric: 'EYP', dataKey: 'eyp5yr', threshold: 0, direction: 'lte', range: 3 },
-        ],
-        logic: 'AND',
-    },
 ];
 
 /**

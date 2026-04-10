@@ -115,211 +115,19 @@ export default function DivergenceChart({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showTable, setShowTable] = useState(false);
+    const [index, setIndex] = useState<'sp500' | 'ndx'>('sp500');
     const { theme } = useTheme();
 
-    // Load all data once on mount
+    // Load data when index changes
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
                 setError(null);
-
-                // Load S&P 500 price data
-                const priceResponse = await fetch(`/api/data/equities?series=${encodeURIComponent('US/GSPC')}`);
-                if (!priceResponse.ok) {
-                    throw new Error('Failed to load S&P 500 price data');
-                }
-                const priceResult = await priceResponse.json();
-
-                // Load all MA data (50, 200, 500)
-                const allMAPeriods = ['50', '200', '500'];
-                const maPromises = allMAPeriods.map(period =>
-                    fetch(`/api/data/derived?series=${encodeURIComponent(`SP500-MA${period}`)}`)
-                );
-
-                // Load all divergence data
-                const divPromises = allMAPeriods.map(period =>
-                    fetch(`/api/data/derived?series=${encodeURIComponent(`SP500-${period}MA-Div`)}`)
-                );
-
-                // Load all slope data
-                const slopePromises = allMAPeriods.map(period =>
-                    fetch(`/api/data/derived?series=${encodeURIComponent(`SP500-${period}MA-Slope`)}`)
-                );
-
-                // Load all positive slope streak data
-                const positiveSlopePromises = allMAPeriods.map(period =>
-                    fetch(`/api/data/derived?series=${encodeURIComponent(`SP500-${period}MA-SlopeStreak`)}`)
-                );
-
-                // Load all price above MA streak data
-                const priceAbovePromises = allMAPeriods.map(period =>
-                    fetch(`/api/data/derived?series=${encodeURIComponent(`SP500-${period}MA-PriceAboveStreak`)}`)
-                );
-
-                // Load percentile data for all metrics
-                const divPercentilePromises = allMAPeriods.map(period =>
-                    fetch(`/api/percentile-history?assetClass=derived&seriesName=${encodeURIComponent(`SP500-${period}MA-Div`)}`)
-                );
-                const slopePercentilePromises = allMAPeriods.map(period =>
-                    fetch(`/api/percentile-history?assetClass=derived&seriesName=${encodeURIComponent(`SP500-${period}MA-Slope`)}`)
-                );
-                const slopeStreakPercentilePromises = allMAPeriods.map(period =>
-                    fetch(`/api/percentile-history?assetClass=derived&seriesName=${encodeURIComponent(`SP500-${period}MA-SlopeStreak`)}`)
-                );
-                const priceAbovePercentilePromises = allMAPeriods.map(period =>
-                    fetch(`/api/percentile-history?assetClass=derived&seriesName=${encodeURIComponent(`SP500-${period}MA-PriceAboveStreak`)}`)
-                );
-
-                const [maResponses, divResponses, slopeResponses, positiveSlopeResponses, priceAboveResponses,
-                    divPercentileResponses, slopePercentileResponses, slopeStreakPercentileResponses, priceAbovePercentileResponses] = await Promise.all([
-                        Promise.all(maPromises),
-                        Promise.all(divPromises),
-                        Promise.all(slopePromises),
-                        Promise.all(positiveSlopePromises),
-                        Promise.all(priceAbovePromises),
-                        Promise.all(divPercentilePromises),
-                        Promise.all(slopePercentilePromises),
-                        Promise.all(slopeStreakPercentilePromises),
-                        Promise.all(priceAbovePercentilePromises)
-                    ]);
-
-                if (!maResponses.every(r => r.ok) || !divResponses.every(r => r.ok) || !slopeResponses.every(r => r.ok) ||
-                    !positiveSlopeResponses.every(r => r.ok) || !priceAboveResponses.every(r => r.ok) ||
-                    !divPercentileResponses.every(r => r.ok) || !slopePercentileResponses.every(r => r.ok) ||
-                    !slopeStreakPercentileResponses.every(r => r.ok) || !priceAbovePercentileResponses.every(r => r.ok)) {
-                    throw new Error('Failed to load data');
-                }
-
-                const maResults = await Promise.all(maResponses.map(r => r.json()));
-                const divResults = await Promise.all(divResponses.map(r => r.json()));
-                const slopeResults = await Promise.all(slopeResponses.map(r => r.json()));
-                const positiveSlopeResults = await Promise.all(positiveSlopeResponses.map(r => r.json()));
-                const priceAboveResults = await Promise.all(priceAboveResponses.map(r => r.json()));
-                const divPercentileResults = await Promise.all(divPercentileResponses.map(r => r.json()));
-                const slopePercentileResults = await Promise.all(slopePercentileResponses.map(r => r.json()));
-                const slopeStreakPercentileResults = await Promise.all(slopeStreakPercentileResponses.map(r => r.json()));
-                const priceAbovePercentileResults = await Promise.all(priceAbovePercentileResponses.map(r => r.json()));
-
-                // Merge all data by date
-                const dateMap = new Map<string, ChartDataPoint>();
-
-                // Add price data
-                priceResult.data.forEach((point: any) => {
-                    dateMap.set(point.date, { date: point.date, Price: point.Value });
-                });
-
-                // Add all MA data
-                maResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const maKey = MA_OPTIONS.find(ma => ma.period === period)?.priceKey || `MA${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        // MA data uses lowercase 'value' column
-                        dateMap.get(point.date)![maKey] = point.value;
-                    });
-                });
-
-                // Add all divergence data
-                divResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const divKey = MA_OPTIONS.find(ma => ma.period === period)?.divKey || `Div${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        // Divergence data uses lowercase 'value' column
-                        dateMap.get(point.date)![divKey] = point.value;
-                    });
-                });
-
-                // Add all slope data
-                slopeResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const slopeKey = MA_OPTIONS.find(ma => ma.period === period)?.slopeKey || `Slope${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![slopeKey] = point.value;
-                    });
-                });
-
-                // Add all positive slope days data
-                positiveSlopeResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const key = MA_OPTIONS.find(ma => ma.period === period)?.positiveSlopeKey || `PositiveSlope${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![key] = point.value;
-                    });
-                });
-
-                // Add all price above MA days data
-                priceAboveResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const key = MA_OPTIONS.find(ma => ma.period === period)?.priceAboveKey || `PriceAbove${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![key] = point.value;
-                    });
-                });
-
-                // Add all percentile data
-                divPercentileResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const key = MA_OPTIONS.find(ma => ma.period === period)?.divPercentileKey || `DivPercentile${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![key] = point.percentile_rank;
-                    });
-                });
-
-                slopePercentileResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const key = MA_OPTIONS.find(ma => ma.period === period)?.slopePercentileKey || `SlopePercentile${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![key] = point.percentile_rank;
-                    });
-                });
-
-                slopeStreakPercentileResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const key = MA_OPTIONS.find(ma => ma.period === period)?.slopeStreakPercentileKey || `SlopeStreakPercentile${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![key] = point.percentile_rank;
-                    });
-                });
-
-                priceAbovePercentileResults.forEach((result, index) => {
-                    const period = allMAPeriods[index];
-                    const key = MA_OPTIONS.find(ma => ma.period === period)?.priceAbovePercentileKey || `PriceAbovePercentile${period}`;
-                    result.data.forEach((point: any) => {
-                        if (!dateMap.has(point.date)) {
-                            dateMap.set(point.date, { date: point.date });
-                        }
-                        dateMap.get(point.date)![key] = point.percentile_rank;
-                    });
-                });
-
-                const mergedData = Array.from(dateMap.values())
-                    .sort((a, b) => a.date.localeCompare(b.date));
-
-                setData(mergedData);
+                const res = await fetch(`/api/divergence-data?index=${index}`);
+                if (!res.ok) throw new Error('Failed to load data');
+                const json = await res.json();
+                setData(json.data || []);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load data');
             } finally {
@@ -328,7 +136,7 @@ export default function DivergenceChart({
         };
 
         loadData();
-    }, []); // Only load once on mount
+    }, [index]); // Reload when index changes
 
     // Filter data based on date range
     useEffect(() => {
@@ -502,7 +310,7 @@ export default function DivergenceChart({
                                     stroke={priceLineColor}
                                     strokeWidth={2}
                                     dot={false}
-                                    name="S&P 500"
+                                    name={index === 'sp500' ? 'S&P 500' : 'NDX 100'}
                                 />
                                 {selectedMAs.map((period) => {
                                     const maInfo = MA_OPTIONS.find(ma => ma.period === period);
@@ -625,64 +433,63 @@ export default function DivergenceChart({
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Latest Date */}
-            {latestDate && (
-                <div className="mb-4 text-xs text-muted-foreground text-right">
-                    Latest data: {(() => { const [y, m, d] = latestDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
-                </div>
-            )}
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Price Divergence</h3>
+                {latestDate && (
+                    <div className="text-xs text-muted-foreground">
+                        Latest data: {(() => { const [y, m, d] = latestDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
+                    </div>
+                )}
+            </div>
             {/* Controls */}
             <div className="mb-6 space-y-4">
-                {/* View Mode Toggle */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <label className="text-sm font-medium text-card-foreground">
-                        View Mode:
-                    </label>
+                {/* View Mode Toggle + Index Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-medium text-card-foreground">View Mode:</label>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setViewMode('price')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'price' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                            >
+                                Price & MAs
+                            </button>
+                            <button
+                                onClick={() => setViewMode('divergence')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'divergence' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                            >
+                                Divergence
+                            </button>
+                            <button
+                                onClick={() => setViewMode('slope')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'slope' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                            >
+                                Slopes
+                            </button>
+                            <button
+                                onClick={() => setViewMode('days')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'days' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                            >
+                                Days
+                            </button>
+                            <button
+                                onClick={() => setViewMode('percentile')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'percentile' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                            >
+                                Percentile
+                            </button>
+                        </div>
+                    </div>
                     <div className="flex gap-2">
-                        <button
-                            onClick={() => setViewMode('price')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'price'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Price & MAs
-                        </button>
-                        <button
-                            onClick={() => setViewMode('divergence')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'divergence'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Divergence
-                        </button>
-                        <button
-                            onClick={() => setViewMode('slope')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'slope'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Slopes
-                        </button>
-                        <button
-                            onClick={() => setViewMode('days')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'days'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Days
-                        </button>
-                        <button
-                            onClick={() => setViewMode('percentile')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'percentile'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Percentile
-                        </button>
+                        {(['sp500', 'ndx'] as const).map(idx => (
+                            <button
+                                key={idx}
+                                onClick={() => setIndex(idx)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${index === idx ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                            >
+                                {idx === 'sp500' ? 'S&P 500' : 'NDX 100'}
+                            </button>
+                        ))}
                     </div>
                 </div>
 

@@ -47,7 +47,6 @@ export default function RegimeHistoryTable() {
             'crisis': 'border-l-red-900',
             'bond stress': 'border-l-orange-600',
             'liquidity shock': 'border-l-purple-500',
-            'liquidity contraction': 'border-l-orange-500',
             'normal': 'border-l-gray-500',
         };
         return colors[regime.toLowerCase()] ?? 'border-l-gray-400';

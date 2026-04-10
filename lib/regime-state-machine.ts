@@ -22,7 +22,6 @@ const T = {
     crisis: { entryReal10Y: -1, entryRealM2: 5, exitReal10Y: 0.5, exitRealM2: 7 },
     bondStress: { entryReal10Y: -0.5, entryReal3M: -1, exitReal10Y: 0.25 },
     liquidityShock: { entryRealM2: 10, exitRealM2: 8 },
-    liquidityContraction: { entryRealM2: 0, entryEYP: 0, exitRealM2: 0, exitEYP: 0 },
 } as const;
 
 const fmt = (v: number) => `${v}%`;
@@ -76,13 +75,6 @@ export const REGIME_TRIGGERS = {
         entryDescription: `Entry: ${cond('Real M2', 'gte', T.liquidityShock.entryRealM2)}`,
         exitDescription: `Exit: ${cond('Real M2', 'lte', T.liquidityShock.exitRealM2)}`,
     },
-    'Liquidity Contraction': {
-        entry: (c: CurrentConditions) => c.realM2 !== null && c.eyp !== null && c.realM2 < T.liquidityContraction.entryRealM2 && c.eyp < T.liquidityContraction.entryEYP,
-        exit: (c: CurrentConditions) => c.realM2 !== null && c.eyp !== null && (c.realM2 >= T.liquidityContraction.exitRealM2 || c.eyp >= T.liquidityContraction.exitEYP),
-        reason: (c: CurrentConditions) => `Liquidity Contraction: Real M2 ${c.realM2?.toFixed(1)}%, EYP ${c.eyp?.toFixed(2)}%`,
-        entryDescription: `Entry: Real M2 < 0% AND EYP < 0%`,
-        exitDescription: `Exit: Real M2 ≥ 0% OR EYP ≥ 0%`,
-    },
     'Normal': {
         entry: () => false,
         exit: () => false,
@@ -135,7 +127,6 @@ export type RegimeFamily =
     | 'Crisis'
     | 'Bond Stress'
     | 'Liquidity Shock'
-    | 'Liquidity Contraction'
     | 'Normal';
 
 export interface RegimeState {
@@ -208,11 +199,6 @@ export const REGIME_METADATA: Record<RegimeFamily, { description: string; guidan
         guidance: 'Massive liquidity injection - speculative assets thrive',
         color: '#a855f7' // purple
     },
-    'Liquidity Contraction': {
-        description: 'Money supply contracting with equities overvalued vs bonds - dual pressure',
-        guidance: 'Tightening liquidity and negative equity premium - reduce risk, favor cash and short duration',
-        color: '#f97316' // orange
-    },
     'Normal': {
         description: 'Balanced conditions - no extreme triggers active',
         guidance: 'Standard market environment - maintain diversified positioning',
@@ -277,8 +263,7 @@ export function determineNextRegime(
         'Bond Stress',
         'Overvaluation',
         'Broad Growth',
-        'Long Duration',
-        'Liquidity Contraction'
+        'Long Duration'
     ];
 
     const currentRegime = currentState?.regime || null;

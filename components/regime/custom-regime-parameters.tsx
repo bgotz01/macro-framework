@@ -13,6 +13,7 @@ import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
 import RegimeProximity from './regime-proximity';
 import RegimePercentileChanges from './regime-percentile-changes';
+import CapitalAllocation from './capital-allocation';
 import { emptyMetric } from './regime-parameters-utils';
 import type { RegimeData } from './regime-parameters-types';
 import {
@@ -28,7 +29,6 @@ function buildTriggerDescriptions(regime: RegimeFamily, t: CustomThresholds): { 
         'Crisis': { entryDescription: `Entry: Real 10Y ≤ ${t.crisis.entryReal10Y}% AND Real M2 ≤ ${t.crisis.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.crisis.exitReal10Y}% OR Real M2 ≥ ${t.crisis.exitRealM2}%` },
         'Bond Stress': { entryDescription: `Entry: Real 10Y ≤ ${t.bondStress.entryReal10Y}% AND Real 3M ≤ ${t.bondStress.entryReal3M}%`, exitDescription: `Exit: Real 10Y ≥ ${t.bondStress.exitReal10Y}%` },
         'Liquidity Shock': { entryDescription: `Entry: Real M2 ≥ ${t.liquidityShock.entry}%`, exitDescription: `Exit: Real M2 ≤ ${t.liquidityShock.exit}%` },
-        'Liquidity Contraction': { entryDescription: `Entry: Real M2 < 0% AND EYP < 0%`, exitDescription: `Exit: Real M2 ≥ 0% OR EYP ≥ 0%` },
         'Normal': { entryDescription: 'Default state when no outlier triggers are active', exitDescription: '' },
     };
     return map[regime] || map['Normal'];
@@ -345,6 +345,10 @@ export default function CustomRegimeParameters() {
                     />
                 </div>
             )}
+
+            <div className="mb-6">
+                <CapitalAllocation regime={customRegimeState.regime} />
+            </div>
 
             <TimelineSlider
                 sliderValue={sliderValue} totalMonths={totalMonths}

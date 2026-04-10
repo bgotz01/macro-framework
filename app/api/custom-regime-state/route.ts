@@ -23,11 +23,6 @@ function buildTriggers(t: any) {
             exit: (c: Conditions) => c.realM2 !== null && c.realM2 <= t.liquidityShock.exit,
             reason: (c: Conditions) => `Liquidity Shock: Real M2 ${c.realM2?.toFixed(1)}%`,
         },
-        'Liquidity Contraction': {
-            entry: (c: Conditions) => c.realM2 !== null && c.eyp !== null && c.realM2 < 0 && c.eyp < 0,
-            exit: (c: Conditions) => c.realM2 !== null && c.eyp !== null && (c.realM2 >= 0 || c.eyp >= 0),
-            reason: (c: Conditions) => `Liquidity Contraction: Real M2 ${c.realM2?.toFixed(1)}%, EYP ${c.eyp?.toFixed(2)}%`,
-        },
         'Crisis': {
             entry: (c: Conditions) => c.real10Y !== null && c.realM2 !== null && c.real10Y <= t.crisis.entryReal10Y && c.realM2 <= t.crisis.entryRealM2,
             exit: (c: Conditions) => c.real10Y !== null && c.realM2 !== null && (c.real10Y >= t.crisis.exitReal10Y || c.realM2 >= t.crisis.exitRealM2),
@@ -68,7 +63,7 @@ function buildTriggers(t: any) {
 
 const PRECEDENCE = [
     'Liquidity Shock', 'Crisis', 'Bond Stress',
-    'Overvaluation', 'Broad Growth', 'Long Duration', 'Liquidity Contraction',
+    'Overvaluation', 'Broad Growth', 'Long Duration',
 ];
 
 function buildCustomTrigger(cr: any) {
