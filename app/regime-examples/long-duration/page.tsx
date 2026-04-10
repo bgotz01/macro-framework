@@ -1,6 +1,7 @@
 'use client';
 
 import StockDataTable from '@/components/regime/stock-data-table';
+import Image from 'next/image';
 
 const sections = [
     { id: 'now', label: '2023–Now' },
@@ -46,9 +47,20 @@ export default function LongDurationPage() {
                     </h2>
                     <div className="mt-2 h-px bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent" />
                 </div>
+                <div className="text-center">
+                    <h3 className="text-lg font-medium mt-4">High Growth Stock Screen Oct 2023</h3>
+                </div>
                 <div className="space-y-8">
+                    <Image
+                        src="/regimes/long-duration/long-duration-2023-screen.png"
+                        alt="High Growth Stock Screen Oct 2023"
+                        title="High Growth Stock Screen Oct 2023"
+                        width={800}
+                        height={600}
+                        className="mx-auto rounded-lg shadow-md"
+                    />
                     <StockDataTable csvPath="/data/regimes/long-duration/AVGO.csv" title="AVGO — Broadcom" />
-                    <StockDataTable csvPath="/data/regimes/long-duration/ANET.csv" title="ANET — Arista Networks" />
+                    
                     <StockDataTable csvPath="/data/regimes/long-duration/NVDA.csv" title="NVDA — Nvidia" />
                     <StockDataTable csvPath="/data/regimes/long-duration/PLTR.csv" title="PLTR — Palantir" />
                     <StockDataTable csvPath="/data/regimes/long-duration/FIX.csv" title="FIX — Comfort Systems" />

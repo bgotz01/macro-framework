@@ -15,11 +15,14 @@ interface DataPoint {
     days_above_percentile: number;
     slope_value: number;
     slope_percentile: number;
+    ma50_200_value: number | null;
+    ma50_200_percentile: number;
     trend_pressure_score?: number;
     score_ma20?: number;
     divergence_pct_ma20?: number;
     days_above_pct_ma20?: number;
     slope_pct_ma20?: number;
+    ma50_200_pct_ma20?: number;
 }
 
 type ViewMode = 'percentile' | 'value';
@@ -38,6 +41,7 @@ const METRICS: MetricConfig[] = [
     { label: 'Divergence', color: '#6366f1', ma20Color: '#a78bfa', valueSuffix: '%', percentileKey: 'divergence_percentile', valueKey: 'divergence_value', ma20Key: 'divergence_pct_ma20' },
     { label: 'Days Above MA', color: '#06b6d4', ma20Color: '#67e8f9', valueSuffix: ' days', percentileKey: 'days_above_percentile', valueKey: 'days_above_value', ma20Key: 'days_above_pct_ma20' },
     { label: 'MA Slope', color: '#22c55e', ma20Color: '#86efac', valueSuffix: '%', percentileKey: 'slope_percentile', valueKey: 'slope_value', ma20Key: 'slope_pct_ma20' },
+    { label: '50/200 MA', color: '#f97316', ma20Color: '#fdba74', valueSuffix: '%', percentileKey: 'ma50_200_percentile', valueKey: 'ma50_200_value', ma20Key: 'ma50_200_pct_ma20' },
 ];
 
 const DATE_PRESETS = [
@@ -52,6 +56,7 @@ const DATE_PRESETS = [
     { label: 'Last 5Y', value: '5y' },
     { label: 'Last 10Y', value: '10y' },
     { label: 'Last 20Y', value: '20y' },
+    { label: 'Custom', value: 'custom' },
 ] as const;
 
 interface TrendPressureChartProps {
@@ -60,12 +65,91 @@ interface TrendPressureChartProps {
 
 const SCORE_COLOR = '#f59e0b';
 
+function AdvancedControls({ METRICS, scoreMetrics, toggleScore, visibleMA20s, toggleMA20, showScoreMA20, setShowScoreMA20, SCORE_COLOR }: {
+    METRICS: MetricConfig[];
+    scoreMetrics: Set<string>;
+    toggleScore: (key: string) => void;
+    visibleMA20s: Set<string>;
+    toggleMA20: (key: string) => void;
+    showScoreMA20: boolean;
+    setShowScoreMA20: React.Dispatch<React.SetStateAction<boolean>>;
+    SCORE_COLOR: string;
+}) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="mb-4 border border-border rounded-lg overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+            >
+                <span className="uppercase tracking-wide">Advanced: In Score &amp; 20D MA</span>
+                <span className="text-base leading-none">{open ? '▲' : '▼'}</span>
+            </button>
+            {open && (
+                <div className="px-3 py-2 space-y-2 border-t border-border">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">In Score:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {METRICS.map(m => {
+                                const active = scoreMetrics.has(m.percentileKey as string);
+                                return (
+                                    <button
+                                        type="button"
+                                        key={m.label}
+                                        onClick={() => toggleScore(m.percentileKey as string)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium border-2 transition-all ${active ? 'text-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}
+                                        style={{ borderColor: active ? SCORE_COLOR : undefined, backgroundColor: 'transparent' }}
+                                    >
+                                        {m.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">20D MA:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={() => setShowScoreMA20(s => !s)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScoreMA20 ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                style={{ backgroundColor: showScoreMA20 ? '#fcd34d' : 'transparent' }}
+                            >
+                                Score
+                            </button>
+                            {METRICS.map(m => {
+                                const active = visibleMA20s.has(m.ma20Key as string);
+                                return (
+                                    <button
+                                        type="button"
+                                        key={`${m.label}-ma20`}
+                                        onClick={() => toggleMA20(m.ma20Key as string)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                        style={{ backgroundColor: active ? m.ma20Color : 'transparent' }}
+                                    >
+                                        {m.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function TrendPressureChart({ height = 450 }: TrendPressureChartProps) {
     const [raw, setRaw] = useState<DataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [fetching, setFetching] = useState(false);
     const [datePreset, setDatePreset] = useState<string>('10y');
-    const [ma, setMa] = useState<'200' | '500'>('200');
+    const [customStart, setCustomStart] = useState<string>('');
+    const [customEnd, setCustomEnd] = useState<string>('');
+    const [appliedStart, setAppliedStart] = useState<string>('');
+    const [appliedEnd, setAppliedEnd] = useState<string>('');
+    const [ma, setMa] = useState<'200' | '500' | 'blend'>('200');
     const [index, setIndex] = useState<'sp500' | 'ndx'>('sp500');
     const [viewMode, setViewMode] = useState<ViewMode>('percentile');
     const [scoreMetrics, setScoreMetrics] = useState<Set<string>>(
@@ -81,9 +165,34 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
         const isFirst = raw.length === 0;
         if (isFirst) setLoading(true);
         else setFetching(true);
-        fetch(`/api/trend-pressure-history?ma=${ma}&index=${index}`)
-            .then(r => r.json())
-            .then(json => setRaw(json.data || []))
+
+        const fetchMA = (m: '200' | '500') =>
+            fetch(`/api/trend-pressure-history?ma=${m}&index=${index}`)
+                .then(r => r.json())
+                .then(json => (json.data || []) as DataPoint[]);
+
+        const promise = ma === 'blend'
+            ? Promise.all([fetchMA('200'), fetchMA('500')]).then(([d200, d500]) => {
+                // Merge by date, averaging the three percentile fields
+                const map = new Map<string, DataPoint>();
+                d200.forEach(d => map.set(d.date, { ...d }));
+                d500.forEach(d => {
+                    const existing = map.get(d.date);
+                    if (existing) {
+                        map.set(d.date, {
+                            ...existing,
+                            divergence_percentile: (existing.divergence_percentile + d.divergence_percentile) / 2,
+                            days_above_percentile: (existing.days_above_percentile + d.days_above_percentile) / 2,
+                            slope_percentile: (existing.slope_percentile + d.slope_percentile) / 2,
+                        });
+                    }
+                });
+                return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+            })
+            : fetchMA(ma);
+
+        promise
+            .then(data => setRaw(data))
             .catch(console.error)
             .finally(() => { setLoading(false); setFetching(false); });
     }, [ma, index]);
@@ -99,6 +208,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                 divergence_pct_ma20: ma20('divergence_percentile'),
                 days_above_pct_ma20: ma20('days_above_percentile'),
                 slope_pct_ma20: ma20('slope_percentile'),
+                ma50_200_pct_ma20: ma20('ma50_200_percentile'),
             };
         });
         // Always compute score (percentile-based composite) regardless of view mode
@@ -148,6 +258,10 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
     const filtered = useMemo(() => {
         if (!data.length) return [];
         if (datePreset === 'all') return data;
+        if (datePreset === 'custom') {
+            if (!appliedStart || !appliedEnd) return data; // keep current view until applied
+            return data.filter(d => d.date >= appliedStart && d.date <= appliedEnd);
+        }
         const preset = DATE_PRESETS.find(p => p.value === datePreset);
         if (preset && 'start' in preset) {
             return data.filter(d => d.date >= preset.start && d.date <= preset.end);
@@ -156,15 +270,22 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
         const cutoff = new Date();
         cutoff.setFullYear(cutoff.getFullYear() - years);
         return data.filter(d => d.date >= cutoff.toISOString().split('T')[0]);
-    }, [data, datePreset]);
+    }, [data, datePreset, appliedStart, appliedEnd]);
 
-    const yearlyTicks = filtered
-        .filter((d, i) => {
-            const yr = parseInt(d.date.split('-')[0]);
-            const prev = i > 0 ? parseInt(filtered[i - 1].date.split('-')[0]) : null;
-            return yr !== prev && yr % 5 === 0;
-        })
-        .map(d => d.date);
+    const yearlyTicks = (() => {
+        if (!filtered.length) return [];
+        const firstYr = parseInt(filtered[0].date.split('-')[0]);
+        const lastYr = parseInt(filtered[filtered.length - 1].date.split('-')[0]);
+        const span = lastYr - firstYr;
+        const step = span > 20 ? 5 : span > 8 ? 2 : 1;
+        return filtered
+            .filter((d, i) => {
+                const yr = parseInt(d.date.split('-')[0]);
+                const prev = i > 0 ? parseInt(filtered[i - 1].date.split('-')[0]) : null;
+                return yr !== prev && yr % step === 0;
+            })
+            .map(d => d.date);
+    })();
 
     const isDark = theme === 'dark';
     const gridColor = isDark ? '#374151' : '#e5e7eb';
@@ -224,7 +345,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                     <div>
                         <h3 className="text-lg font-semibold">Trend Pressure Score</h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                            Average of selected {ma}MA percentiles{fetching && <span className="ml-2 opacity-60">updating…</span>}
+                            Average of selected {ma === 'blend' ? '200MA+500MA blended' : `${ma}MA`} percentiles{fetching && <span className="ml-2 opacity-60">updating…</span>}
                         </p>
                     </div>
                     {latest && (
@@ -255,17 +376,17 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                         ))}
                     </div>
                     <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
-                        {(['200', '500'] as const).map(period => (
+                        {(['200', '500', 'blend'] as const).map(period => (
                             <button
                                 type="button"
                                 key={period}
                                 onClick={() => setMa(period)}
-                                className={`px-3 py-1.5 transition-colors ${ma === period
+                                className={`w-14 py-1.5 transition-colors text-center ${ma === period
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-background text-muted-foreground hover:bg-muted'
                                     }`}
                             >
-                                {period}MA
+                                {period === 'blend' ? 'Blend' : `${period}MA`}
                             </button>
                         ))}
                     </div>
@@ -288,7 +409,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
             </div>
 
             {/* Show Lines row */}
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-4">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Show Lines:</span>
                 <div className="flex items-center gap-2 flex-1 flex-wrap">
                     {viewMode === 'percentile' && (
@@ -327,58 +448,24 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                         );
                     })}
                 </div>
-                {viewMode === 'percentile' && (
-                    <div className="flex items-center gap-2 ml-auto">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">In Score:</span>
-                        {METRICS.map(m => {
-                            const active = scoreMetrics.has(m.percentileKey as string);
-                            return (
-                                <button
-                                    type="button"
-                                    key={m.label}
-                                    onClick={() => toggleScore(m.percentileKey as string)}
-                                    className={`px-3 py-1 rounded-full text-xs font-medium border-2 transition-all ${active ? 'text-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}
-                                    style={{ borderColor: active ? SCORE_COLOR : undefined, backgroundColor: 'transparent' }}
-                                >
-                                    {m.label}
-                                </button>
-                            );
-                        })}
-                    </div>
-                )}
             </div>
 
-            {/* 20D MA row — percentile mode only */}
+            {/* Collapsible: In Score + 20D MA — percentile mode only */}
             {viewMode === 'percentile' && (
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">20D MA:</span>
-                    <button
-                        type="button"
-                        onClick={() => setShowScoreMA20(s => !s)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScoreMA20 ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                        style={{ backgroundColor: showScoreMA20 ? '#fcd34d' : 'transparent' }}
-                    >
-                        Score
-                    </button>
-                    {METRICS.map(m => {
-                        const active = visibleMA20s.has(m.ma20Key as string);
-                        return (
-                            <button
-                                type="button"
-                                key={`${m.label}-ma20`}
-                                onClick={() => toggleMA20(m.ma20Key as string)}
-                                className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                                style={{ backgroundColor: active ? m.ma20Color : 'transparent' }}
-                            >
-                                {m.label}
-                            </button>
-                        );
-                    })}
-                </div>
+                <AdvancedControls
+                    METRICS={METRICS}
+                    scoreMetrics={scoreMetrics}
+                    toggleScore={toggleScore}
+                    visibleMA20s={visibleMA20s}
+                    toggleMA20={toggleMA20}
+                    showScoreMA20={showScoreMA20}
+                    setShowScoreMA20={setShowScoreMA20}
+                    SCORE_COLOR={SCORE_COLOR}
+                />
             )}
 
             {/* Date presets */}
-            <div className="flex flex-wrap gap-2 mb-5">
+            <div className="flex flex-wrap gap-2 mb-3">
                 {DATE_PRESETS.map(p => (
                     <button
                         type="button"
@@ -393,6 +480,35 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                     </button>
                 ))}
             </div>
+
+            {/* Custom date range inputs */}
+            {datePreset === 'custom' && (
+                <div className="flex items-center gap-3 mb-5">
+                    <label className="text-xs text-muted-foreground font-medium">From</label>
+                    <input
+                        type="date"
+                        value={customStart}
+                        onChange={e => setCustomStart(e.target.value)}
+                        className="px-2 py-1 rounded-md border border-border bg-background text-sm text-foreground"
+                    />
+                    <label className="text-xs text-muted-foreground font-medium">To</label>
+                    <input
+                        type="date"
+                        value={customEnd}
+                        onChange={e => setCustomEnd(e.target.value)}
+                        className="px-2 py-1 rounded-md border border-border bg-background text-sm text-foreground"
+                    />
+                    <button
+                        type="button"
+                        disabled={!customStart || !customEnd}
+                        onClick={() => { setAppliedStart(customStart); setAppliedEnd(customEnd); }}
+                        className="px-3 py-1 rounded-md text-sm font-medium bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                    >
+                        Apply
+                    </button>
+                </div>
+            )}
+            {datePreset !== 'custom' && <div className="mb-5" />}
 
             <ResponsiveContainer width="100%" height={height}>
                 <ComposedChart data={filtered} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -435,9 +551,9 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
 
                     {viewMode === 'percentile' && (
                         <>
-                            <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: '75th', fill: textColor, fontSize: 10 }} />
+                            <ReferenceLine y={90} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: '90th', fill: textColor, fontSize: 10 }} />
                             <ReferenceLine y={50} stroke={gridColor} strokeDasharray="4 4" strokeOpacity={0.8} />
-                            <ReferenceLine y={25} stroke="#10b981" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: '25th', fill: textColor, fontSize: 10 }} />
+                            <ReferenceLine y={10} stroke="#10b981" strokeDasharray="4 4" strokeOpacity={0.5} label={{ value: '10th', fill: textColor, fontSize: 10 }} />
                         </>
                     )}
                     {viewMode === 'value' && (

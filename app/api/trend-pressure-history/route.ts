@@ -88,10 +88,44 @@ export async function GET(request: NextRequest) {
                 ORDER BY date ASC
             `).all() as { date: string; price: number }[];
 
+            // Also compute 50/200 divergence percentile for NDX
+            const ndxRows = computeNdxMetrics(prices, maPeriod);
+
+            // Compute 50MA and 200MA for NDX to get div_50_200
+            const ndx50 = computeNdxMetrics(prices, 50);
+            const ndx200 = computeNdxMetrics(prices, 200);
+            const ma50Map = new Map(ndx50.map(r => [r.date, r.divergence_value]));
+            const ma200Map = new Map(ndx200.map(r => [r.date, r.divergence_value]));
+
+            // div_50_200 = (price_above_50ma% - price_above_200ma%) proxy via divergence values
+            // Actually compute raw 50MA and 200MA prices to get the spread
+            const priceMap = new Map(prices.map(r => [r.date, r.price]));
+            const divValues: number[] = [];
+            const divDates: string[] = [];
+            ndxRows.forEach(r => {
+                const price = priceMap.get(r.date);
+                if (price == null) return;
+                // Recompute 50MA and 200MA at this date
+                const idx = prices.findIndex(p => p.date === r.date);
+                if (idx < 199) return;
+                const win200 = prices.slice(idx - 199, idx + 1);
+                const win50 = prices.slice(idx - 49, idx + 1);
+                const ma200v = win200.reduce((s, x) => s + x.price, 0) / 200;
+                const ma50v = win50.reduce((s, x) => s + x.price, 0) / 50;
+                divValues.push((ma50v - ma200v) / ma200v * 100);
+                divDates.push(r.date);
+            });
+            const divPct = rollingPercentile(divValues, divValues.length);
+            const divPctMap = new Map(divDates.map((d, i) => [d, divPct[i]]));
+
             db.close();
-            rows = computeNdxMetrics(prices, maPeriod);
+            rows = ndxRows.map(r => ({
+                ...r,
+                ma50_200_value: null,
+                ma50_200_percentile: divPctMap.get(r.date) ?? null,
+            }));
         } else {
-            rows = db.prepare(`
+            const baseRows = db.prepare(`
                 SELECT
                     d.date,
                     d.value            AS divergence_value,
@@ -99,13 +133,19 @@ export async function GET(request: NextRequest) {
                     p.value            AS days_above_value,
                     p.percentile_rank  AS days_above_percentile,
                     s.value            AS slope_value,
-                    s.percentile_rank  AS slope_percentile
+                    s.percentile_rank  AS slope_percentile,
+                    ma50.value         AS ma50_price,
+                    ma200.value        AS ma200_price
                 FROM percentile_analysis d
-                JOIN percentile_analysis p ON d.date = p.date
-                JOIN percentile_analysis s ON d.date = s.date
-                WHERE d.series_name = ?
-                  AND p.series_name = ?
-                  AND s.series_name = ?
+                JOIN percentile_analysis p   ON d.date = p.date
+                JOIN percentile_analysis s   ON d.date = s.date
+                JOIN percentile_analysis ma50  ON d.date = ma50.date
+                JOIN percentile_analysis ma200 ON d.date = ma200.date
+                WHERE d.series_name   = ?
+                  AND p.series_name   = ?
+                  AND s.series_name   = ?
+                  AND ma50.series_name  = 'SP500-MA50'
+                  AND ma200.series_name = 'SP500-MA200'
                   AND d.percentile_rank IS NOT NULL
                   AND p.percentile_rank IS NOT NULL
                   AND s.percentile_rank IS NOT NULL
@@ -117,6 +157,24 @@ export async function GET(request: NextRequest) {
             ) as any[];
 
             db.close();
+
+            // Compute rolling percentile of 50/200 divergence
+            const divValues = baseRows.map((r: any) =>
+                r.ma200_price > 0 ? (r.ma50_price - r.ma200_price) / r.ma200_price * 100 : 0
+            );
+            const divPct = rollingPercentile(divValues, divValues.length);
+
+            rows = baseRows.map((r: any, i: number) => ({
+                date: r.date,
+                divergence_value: r.divergence_value,
+                divergence_percentile: r.divergence_percentile,
+                days_above_value: r.days_above_value,
+                days_above_percentile: r.days_above_percentile,
+                slope_value: r.slope_value,
+                slope_percentile: r.slope_percentile,
+                ma50_200_value: parseFloat(divValues[i].toFixed(4)),
+                ma50_200_percentile: divPct[i],
+            }));
         }
 
         return NextResponse.json({ data: rows, ma, index });

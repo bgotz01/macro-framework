@@ -66,7 +66,7 @@ const sidebarData: SidebarCategory[] = [
                 href: '/sp500',
                 children: [
                     { title: 'Constituents', href: '/sp500/constituents' },
-
+                    { title: 'Returns', href: '/sp500/returns' },
                 ],
             },
 
@@ -113,10 +113,7 @@ const sidebarData: SidebarCategory[] = [
                 title: 'Regime Context',
                 href: '/context',
             },
-            {
-                title: 'Regime Returns',
-                href: '/regime/returns',
-            },
+
             {
                 title: 'Regime Examples',
                 href: '/regime-examples',
