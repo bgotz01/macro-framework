@@ -3,9 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const SERIES_OPTIONS = [
-    { value: 'CPI', label: 'CPI (YoY %)', placeholder: '2.4' },
-    { value: 'M2', label: 'M2 ($B → YoY%)', placeholder: '22442.1' },
-    { value: 'SP500-EPS', label: 'SP500 EPS ($)', placeholder: '234.06' },
+    { value: 'CPI-U', label: 'CPI (Index → YoY%)', placeholder: '314.5', source: 'Released 10th–13th of the month', urls: [{ label: 'bls.gov', href: 'https://www.bls.gov/cpi/' }, { label: 'BLS data query', href: 'https://data.bls.gov/pdq/SurveyOutputServlet' }] },
+    { value: 'M2', label: 'M2 ($B → YoY%)', placeholder: '22442.1', source: 'Released 4th Tuesday of every month', urls: [{ label: 'fred.stlouisfed.org', href: 'https://fred.stlouisfed.org/series/WM2NS' }] },
+    {
+        value: 'SP500-EPS', label: 'SP500 EPS ($)', placeholder: '234.06', source: 'Quarterly', urls: [
+            { label: 'gurufocus.com', href: 'https://www.gurufocus.com/economic_indicators/4281/sp-500-eps-with-estimate-ttm' },
+            { label: 'spglobal.com', href: 'https://www.spglobal.com/spdji/en/documents/additional-material/sp-500-eps-est.xlsx' },
+        ]
+    },
 ];
 
 interface RecentRow {
@@ -16,12 +21,13 @@ interface RecentRow {
 }
 
 export default function DataInputPage() {
-    const [series, setSeries] = useState('CPI');
+    const [series, setSeries] = useState('CPI-U');
     const [date, setDate] = useState('');
     const [value, setValue] = useState('');
     const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [recent, setRecent] = useState<RecentRow[]>([]);
+    const [quarterly, setQuarterly] = useState<{ date: string; eps: number }[]>([]);
     const [loadingRecent, setLoadingRecent] = useState(false);
     const abortRef = useRef<AbortController | null>(null);
 
@@ -34,6 +40,7 @@ export default function DataInputPage() {
             const res = await fetch(`/api/data-input?series=${s}`, { signal: abortRef.current.signal });
             const json = await res.json();
             setRecent(json.data || []);
+            setQuarterly(json.quarterly || []);
         } catch (e: any) {
             if (e.name !== 'AbortError') console.error(e);
         } finally {
@@ -75,7 +82,8 @@ export default function DataInputPage() {
     };
 
     const selectedOption = SERIES_OPTIONS.find(o => o.value === series)!;
-    const isPercent = series === 'CPI';
+    const isPercent = false;
+    const valueLabel = series === 'M2' ? '($B)' : series === 'CPI-U' ? '(Index)' : '($)';
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -108,6 +116,19 @@ export default function DataInputPage() {
                                 </button>
                             ))}
                         </div>
+                        {selectedOption.source && (
+                            <div className="text-xs text-muted-foreground mt-1.5">
+                                {selectedOption.source} —{' '}
+                                {selectedOption.urls.map((u, i) => (
+                                    <span key={u.href}>
+                                        {i > 0 && ' · '}
+                                        <a href={u.href} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground transition-colors">
+                                            {u.label}
+                                        </a>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Date + Value */}
@@ -150,7 +171,7 @@ export default function DataInputPage() {
                         </div>
                         <div className="flex-1">
                             <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                                Value {isPercent ? '(%)' : series === 'M2' ? '($B)' : '($)'}
+                                Value {valueLabel}
                             </label>
                             <input
                                 type="number"
@@ -186,44 +207,83 @@ export default function DataInputPage() {
                     Recent — {selectedOption.label}
                 </div>
                 {series === 'SP500-EPS' ? (
-                    // Group into rows of 3 (anchor + 2 filled months)
-                    <table className={`w-full text-sm ${loadingRecent ? 'opacity-40' : ''}`}>
-                        <thead>
-                            <tr className="text-xs text-muted-foreground border-b border-border">
-                                <th className="text-left pb-2">Q-End</th>
-                                <th className="text-left pb-2 text-muted-foreground/50">+1mo</th>
-                                <th className="text-left pb-2 text-muted-foreground/50">+2mo</th>
-                                <th className="text-right pb-2">Q-End</th>
-                                <th className="text-right pb-2 text-muted-foreground/50">+1mo</th>
-                                <th className="text-right pb-2 text-muted-foreground/50">+2mo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {recent.length === 0 && !loadingRecent ? (
-                                <tr><td colSpan={6} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
-                            ) : (() => {
-                                // Group consecutive rows into chunks of 3
-                                const chunks: RecentRow[][] = [];
-                                for (let i = 0; i < recent.length; i += 3) {
-                                    chunks.push(recent.slice(i, i + 3));
-                                }
-                                return chunks.map((chunk, ci) => (
-                                    <tr key={ci} className="border-b border-border/40 last:border-0">
-                                        {[0, 1, 2].map(j => (
-                                            <td key={j} className={`py-1.5 pr-3 ${j > 0 ? 'text-muted-foreground/40 text-xs' : 'text-muted-foreground'}`}>
-                                                {chunk[j]?.date ?? '—'}
-                                            </td>
-                                        ))}
-                                        {[0, 1, 2].map(j => (
-                                            <td key={j} className={`py-1.5 text-right ${j > 0 ? 'text-muted-foreground/40 text-xs' : 'font-medium'}`}>
-                                                {chunk[j] != null ? chunk[j].value.toFixed(2) : '—'}
-                                            </td>
-                                        ))}
+                    <>
+                        {/* Quarterly actuals — primary table */}
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Quarterly Actuals</div>
+                        {quarterly.length === 0 && !loadingRecent ? (
+                            <p className="text-xs text-muted-foreground py-4 text-center">No data</p>
+                        ) : (
+                            <table className={`w-full text-sm ${loadingRecent ? 'opacity-40' : ''}`}>
+                                <thead>
+                                    <tr className="text-xs text-muted-foreground border-b border-border">
+                                        <th className="text-left pb-2">Quarter End</th>
+                                        <th className="text-right pb-2">EPS ($)</th>
+                                        <th className="text-right pb-2">TTM ($)</th>
+                                        <th className="text-right pb-2">YoY %</th>
                                     </tr>
-                                ));
-                            })()}
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    {quarterly.map((row, i) => {
+                                        const prevYear = quarterly.find(r => {
+                                            const d1 = new Date(row.date), d2 = new Date(r.date);
+                                            return d2.getFullYear() === d1.getFullYear() - 1 && d2.getMonth() === d1.getMonth();
+                                        });
+                                        const yoy = prevYear ? ((row.eps - prevYear.eps) / Math.abs(prevYear.eps)) * 100 : null;
+                                        const ttmSlice = quarterly.slice(i, i + 4);
+                                        const ttm = ttmSlice.length === 4 ? ttmSlice.reduce((s, r) => s + r.eps, 0) : null;
+                                        return (
+                                            <tr key={i} className="border-b border-border/40 last:border-0">
+                                                <td className="py-1.5 text-muted-foreground">{row.date}</td>
+                                                <td className="py-1.5 text-right font-medium">{row.eps.toFixed(2)}</td>
+                                                <td className="py-1.5 text-right text-muted-foreground">{ttm != null ? ttm.toFixed(2) : <span className="text-muted-foreground/40">—</span>}</td>
+                                                <td className={`py-1.5 text-right font-medium ${yoy == null ? '' : yoy >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {yoy != null ? `${yoy.toFixed(1)}%` : <span className="text-muted-foreground/40">—</span>}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        )}
+                        {/* TTM entries (filled months) */}
+                        {recent.length > 0 && (
+                            <div className="mt-6">
+                                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">TTM — Monthly Fill</div>
+                                <table className={`w-full text-sm ${loadingRecent ? 'opacity-40' : ''}`}>
+                                    <thead>
+                                        <tr className="text-xs text-muted-foreground border-b border-border">
+                                            <th className="text-left pb-2">Q-End</th>
+                                            <th className="text-left pb-2 text-muted-foreground/50">+1mo</th>
+                                            <th className="text-left pb-2 text-muted-foreground/50">+2mo</th>
+                                            <th className="text-right pb-2">Q-End</th>
+                                            <th className="text-right pb-2 text-muted-foreground/50">+1mo</th>
+                                            <th className="text-right pb-2 text-muted-foreground/50">+2mo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(() => {
+                                            const chunks: RecentRow[][] = [];
+                                            for (let i = 0; i < recent.length; i += 3) chunks.push(recent.slice(i, i + 3));
+                                            return chunks.map((chunk, ci) => (
+                                                <tr key={ci} className="border-b border-border/40 last:border-0">
+                                                    {[0, 1, 2].map(j => (
+                                                        <td key={j} className={`py-1.5 pr-3 ${j > 0 ? 'text-muted-foreground/40 text-xs' : 'text-muted-foreground'}`}>
+                                                            {chunk[j]?.date ?? '—'}
+                                                        </td>
+                                                    ))}
+                                                    {[0, 1, 2].map(j => (
+                                                        <td key={j} className={`py-1.5 text-right ${j > 0 ? 'text-muted-foreground/40 text-xs' : 'font-medium'}`}>
+                                                            {chunk[j] != null ? chunk[j].value.toFixed(2) : '—'}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ));
+                                        })()}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <table className={`w-full text-sm ${loadingRecent ? 'opacity-40' : ''}`}>
                         <thead>
@@ -234,6 +294,11 @@ export default function DataInputPage() {
                                         <th className="text-right pb-2">Nominal ($B)</th>
                                         <th className="text-right pb-2">YoY %</th>
                                     </>
+                                ) : series === 'CPI-U' ? (
+                                    <>
+                                        <th className="text-right pb-2">Index</th>
+                                        <th className="text-right pb-2">YoY %</th>
+                                    </>
                                 ) : (
                                     <th className="text-right pb-2">Value</th>
                                 )}
@@ -241,7 +306,7 @@ export default function DataInputPage() {
                         </thead>
                         <tbody>
                             {recent.length === 0 && !loadingRecent ? (
-                                <tr><td colSpan={series === 'M2' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
+                                <tr><td colSpan={series === 'M2' || series === 'CPI-U' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
                             ) : recent.map(row => (
                                 <tr key={row.date} className="border-b border-border/40 last:border-0">
                                     <td className="py-1.5 text-muted-foreground">{row.date}</td>
@@ -252,9 +317,16 @@ export default function DataInputPage() {
                                                 {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
                                             </td>
                                         </>
+                                    ) : series === 'CPI-U' ? (
+                                        <>
+                                            <td className="py-1.5 text-right font-medium">{row.value?.toFixed(3)}</td>
+                                            <td className="py-1.5 text-right font-medium">
+                                                {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
+                                            </td>
+                                        </>
                                     ) : (
                                         <td className="py-1.5 text-right font-medium">
-                                            {isPercent ? `${row.value.toFixed(2)}%` : row.value.toFixed(2)}
+                                            {isPercent ? `${row.value.toFixed(2)}%` : row.value?.toFixed(2)}
                                         </td>
                                     )}
                                 </tr>

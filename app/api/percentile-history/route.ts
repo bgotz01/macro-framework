@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
+
+const PIVOT_SERIES = [
+    'CPI', 'US/FEDFUNDS', 'M1-YoY', 'M2-YoY', 'Real-M2-YoY',
+    'US/TNX-Monthly', 'US/US-2yr-Monthly', 'US/IRX-Monthly',
+    'Real-10Y', 'Real-3M', 'Yield-Curve', 'Yield-Curve-10Y-3M',
+    'PE-5yr', 'PE-2yr', 'Earnings-Yield-5yr', 'Earnings-Yield-2yr',
+    'Earnings-Yield-Premium-5yr', 'Earnings-Yield-Premium-2yr',
+    'Real-Earnings-Yield-5yr', 'Real-Earnings-Yield-2yr',
+];
+
+const SERIES_KEY_MAP: Record<string, string> = {
+    'CPI': 'cpi', 'US/FEDFUNDS': 'fedfunds', 'M1-YoY': 'm1yoy', 'M2-YoY': 'm2yoy',
+    'Real-M2-YoY': 'realm2yoy', 'US/TNX-Monthly': 'tnx', 'US/US-2yr-Monthly': 'us2yr',
+    'US/IRX-Monthly': 'irx', 'Real-10Y': 'realyield', 'Real-3M': 'realyield3m',
+    'Yield-Curve': 'yieldcurve', 'Yield-Curve-10Y-3M': 'yieldcurve3m',
+    'PE-5yr': 'pe5yr', 'PE-2yr': 'pe2yr',
+    'Earnings-Yield-5yr': 'ey5yr', 'Earnings-Yield-2yr': 'ey2yr',
+    'Earnings-Yield-Premium-5yr': 'eyp5yr', 'Earnings-Yield-Premium-2yr': 'eyp2yr',
+    'Real-Earnings-Yield-5yr': 'rey5yr', 'Real-Earnings-Yield-2yr': 'rey2yr',
+};
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -8,123 +27,38 @@ export async function GET(request: NextRequest) {
     const seriesName = searchParams.get('seriesName');
 
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true, timeout: 10000 });
-
-        // If no parameters, fetch all data in wide format for the chart
-        if (!assetClass && !seriesName) {
-            const query = `
-                SELECT 
-                    date,
-                    MAX(CASE WHEN series_name = 'CPI' THEN value END) as cpi_value,
-                    MAX(CASE WHEN series_name = 'CPI' THEN percentile_rank END) as cpi_percentile,
-                    MAX(CASE WHEN series_name = 'CPI' THEN yoy_percentile_change END) as cpi_yoy,
-                    MAX(CASE WHEN series_name = 'US/FEDFUNDS' THEN value END) as fedfunds_value,
-                    MAX(CASE WHEN series_name = 'US/FEDFUNDS' THEN percentile_rank END) as fedfunds_percentile,
-                    MAX(CASE WHEN series_name = 'US/FEDFUNDS' THEN yoy_percentile_change END) as fedfunds_yoy,
-                    MAX(CASE WHEN series_name = 'M1-YoY' THEN value END) as m1yoy_value,
-                    MAX(CASE WHEN series_name = 'M1-YoY' THEN percentile_rank END) as m1yoy_percentile,
-                    MAX(CASE WHEN series_name = 'M1-YoY' THEN yoy_percentile_change END) as m1yoy_yoy,
-                    MAX(CASE WHEN series_name = 'M2-YoY' THEN value END) as m2yoy_value,
-                    MAX(CASE WHEN series_name = 'M2-YoY' THEN percentile_rank END) as m2yoy_percentile,
-                    MAX(CASE WHEN series_name = 'M2-YoY' THEN yoy_percentile_change END) as m2yoy_yoy,
-                    MAX(CASE WHEN series_name = 'Real-M2-YoY' THEN value END) as realm2yoy_value,
-                    MAX(CASE WHEN series_name = 'Real-M2-YoY' THEN percentile_rank END) as realm2yoy_percentile,
-                    MAX(CASE WHEN series_name = 'Real-M2-YoY' THEN yoy_percentile_change END) as realm2yoy_yoy,
-                    MAX(CASE WHEN series_name = 'US/TNX-Monthly' THEN value END) as tnx_value,
-                    MAX(CASE WHEN series_name = 'US/TNX-Monthly' THEN percentile_rank END) as tnx_percentile,
-                    MAX(CASE WHEN series_name = 'US/TNX-Monthly' THEN yoy_percentile_change END) as tnx_yoy,
-                    MAX(CASE WHEN series_name = 'US/US-2yr-Monthly' THEN value END) as us2yr_value,
-                    MAX(CASE WHEN series_name = 'US/US-2yr-Monthly' THEN percentile_rank END) as us2yr_percentile,
-                    MAX(CASE WHEN series_name = 'US/US-2yr-Monthly' THEN yoy_percentile_change END) as us2yr_yoy,
-                    MAX(CASE WHEN series_name = 'US/IRX-Monthly' THEN value END) as irx_value,
-                    MAX(CASE WHEN series_name = 'US/IRX-Monthly' THEN percentile_rank END) as irx_percentile,
-                    MAX(CASE WHEN series_name = 'US/IRX-Monthly' THEN yoy_percentile_change END) as irx_yoy,
-                    MAX(CASE WHEN series_name = 'Real-10Y' THEN value END) as realyield_value,
-                    MAX(CASE WHEN series_name = 'Real-10Y' THEN percentile_rank END) as realyield_percentile,
-                    MAX(CASE WHEN series_name = 'Real-10Y' THEN yoy_percentile_change END) as realyield_yoy,
-                    MAX(CASE WHEN series_name = 'Real-3M' THEN value END) as realyield3m_value,
-                    MAX(CASE WHEN series_name = 'Real-3M' THEN percentile_rank END) as realyield3m_percentile,
-                    MAX(CASE WHEN series_name = 'Real-3M' THEN yoy_percentile_change END) as realyield3m_yoy,
-                    MAX(CASE WHEN series_name = 'Yield-Curve' THEN value END) as yieldcurve_value,
-                    MAX(CASE WHEN series_name = 'Yield-Curve' THEN percentile_rank END) as yieldcurve_percentile,
-                    MAX(CASE WHEN series_name = 'Yield-Curve' THEN yoy_percentile_change END) as yieldcurve_yoy,
-                    MAX(CASE WHEN series_name = 'Yield-Curve-10Y-3M' THEN value END) as yieldcurve3m_value,
-                    MAX(CASE WHEN series_name = 'Yield-Curve-10Y-3M' THEN percentile_rank END) as yieldcurve3m_percentile,
-                    MAX(CASE WHEN series_name = 'Yield-Curve-10Y-3M' THEN yoy_percentile_change END) as yieldcurve3m_yoy,
-                    MAX(CASE WHEN series_name = 'Shiller-PE' THEN value END) as shillerpe_value,
-                    MAX(CASE WHEN series_name = 'Shiller-PE' THEN percentile_rank END) as shillerpe_percentile,
-                    MAX(CASE WHEN series_name = 'Shiller-PE' THEN yoy_percentile_change END) as shillerpe_yoy,
-                    MAX(CASE WHEN series_name = 'PE-5yr' THEN value END) as pe5yr_value,
-                    MAX(CASE WHEN series_name = 'PE-5yr' THEN percentile_rank END) as pe5yr_percentile,
-                    MAX(CASE WHEN series_name = 'PE-5yr' THEN yoy_percentile_change END) as pe5yr_yoy,
-                    MAX(CASE WHEN series_name = 'PE-1yr' THEN value END) as pe1yr_value,
-                    MAX(CASE WHEN series_name = 'PE-1yr' THEN percentile_rank END) as pe1yr_percentile,
-                    MAX(CASE WHEN series_name = 'PE-1yr' THEN yoy_percentile_change END) as pe1yr_yoy,
-                    MAX(CASE WHEN series_name = 'PE-2yr' THEN value END) as pe2yr_value,
-                    MAX(CASE WHEN series_name = 'PE-2yr' THEN percentile_rank END) as pe2yr_percentile,
-                    MAX(CASE WHEN series_name = 'PE-2yr' THEN yoy_percentile_change END) as pe2yr_yoy,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield' THEN value END) as eycape_value,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield' THEN percentile_rank END) as eycape_percentile,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield' THEN yoy_percentile_change END) as eycape_yoy,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-5yr' THEN value END) as ey5yr_value,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-5yr' THEN percentile_rank END) as ey5yr_percentile,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-5yr' THEN yoy_percentile_change END) as ey5yr_yoy,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-2yr' THEN value END) as ey2yr_value,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-2yr' THEN percentile_rank END) as ey2yr_percentile,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-2yr' THEN yoy_percentile_change END) as ey2yr_yoy,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-2yr' THEN value END) as eyp2yr_value,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-2yr' THEN percentile_rank END) as eyp2yr_percentile,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-2yr' THEN yoy_percentile_change END) as eyp2yr_yoy,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-5yr' THEN value END) as eyp5yr_value,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-5yr' THEN percentile_rank END) as eyp5yr_percentile,
-                    MAX(CASE WHEN series_name = 'Earnings-Yield-Premium-5yr' THEN yoy_percentile_change END) as eyp5yr_yoy,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN value END) as rey5yr_value,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN percentile_rank END) as rey5yr_percentile,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-5yr' THEN yoy_percentile_change END) as rey5yr_yoy,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-2yr' THEN value END) as rey2yr_value,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-2yr' THEN percentile_rank END) as rey2yr_percentile,
-                    MAX(CASE WHEN series_name = 'Real-Earnings-Yield-2yr' THEN yoy_percentile_change END) as rey2yr_yoy
-                FROM percentile_analysis
-                GROUP BY date
-                ORDER BY date ASC
-            `;
-
-            const rows = db.prepare(query).all() as any[];
-            db.close();
+        // Specific series request
+        if (assetClass && seriesName) {
+            const columnName = searchParams.get('columnName') ?? 'Value';
+            const rows = await prisma.macro_percentile_analysis.findMany({
+                where: { asset_class: assetClass, series_name: seriesName, column_name: columnName },
+                orderBy: { date: 'asc' },
+                select: { date: true, value: true, percentile_rank: true },
+            });
             return NextResponse.json({ data: rows });
         }
 
-        // If parameters provided, fetch specific series
-        if (!assetClass || !seriesName) {
-            return NextResponse.json({ error: 'Missing assetClass or seriesName parameter' }, { status: 400 });
+        // Wide pivot format for chart
+        const rows = await prisma.macro_percentile_analysis.findMany({
+            where: { series_name: { in: PIVOT_SERIES }, column_name: 'Value' },
+            orderBy: { date: 'asc' },
+            select: { date: true, series_name: true, value: true, percentile_rank: true, yoy_percentile_change: true },
+        });
+
+        // Pivot in memory
+        const dateMap = new Map<string, any>();
+        for (const row of rows) {
+            if (!dateMap.has(row.date)) dateMap.set(row.date, { date: row.date });
+            const key = SERIES_KEY_MAP[row.series_name];
+            if (key) {
+                const entry = dateMap.get(row.date);
+                entry[`${key}_value`] = row.value;
+                entry[`${key}_percentile`] = row.percentile_rank;
+                entry[`${key}_yoy`] = row.yoy_percentile_change;
+            }
         }
 
-        const columnName = searchParams.get('columnName');
-
-        let query = `
-            SELECT 
-                date,
-                value,
-                percentile_rank
-            FROM percentile_analysis
-            WHERE asset_class = ?
-              AND series_name = ?
-        `;
-        const params: any[] = [assetClass, seriesName];
-
-        if (columnName) {
-            query += ` AND column_name = ?`;
-            params.push(columnName);
-        }
-
-        query += ` ORDER BY date ASC`;
-
-        const rows = db.prepare(query).all(...params) as any[];
-
-        db.close();
-
-        return NextResponse.json({ data: rows });
+        return NextResponse.json({ data: Array.from(dateMap.values()) });
     } catch (error) {
         console.error('Error fetching percentile history:', error);
         return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });

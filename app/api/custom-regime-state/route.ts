@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 interface Conditions {
     rey: number | null;
@@ -88,8 +87,11 @@ function buildCustomTrigger(cr: any) {
     };
 }
 
-function walkTimeline(rows: Array<{ date: string } & Conditions>, triggers: any, customRegimeDef?: any): RegimeResult {
-    // Build precedence with custom regime injected
+function walkTimeline(
+    rows: Array<{ date: string } & Conditions>,
+    triggers: any,
+    customRegimeDef?: any,
+): RegimeResult {
     const base = [...PRECEDENCE];
     if (customRegimeDef) {
         const pos = Math.max(0, Math.min((customRegimeDef.precedence ?? 5) - 1, base.length));
@@ -97,14 +99,14 @@ function walkTimeline(rows: Array<{ date: string } & Conditions>, triggers: any,
         triggers[customRegimeDef.name] = buildCustomTrigger(customRegimeDef);
     }
 
-    let current = null as RegimeResult | null;
+    let current: RegimeResult | null = null;
 
     for (const row of rows) {
-        const currentRegime = current ? current.regime : null;
+        const currentRegime: string | null = current ? current.regime : null;
         let nextRegime: RegimeResult | null = null;
 
         for (const regime of base) {
-            const config = triggers[regime];
+            const config: { entry: (c: Conditions) => boolean; exit: (c: Conditions) => boolean; reason: (c: Conditions) => string } = triggers[regime];
             if (!config) continue;
 
             const isCurrentRegime = regime === currentRegime;
@@ -123,7 +125,7 @@ function walkTimeline(rows: Array<{ date: string } & Conditions>, triggers: any,
 
         if (!nextRegime) {
             if (current && current.regime !== 'Normal') {
-                const config = triggers[current.regime];
+                const config: { entry: (c: Conditions) => boolean; exit: (c: Conditions) => boolean; reason: (c: Conditions) => string } = triggers[current.regime];
                 if (config && !config.exit(row)) {
                     nextRegime = current;
                 } else {
@@ -147,35 +149,43 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing thresholds' }, { status: 400 });
         }
 
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true, timeout: 10000 });
-
-        const dateFilter = targetDate && targetDate !== 'latest' ? `AND r.date <= ?` : '';
-        const params: string[] = [];
-        if (targetDate && targetDate !== 'latest') params.push(targetDate);
-
-        const rows = db.prepare(`
-            SELECT
-                r.date,
-                r.value as rey,
-                e.value as eyp,
-                t.value as real10y,
-                m3.value as real3m,
-                m2.value as realM2
-            FROM percentile_analysis r
-            LEFT JOIN percentile_analysis e ON r.date = e.date AND e.asset_class = 'derived' AND e.series_name = 'Earnings-Yield-Premium-5yr'
-            LEFT JOIN percentile_analysis t ON r.date = t.date AND t.asset_class = 'derived' AND t.series_name = 'Real-10Y'
-            LEFT JOIN percentile_analysis m3 ON r.date = m3.date AND m3.asset_class = 'derived' AND m3.series_name = 'Real-3M'
-            LEFT JOIN percentile_analysis m2 ON r.date = m2.date AND m2.asset_class = 'economic' AND m2.series_name = 'Real-M2-YoY'
-            WHERE r.asset_class = 'derived' AND r.series_name = 'Real-Earnings-Yield-5yr'
-            ${dateFilter}
-            ORDER BY r.date ASC
-        `).all(...params) as Array<{
-            date: string; rey: number | null; eyp: number | null;
-            real10y: number | null; real3m: number | null; realM2: number | null;
-        }>;
-
-        db.close();
+        const rows = await (targetDate && targetDate !== 'latest'
+            ? prisma.$queryRaw<Array<{ date: string; rey: number | null; eyp: number | null; real10y: number | null; real3m: number | null; realM2: number | null }>>`
+                SELECT
+                    r.date::text as date,
+                    r.value as rey,
+                    e.value as eyp,
+                    t.value as real10y,
+                    m3.value as real3m,
+                    m2.value as "realM2"
+                FROM macro_percentile_analysis r
+                LEFT JOIN macro_percentile_analysis e  ON r.date = e.date  AND e.asset_class  = 'derived'   AND e.series_name  = 'Earnings-Yield-Premium-5yr'
+                LEFT JOIN macro_percentile_analysis t  ON r.date = t.date  AND t.asset_class  = 'derived'   AND t.series_name  = 'Real-10Y'
+                LEFT JOIN macro_percentile_analysis m3 ON r.date = m3.date AND m3.asset_class = 'derived'   AND m3.series_name = 'Real-3M'
+                LEFT JOIN macro_percentile_analysis m2 ON r.date = m2.date AND m2.asset_class = 'economic'  AND m2.series_name = 'Real-M2-YoY'
+                WHERE r.asset_class = 'derived'
+                  AND r.series_name = 'Real-Earnings-Yield-5yr'
+                  AND r.date <= ${targetDate}::date
+                ORDER BY r.date ASC
+            `
+            : prisma.$queryRaw<Array<{ date: string; rey: number | null; eyp: number | null; real10y: number | null; real3m: number | null; realM2: number | null }>>`
+                SELECT
+                    r.date::text as date,
+                    r.value as rey,
+                    e.value as eyp,
+                    t.value as real10y,
+                    m3.value as real3m,
+                    m2.value as "realM2"
+                FROM macro_percentile_analysis r
+                LEFT JOIN macro_percentile_analysis e  ON r.date = e.date  AND e.asset_class  = 'derived'   AND e.series_name  = 'Earnings-Yield-Premium-5yr'
+                LEFT JOIN macro_percentile_analysis t  ON r.date = t.date  AND t.asset_class  = 'derived'   AND t.series_name  = 'Real-10Y'
+                LEFT JOIN macro_percentile_analysis m3 ON r.date = m3.date AND m3.asset_class = 'derived'   AND m3.series_name = 'Real-3M'
+                LEFT JOIN macro_percentile_analysis m2 ON r.date = m2.date AND m2.asset_class = 'economic'  AND m2.series_name = 'Real-M2-YoY'
+                WHERE r.asset_class = 'derived'
+                  AND r.series_name = 'Real-Earnings-Yield-5yr'
+                ORDER BY r.date ASC
+            `
+        );
 
         const mapped = rows.map(r => ({
             date: r.date,
@@ -189,7 +199,6 @@ export async function POST(request: NextRequest) {
         const triggers = buildTriggers(thresholds);
         const result = walkTimeline(mapped, triggers, thresholds.customRegime);
 
-        // Calculate months in regime
         let monthsInRegime = 0;
         if (result.entryDate && mapped.length > 0) {
             const entry = new Date(result.entryDate);

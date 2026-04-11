@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { REGIME_METADATA } from '@/lib/regime-state-machine';
 import type { RegimeFamily } from '@/lib/regime-state-machine';
 import { REGIME_TRIGGERS } from '@/lib/regime-state-machine';
+import CapitalAllocation from './capital-allocation';
 
 const REGIME_METRICS: Record<RegimeFamily, Set<string>> = {
     'Broad Growth': new Set(['rey']),
@@ -341,6 +342,8 @@ export default function RegimeStateDisplay({
                                     {metadata.guidance}
                                 </p>
                             </div>
+
+                            <CapitalAllocation regime={regime} />
                         </div>
                     )}
                 </div>

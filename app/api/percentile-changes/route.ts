@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 const SERIES = [
     { key: 'fedFunds', asset_class: 'economic', series_name: 'US/FEDFUNDS', label: 'Fed Rate' },
@@ -21,18 +20,14 @@ export async function GET(request: NextRequest) {
     const targetDate = request.nextUrl.searchParams.get('date') || 'latest';
 
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true, timeout: 10000 });
-
-        // Resolve reference date (end-of-month for the target period)
         let refDate: string;
         if (targetDate === 'latest') {
-            const row = db.prepare(`
-                SELECT date FROM percentile_analysis
+            const rows = await prisma.$queryRaw<{ date: string }[]>`
+                SELECT date::text as date FROM macro_percentile_analysis
                 WHERE asset_class = 'derived' AND series_name = 'Real-Earnings-Yield-5yr'
                 ORDER BY date DESC LIMIT 1
-            `).get() as { date: string } | undefined;
-            refDate = row?.date ?? new Date().toISOString().split('T')[0];
+            `;
+            refDate = rows[0]?.date ?? new Date().toISOString().split('T')[0];
         } else {
             refDate = targetDate;
         }
@@ -46,25 +41,28 @@ export async function GET(request: NextRequest) {
             prevDate: string | null;
         }> = {};
 
-        for (const s of SERIES) {
-            // Current month row
-            const cur = db.prepare(`
-                SELECT date, percentile_rank FROM percentile_analysis
-                WHERE asset_class = ? AND series_name = ?
-                  AND strftime('%Y-%m', date) = strftime('%Y-%m', ?)
-                ORDER BY date DESC LIMIT 1
-            `).get(s.asset_class, s.series_name, refDate) as { date: string; percentile_rank: number } | undefined;
+        await Promise.all(SERIES.map(async (s) => {
+            const [curRows, prevRows] = await Promise.all([
+                prisma.$queryRaw<{ date: string; percentile_rank: number }[]>`
+                    SELECT date::text as date, percentile_rank
+                    FROM macro_percentile_analysis
+                    WHERE asset_class = ${s.asset_class}
+                      AND series_name = ${s.series_name}
+                      AND to_char(date::date, 'YYYY-MM') = to_char(${refDate}::date, 'YYYY-MM')
+                    ORDER BY date DESC LIMIT 1
+                `,
+                prisma.$queryRaw<{ date: string; percentile_rank: number }[]>`
+                    SELECT date::text as date, percentile_rank
+                    FROM macro_percentile_analysis
+                    WHERE asset_class = ${s.asset_class}
+                      AND series_name = ${s.series_name}
+                      AND date < date_trunc('month', ${refDate}::date)
+                    ORDER BY date DESC LIMIT 1
+                `,
+            ]);
 
-            // Previous month row — go back one month from refDate
-            const prev = db.prepare(`
-                SELECT date, percentile_rank FROM percentile_analysis
-                WHERE asset_class = ? AND series_name = ?
-                  AND date < date(?, 'start of month')
-                ORDER BY date DESC LIMIT 1
-            `).get(s.asset_class, s.series_name, refDate) as { date: string; percentile_rank: number } | undefined;
-
-            const current = cur?.percentile_rank ?? null;
-            const previous = prev?.percentile_rank ?? null;
+            const current = curRows[0]?.percentile_rank ?? null;
+            const previous = prevRows[0]?.percentile_rank ?? null;
             const delta = current !== null && previous !== null
                 ? Math.round((current - previous) * 10) / 10
                 : null;
@@ -74,12 +72,11 @@ export async function GET(request: NextRequest) {
                 current,
                 previous,
                 delta,
-                date: cur?.date ?? null,
-                prevDate: prev?.date ?? null,
+                date: curRows[0]?.date ?? null,
+                prevDate: prevRows[0]?.date ?? null,
             };
-        }
+        }));
 
-        db.close();
         return NextResponse.json(result);
     } catch (error) {
         console.error('Error fetching percentile changes:', error);

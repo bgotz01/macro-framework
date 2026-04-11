@@ -637,3 +637,136 @@ model trade_ideas {
 
   @@index([isActive, position])
 }
+
+model macro_series_metadata {
+  asset_class  String
+  series_name  String
+  display_name String?
+  description  String?
+  source       String?
+  last_updated BigInt?
+  geography    String?
+  units        String?
+  currency     String?
+
+  @@id([asset_class, series_name])
+  @@map("macro_series_metadata")
+}
+
+model macro_regime_timeline {
+  date            String  @id
+  regime          String
+  entry_date      String
+  trigger_reason  String
+  liquidity_score Float?
+  rey             Float?
+  eyp             Float?
+  real10Y         Float?
+  real3M          Float?
+  realM2          Float?
+
+  @@index([regime])
+  @@index([entry_date])
+  @@map("macro_regime_timeline")
+}
+
+model macro_time_series {
+  id          Int     @id @default(autoincrement())
+  date        String
+  asset_class String
+  series_name String
+  column_name String
+  value       Float?
+
+  @@unique([date, asset_class, series_name, column_name])
+  @@index([date])
+  @@index([asset_class])
+  @@index([series_name])
+  @@index([asset_class, series_name, date])
+  @@map("macro_time_series")
+}
+
+model macro_percentile_analysis {
+  id                  Int     @id @default(autoincrement())
+  date                String
+  asset_class         String
+  series_name         String
+  column_name         String
+  value               Float?
+  percentile_rank     Float?
+  yoy_percentile_change Float?
+
+  @@unique([date, asset_class, series_name, column_name])
+  @@index([date])
+  @@index([asset_class, series_name, date])
+  @@map("macro_percentile_analysis")
+}
+
+model sp500_constituents {
+  symbol                 String  @id
+  security               String
+  gics_sector            String?
+  gics_sub_industry      String?
+  headquarters_location  String?
+  date_added             String?
+  cik                    Int?
+  founded                String?
+  extra_notes            String?
+
+  @@index([gics_sector])
+  @@index([date_added])
+  @@map("sp500_constituents")
+}
+
+model sp500_changes {
+  id              Int     @id @default(autoincrement())
+  date            String
+  added_ticker    String?
+  added_company   String?
+  removed_ticker  String?
+  removed_company String?
+  reason          String?
+
+  @@index([date])
+  @@index([added_ticker])
+  @@index([removed_ticker])
+  @@map("sp500_changes")
+}
+
+model sp500_snapshots {
+  snapshot_date String
+  ticker        String
+  company_name  String?
+
+  @@id([snapshot_date, ticker])
+  @@index([snapshot_date])
+  @@index([ticker])
+  @@map("sp500_snapshots")
+}
+
+model sp500_wharton {
+  id         Int     @id @default(autoincrement())
+  permno     String
+  company    String?
+  ticker     String?
+  action     String
+  start_date String
+  end_date   String
+
+  @@index([permno])
+  @@index([ticker])
+  @@index([start_date, end_date])
+  @@map("sp500_wharton")
+}
+
+model sp500_snapshots_wharton {
+  snapshot_date String
+  permno        String
+  ticker        String?
+  company       String?
+
+  @@id([snapshot_date, permno])
+  @@index([snapshot_date])
+  @@index([permno])
+  @@map("sp500_snapshots_wharton")
+}

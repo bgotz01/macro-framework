@@ -1,5 +1,4 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 const COMMODITIES = [
@@ -37,7 +36,6 @@ function calcReturn(prices: { date: string; value: number }[], yearsBack: number
     targetDate.setFullYear(targetDate.getFullYear() - yearsBack);
     const targetStr = targetDate.toISOString().split('T')[0];
 
-    // Find closest price on or before target date
     let past: { date: string; value: number } | null = null;
     for (let i = prices.length - 1; i >= 0; i--) {
         if (prices[i].date <= targetStr) {
@@ -49,27 +47,38 @@ function calcReturn(prices: { date: string; value: number }[], yearsBack: number
     return ((latest.value - past.value) / past.value) * 100;
 }
 
+async function fetchRows(assetClass: string, series: string) {
+    return prisma.$queryRaw<{ date: string; value: number }[]>`
+        SELECT date::text as date, value
+        FROM macro_time_series
+        WHERE asset_class = ${assetClass}
+          AND series_name = ${series}
+          AND column_name = 'Value'
+          AND date::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+        ORDER BY date ASC
+    `;
+}
+
+async function toRow(assetClass: string, { series, label, region }: { series: string; label: string; region: string }) {
+    const rows = await fetchRows(assetClass, series);
+    if (rows.length === 0) return { series, label, region, latest: null, latestDate: null, r1y: null, r5y: null, r10y: null };
+    const latest = rows[rows.length - 1];
+    return {
+        series, label, region,
+        latest: latest.value,
+        latestDate: latest.date,
+        r1y: calcReturn(rows, 1),
+        r5y: calcReturn(rows, 5),
+        r10y: calcReturn(rows, 10),
+    };
+}
+
 export async function GET() {
-    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-    const db = new Database(dbPath, { readonly: true });
+    const [equities, fx, commodities] = await Promise.all([
+        Promise.all(INDICES.map(i => toRow('equities', i))),
+        Promise.all(FX.map(i => toRow('fx', i))),
+        Promise.all(COMMODITIES.map(i => toRow('commodities', i))),
+    ]);
 
-    function fetchRows(assetClass: string, series: string) {
-        return db.prepare(
-            `SELECT date, value FROM time_series WHERE asset_class=? AND series_name=? AND column_name='Value' AND date LIKE '____-__-__' ORDER BY date ASC`
-        ).all(assetClass, series) as { date: string; value: number }[];
-    }
-
-    function toRow(assetClass: string, { series, label, region }: { series: string; label: string; region: string }) {
-        const rows = fetchRows(assetClass, series);
-        if (rows.length === 0) return { series, label, region, latest: null, latestDate: null, r1y: null, r5y: null, r10y: null };
-        const latest = rows[rows.length - 1];
-        return { series, label, region, latest: latest.value, latestDate: latest.date, r1y: calcReturn(rows, 1), r5y: calcReturn(rows, 5), r10y: calcReturn(rows, 10) };
-    }
-
-    const equities = INDICES.map(i => toRow('equities', i));
-    const fx = FX.map(i => toRow('fx', i));
-    const commodities = COMMODITIES.map(i => toRow('commodities', i));
-
-    db.close();
     return NextResponse.json({ equities, fx, commodities });
 }

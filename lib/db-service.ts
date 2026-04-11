@@ -1,8 +1,7 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from './prisma';
 
 export interface DataPoint {
-    date: string;  // ISO date string (YYYY-MM-DD)
+    date: string;
     [key: string]: any;
 }
 
@@ -27,89 +26,43 @@ export interface SeriesInfo {
 }
 
 class DatabaseService {
-    private db: Database.Database | null = null;
-    private dbPath: string;
     private seriesCache = new Map<string, SeriesInfo[]>();
-    private preparedStatements = new Map<string, Database.Statement>();
 
-    constructor() {
-        this.dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-    }
-
-    private getDB(): Database.Database {
-        if (!this.db) {
-            this.db = new Database(this.dbPath, { readonly: true });
-            // Enable WAL mode for better read performance
-            this.db.pragma('journal_mode = WAL');
-            this.db.pragma('cache_size = -64000'); // 64MB cache
-        }
-        return this.db;
-    }
-
-    private prepare(sql: string): Database.Statement {
-        if (!this.preparedStatements.has(sql)) {
-            this.preparedStatements.set(sql, this.getDB().prepare(sql));
-        }
-        return this.preparedStatements.get(sql)!;
-    }
-
-    // Get all available series for an asset class
-    getSeriesByAssetClass(assetClass: string): SeriesInfo[] {
+    async getSeriesByAssetClass(assetClass: string): Promise<SeriesInfo[]> {
         if (this.seriesCache.has(assetClass)) {
             return this.seriesCache.get(assetClass)!;
         }
 
-        const db = this.getDB();
+        const rows = await prisma.macro_series_metadata.findMany({
+            where: { asset_class: assetClass },
+            orderBy: { display_name: 'asc' },
+        });
 
-        const query = `
-            SELECT 
-                asset_class,
-                series_name,
-                COALESCE(display_name, series_name) as display_name,
-                units,
-                geography,
-                currency
-            FROM series_metadata
-            WHERE asset_class = ?
-            ORDER BY display_name
-        `;
-
-        const rows = this.prepare(query).all(assetClass) as any[];
-
-        const result = rows.map(row => ({
+        const result: SeriesInfo[] = rows.map(row => ({
             asset_class: row.asset_class,
             series_name: row.series_name,
-            display_name: row.display_name,
+            display_name: row.display_name ?? row.series_name,
             columns: ['Value'],
-            units: row.units,
-            geography: row.geography,
-            currency: row.currency
+            units: row.units ?? undefined,
+            geography: row.geography ?? undefined,
+            currency: row.currency ?? undefined,
         }));
 
         this.seriesCache.set(assetClass, result);
         return result;
     }
 
-    // Load data for a specific series
-    loadSeries(assetClass: string, seriesName: string, columns?: string[]): ChartData {
-        let query = `
-            SELECT date, column_name, value
-            FROM time_series
-            WHERE asset_class = ? AND series_name = ?
-        `;
+    async loadSeries(assetClass: string, seriesName: string, columns?: string[]): Promise<ChartData> {
+        const rows = await prisma.macro_time_series.findMany({
+            where: {
+                asset_class: assetClass,
+                series_name: seriesName,
+                ...(columns && columns.length > 0 ? { column_name: { in: columns } } : {}),
+            },
+            select: { date: true, column_name: true, value: true },
+            orderBy: { date: 'asc' },
+        });
 
-        const params: any[] = [assetClass, seriesName];
-
-        if (columns && columns.length > 0) {
-            query += ` AND column_name IN (${columns.map(() => '?').join(',')})`;
-            params.push(...columns);
-        }
-
-        query += ` ORDER BY date ASC`;
-
-        const rows = this.prepare(query).all(...params) as any[];
-
-        // Transform to chart format
         const dataMap = new Map<string, DataPoint>();
         const columnSet = new Set<string>();
 
@@ -127,35 +80,26 @@ class DatabaseService {
             metadata: {
                 title: seriesName.replace(/[-_]/g, ' '),
                 category: assetClass,
-                filename: seriesName
-            }
+                filename: seriesName,
+            },
         };
     }
 
-    // Load multiple series and combine them
-    loadMultipleSeries(requests: Array<{ assetClass: string; seriesName: string; columns?: string[] }>): ChartData {
-        const datasets = requests.map(req =>
+    async loadMultipleSeries(requests: Array<{ assetClass: string; seriesName: string; columns?: string[] }>): Promise<ChartData> {
+        const datasets = await Promise.all(requests.map(req =>
             this.loadSeries(req.assetClass, req.seriesName, req.columns)
-        );
+        ));
 
-        if (datasets.length === 1) {
-            return datasets[0];
-        }
+        if (datasets.length === 1) return datasets[0];
 
-        // Combine datasets
         const dateMap = new Map<string, DataPoint>();
         const allColumns = new Set<string>();
 
         for (const dataset of datasets) {
             const prefix = dataset.metadata.filename;
-
             for (const row of dataset.data) {
-                if (!dateMap.has(row.date)) {
-                    dateMap.set(row.date, { date: row.date });
-                }
-
+                if (!dateMap.has(row.date)) dateMap.set(row.date, { date: row.date });
                 const combinedRow = dateMap.get(row.date)!;
-
                 for (const [key, value] of Object.entries(row)) {
                     if (key === 'date') continue;
                     const newKey = datasets.length > 1 ? `${prefix}_${key}` : key;
@@ -165,41 +109,26 @@ class DatabaseService {
             }
         }
 
-        const combinedData = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-
         return {
-            data: combinedData,
+            data: Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
             columns: ['date', ...Array.from(allColumns)],
             metadata: {
                 title: `Combined ${datasets.map(d => d.metadata.title).join(', ')}`,
                 category: 'combined',
-                filename: 'combined'
-            }
+                filename: 'combined',
+            },
         };
     }
 
-    // Get date range for a series
-    getDateRange(assetClass: string, seriesName: string): { min: string; max: string } | null {
-        const query = `
-            SELECT MIN(date) as min, MAX(date) as max
-            FROM time_series
-            WHERE asset_class = ? AND series_name = ?
-        `;
+    async getDateRange(assetClass: string, seriesName: string): Promise<{ min: string; max: string } | null> {
+        const result = await prisma.macro_time_series.aggregate({
+            where: { asset_class: assetClass, series_name: seriesName },
+            _min: { date: true },
+            _max: { date: true },
+        });
 
-        const result = this.prepare(query).get(assetClass, seriesName) as any;
-
-        if (!result || !result.min) {
-            return null;
-        }
-
-        return { min: result.min, max: result.max };
-    }
-
-    close() {
-        if (this.db) {
-            this.db.close();
-            this.db = null;
-        }
+        if (!result._min.date) return null;
+        return { min: result._min.date, max: result._max.date! };
     }
 }
 

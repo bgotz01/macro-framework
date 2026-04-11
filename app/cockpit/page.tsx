@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { prisma } from '@/lib/prisma';
 import {
     calculateLiquidityRegime,
     calculateValuationRegime,
@@ -23,9 +24,17 @@ function getMetric(db: Database.Database, assetClass: string, seriesName: string
     return db.prepare(query).get(...params) as MetricRow | null;
 }
 
-export default function CockpitPage() {
+export default async function CockpitPage() {
     const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
     const db = new Database(dbPath, { readonly: true });
+
+    // Get latest S&P 500 date from Postgres (most up-to-date)
+    const gspcRows = await prisma.$queryRaw<{ date: string }[]>`
+        SELECT date::text as date FROM macro_time_series
+        WHERE asset_class = 'equities' AND series_name = 'US/GSPC' AND column_name = 'Value'
+        ORDER BY date DESC LIMIT 1
+    `;
+    const sp500Date = gspcRows[0]?.date ?? null;
 
     // Get reference date from REY (monthly aligned)
     const refRow = db.prepare(`SELECT date FROM percentile_analysis WHERE asset_class='derived' AND series_name='Real-Earnings-Yield-5yr' ORDER BY date DESC LIMIT 1`).get() as { date: string } | undefined;
@@ -51,8 +60,8 @@ export default function CockpitPage() {
     const slopeStreak = getMetric(db, 'derived', 'SP500-200MA-SlopeStreak');
     const daysAbove = getMetric(db, 'derived', 'SP500-200MA-PriceAboveStreak');
 
-    // S&P 500 latest price
-    const sp500 = db.prepare(`SELECT date, value FROM time_series WHERE asset_class='equities' AND series_name='US/GSPC' AND column_name='Value' AND date LIKE '____-__-__' ORDER BY date DESC LIMIT 1`).get() as { date: string; value: number } | undefined;
+    // S&P 500 latest price (from SQLite fallback — real date comes from Postgres via cockpit-live)
+    const sp500Sqlite = db.prepare(`SELECT date, value FROM time_series WHERE asset_class='equities' AND series_name='US/GSPC' AND column_name='Value' AND date LIKE '____-__-__' ORDER BY date DESC LIMIT 1`).get() as { date: string; value: number } | undefined;
 
     // Regime state
     const regimeRow = db.prepare(`SELECT date, regime, entry_date, trigger_reason FROM regime_timeline ORDER BY date DESC LIMIT 1`).get() as { date: string; regime: string; entry_date: string; trigger_reason: string } | undefined;
@@ -126,7 +135,8 @@ export default function CockpitPage() {
     // Build props for client component
     const data = {
         refDate: refDate ?? null,
-        sp500: sp500 ? { price: sp500.value, date: sp500.date } : null,
+        sp500: sp500Sqlite ? { price: sp500Sqlite.value, date: sp500Sqlite.date } : null,
+        sp500Date,
         regime: regimeRow ? {
             name: regimeRow.regime,
             entryDate: regimeRow.entry_date,

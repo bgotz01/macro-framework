@@ -1,97 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-interface QueryParams {
-    assetClass?: string;
-    seriesName?: string;
-    columnName?: string;
-    startDate?: string;
-    endDate?: string;
-    page: number;
-    pageSize: number;
-}
 
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
 
-        const params: QueryParams = {
-            assetClass: searchParams.get('assetClass') || undefined,
-            seriesName: searchParams.get('seriesName') || undefined,
-            columnName: searchParams.get('columnName') || 'Value',
-            startDate: searchParams.get('startDate') || undefined,
-            endDate: searchParams.get('endDate') || undefined,
-            page: parseInt(searchParams.get('page') || '1'),
-            pageSize: parseInt(searchParams.get('pageSize') || '20'),
-        };
+        const assetClass = searchParams.get('assetClass') || null;
+        const seriesName = searchParams.get('seriesName') || null;
+        const columnName = searchParams.get('columnName') || 'Value';
+        const startDate = searchParams.get('startDate') || null;
+        const endDate = searchParams.get('endDate') || null;
+        const page = parseInt(searchParams.get('page') || '1');
+        const pageSize = parseInt(searchParams.get('pageSize') || '20');
 
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true });
+        // Build WHERE clauses dynamically
+        const conditions: Prisma.Sql[] = [Prisma.sql`ts.column_name = ${columnName}`];
+        if (assetClass) conditions.push(Prisma.sql`ts.asset_class = ${assetClass}`);
+        if (seriesName) conditions.push(Prisma.sql`ts.series_name = ${seriesName}`);
+        if (startDate) conditions.push(Prisma.sql`ts.date >= ${startDate}::date`);
+        if (endDate) conditions.push(Prisma.sql`ts.date <= ${endDate}::date`);
 
-        // Build query
-        let query = `
-            SELECT 
-                ts.date,
-                ts.asset_class,
-                ts.series_name,
-                COALESCE(sm.display_name, ts.series_name) as display_name,
-                ts.column_name,
-                ts.value,
-                sm.units,
-                sm.geography
-            FROM time_series ts
-            LEFT JOIN series_metadata sm 
-                ON ts.asset_class = sm.asset_class 
-                AND ts.series_name = sm.series_name
-            WHERE 1=1
-        `;
+        const where = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`;
 
-        const queryParams: any[] = [];
+        const [countRows, rows] = await Promise.all([
+            prisma.$queryRaw<{ total: bigint }[]>`
+                SELECT COUNT(*) as total
+                FROM macro_time_series ts
+                ${where}
+            `,
+            prisma.$queryRaw<any[]>`
+                SELECT
+                    ts.date::text as date,
+                    ts.asset_class,
+                    ts.series_name,
+                    COALESCE(sm.display_name, ts.series_name) as display_name,
+                    ts.column_name,
+                    ts.value,
+                    sm.units,
+                    sm.geography
+                FROM macro_time_series ts
+                LEFT JOIN macro_series_metadata sm
+                    ON ts.asset_class = sm.asset_class
+                    AND ts.series_name = sm.series_name
+                ${where}
+                ORDER BY ts.date DESC, ts.series_name ASC
+                LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+            `,
+        ]);
 
-        if (params.assetClass) {
-            query += ` AND ts.asset_class = ?`;
-            queryParams.push(params.assetClass);
-        }
+        const total = Number(countRows[0]?.total ?? 0);
 
-        if (params.seriesName) {
-            query += ` AND ts.series_name = ?`;
-            queryParams.push(params.seriesName);
-        }
-
-        if (params.columnName) {
-            query += ` AND ts.column_name = ?`;
-            queryParams.push(params.columnName);
-        }
-
-        if (params.startDate) {
-            query += ` AND ts.date >= ?`;
-            queryParams.push(params.startDate);
-        }
-
-        if (params.endDate) {
-            query += ` AND ts.date <= ?`;
-            queryParams.push(params.endDate);
-        }
-
-        // Get total count
-        const countQuery = `SELECT COUNT(*) as total FROM (${query})`;
-        const countResult = db.prepare(countQuery).get(...queryParams) as { total: number };
-        const total = countResult.total;
-
-        // Add pagination
-        query += ` ORDER BY ts.date DESC, ts.series_name ASC`;
-        query += ` LIMIT ? OFFSET ?`;
-        queryParams.push(params.pageSize, (params.page - 1) * params.pageSize);
-
-        const rows = db.prepare(query).all(...queryParams) as any[];
-
-        // Transform data
         const data = rows.map(row => ({
-            date: row.date, // Already in ISO format
+            date: row.date,
             assetClass: row.asset_class,
             seriesName: row.series_name,
             displayName: row.display_name,
@@ -101,26 +65,19 @@ export async function GET(request: NextRequest) {
             geography: row.geography,
         }));
 
-        db.close();
-
         return NextResponse.json({
             data,
             pagination: {
-                page: params.page,
-                pageSize: params.pageSize,
+                page,
+                pageSize,
                 total,
-                totalPages: Math.ceil(total / params.pageSize),
-            }
+                totalPages: Math.ceil(total / pageSize),
+            },
         }, {
-            headers: {
-                'Cache-Control': 'no-store, max-age=0',
-            }
+            headers: { 'Cache-Control': 'no-store, max-age=0' },
         });
     } catch (error) {
         console.error('API Error:', error);
-        return NextResponse.json(
-            { error: 'Failed to load data' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to load data' }, { status: 500 });
     }
 }

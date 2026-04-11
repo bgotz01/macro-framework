@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 const MA_PERIODS = [50, 200, 500];
 
@@ -14,13 +13,8 @@ function rollingPercentile(values: number[]): number[] {
 
 function computeAllMetrics(prices: { date: string; price: number }[], maPeriod: number) {
     const result: {
-        date: string;
-        price: number;
-        ma: number;
-        div: number;
-        slope: number;
-        slopeStreak: number;
-        priceAboveStreak: number;
+        date: string; price: number; ma: number; div: number;
+        slope: number; slopeStreak: number; priceAboveStreak: number;
     }[] = [];
 
     for (let i = maPeriod - 1; i < prices.length; i++) {
@@ -29,7 +23,6 @@ function computeAllMetrics(prices: { date: string; price: number }[], maPeriod: 
         const price = prices[i].price;
         const div = (price - ma) / ma * 100;
 
-        // Slope: % change of MA over last 20 days
         let slope = 0;
         if (i >= maPeriod + 19) {
             const prevWin = prices.slice(i - maPeriod - 18, i - 18);
@@ -37,7 +30,6 @@ function computeAllMetrics(prices: { date: string; price: number }[], maPeriod: 
             slope = prevMa !== 0 ? (ma - prevMa) / prevMa * 100 : 0;
         }
 
-        // Slope streak: consecutive days MA slope is positive
         let slopeStreak = 0;
         if (slope > 0) {
             for (let j = i; j >= maPeriod + 19; j--) {
@@ -46,8 +38,7 @@ function computeAllMetrics(prices: { date: string; price: number }[], maPeriod: 
                 const prevWj = prices.slice(j - maPeriod - 18, j - 18);
                 const prevMaj = prevWj.reduce((s, x) => s + x.price, 0) / maPeriod;
                 const sj = prevMaj !== 0 ? (maj - prevMaj) / prevMaj * 100 : 0;
-                if (sj > 0) slopeStreak++;
-                else break;
+                if (sj > 0) slopeStreak++; else break;
             }
         } else {
             for (let j = i; j >= maPeriod + 19; j--) {
@@ -56,26 +47,22 @@ function computeAllMetrics(prices: { date: string; price: number }[], maPeriod: 
                 const prevWj = prices.slice(j - maPeriod - 18, j - 18);
                 const prevMaj = prevWj.reduce((s, x) => s + x.price, 0) / maPeriod;
                 const sj = prevMaj !== 0 ? (maj - prevMaj) / prevMaj * 100 : 0;
-                if (sj <= 0) slopeStreak--;
-                else break;
+                if (sj <= 0) slopeStreak--; else break;
             }
         }
 
-        // Price above streak: consecutive days price > MA
         let priceAboveStreak = 0;
         if (price > ma) {
             for (let j = i; j >= maPeriod - 1; j--) {
                 const wj = prices.slice(j - maPeriod + 1, j + 1);
                 const maj = wj.reduce((s, x) => s + x.price, 0) / maPeriod;
-                if (prices[j].price > maj) priceAboveStreak++;
-                else break;
+                if (prices[j].price > maj) priceAboveStreak++; else break;
             }
         } else {
             for (let j = i; j >= maPeriod - 1; j--) {
                 const wj = prices.slice(j - maPeriod + 1, j + 1);
                 const maj = wj.reduce((s, x) => s + x.price, 0) / maPeriod;
-                if (prices[j].price <= maj) priceAboveStreak--;
-                else break;
+                if (prices[j].price <= maj) priceAboveStreak--; else break;
             }
         }
 
@@ -88,17 +75,10 @@ function computeAllMetrics(prices: { date: string; price: number }[], maPeriod: 
     const priceAboveStreakPct = rollingPercentile(result.map(r => r.priceAboveStreak));
 
     return result.map((r, i) => ({
-        date: r.date,
-        price: r.price,
-        ma: r.ma,
-        div: r.div,
-        slope: r.slope,
-        slopeStreak: r.slopeStreak,
-        priceAboveStreak: r.priceAboveStreak,
-        divPct: divPct[i],
-        slopePct: slopePct[i],
-        slopeStreakPct: slopeStreakPct[i],
-        priceAboveStreakPct: priceAboveStreakPct[i],
+        date: r.date, price: r.price, ma: r.ma,
+        div: r.div, slope: r.slope, slopeStreak: r.slopeStreak, priceAboveStreak: r.priceAboveStreak,
+        divPct: divPct[i], slopePct: slopePct[i],
+        slopeStreakPct: slopeStreakPct[i], priceAboveStreakPct: priceAboveStreakPct[i],
     }));
 }
 
@@ -106,21 +86,15 @@ export async function GET(request: NextRequest) {
     const index = request.nextUrl.searchParams.get('index') || 'sp500';
 
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true, timeout: 30000 });
-
-        // date → merged row
         const dateMap = new Map<string, Record<string, number>>();
 
         if (index === 'ndx') {
-            const prices = db.prepare(`
-                SELECT date, value AS price
-                FROM time_series
+            const prices = await prisma.$queryRaw<{ date: string; price: number }[]>`
+                SELECT date::text as date, value AS price
+                FROM macro_time_series
                 WHERE series_name = 'NDX' AND column_name = 'Value'
                 ORDER BY date ASC
-            `).all() as { date: string; price: number }[];
-
-            db.close();
+            `;
 
             for (const period of MA_PERIODS) {
                 const rows = computeAllMetrics(prices, period);
@@ -140,37 +114,39 @@ export async function GET(request: NextRequest) {
                 }
             }
         } else {
-            // SP500 — pull from pre-computed series
-            const priceRows = db.prepare(`
-                SELECT date, value AS price FROM time_series
+            const priceRows = await prisma.$queryRaw<{ date: string; price: number }[]>`
+                SELECT date::text as date, value AS price
+                FROM macro_time_series
                 WHERE series_name = 'US/GSPC' AND column_name = 'Value'
                 ORDER BY date ASC
-            `).all() as { date: string; price: number }[];
-
+            `;
             for (const r of priceRows) {
                 dateMap.set(r.date, { Price: r.price });
             }
 
-            for (const period of MA_PERIODS) {
-                const maRows = db.prepare(`
-                    SELECT date, value FROM percentile_analysis WHERE series_name = ? ORDER BY date ASC
-                `).all(`SP500-MA${period}`) as { date: string; value: number }[];
-
-                const divRows = db.prepare(`
-                    SELECT date, value, percentile_rank FROM percentile_analysis WHERE series_name = ? ORDER BY date ASC
-                `).all(`SP500-${period}MA-Div`) as { date: string; value: number; percentile_rank: number }[];
-
-                const slopeRows = db.prepare(`
-                    SELECT date, value, percentile_rank FROM percentile_analysis WHERE series_name = ? ORDER BY date ASC
-                `).all(`SP500-${period}MA-Slope`) as { date: string; value: number; percentile_rank: number }[];
-
-                const slopeStreakRows = db.prepare(`
-                    SELECT date, value, percentile_rank FROM percentile_analysis WHERE series_name = ? ORDER BY date ASC
-                `).all(`SP500-${period}MA-SlopeStreak`) as { date: string; value: number; percentile_rank: number }[];
-
-                const priceAboveRows = db.prepare(`
-                    SELECT date, value, percentile_rank FROM percentile_analysis WHERE series_name = ? ORDER BY date ASC
-                `).all(`SP500-${period}MA-PriceAboveStreak`) as { date: string; value: number; percentile_rank: number }[];
+            await Promise.all(MA_PERIODS.map(async (period) => {
+                const [maRows, divRows, slopeRows, slopeStreakRows, priceAboveRows] = await Promise.all([
+                    prisma.$queryRaw<{ date: string; value: number }[]>`
+                        SELECT date::text as date, value FROM macro_percentile_analysis
+                        WHERE series_name = ${'SP500-MA' + period} ORDER BY date ASC
+                    `,
+                    prisma.$queryRaw<{ date: string; value: number; percentile_rank: number }[]>`
+                        SELECT date::text as date, value, percentile_rank FROM macro_percentile_analysis
+                        WHERE series_name = ${'SP500-' + period + 'MA-Div'} ORDER BY date ASC
+                    `,
+                    prisma.$queryRaw<{ date: string; value: number; percentile_rank: number }[]>`
+                        SELECT date::text as date, value, percentile_rank FROM macro_percentile_analysis
+                        WHERE series_name = ${'SP500-' + period + 'MA-Slope'} ORDER BY date ASC
+                    `,
+                    prisma.$queryRaw<{ date: string; value: number; percentile_rank: number }[]>`
+                        SELECT date::text as date, value, percentile_rank FROM macro_percentile_analysis
+                        WHERE series_name = ${'SP500-' + period + 'MA-SlopeStreak'} ORDER BY date ASC
+                    `,
+                    prisma.$queryRaw<{ date: string; value: number; percentile_rank: number }[]>`
+                        SELECT date::text as date, value, percentile_rank FROM macro_percentile_analysis
+                        WHERE series_name = ${'SP500-' + period + 'MA-PriceAboveStreak'} ORDER BY date ASC
+                    `,
+                ]);
 
                 for (const r of maRows) {
                     if (!dateMap.has(r.date)) dateMap.set(r.date, {});
@@ -200,9 +176,7 @@ export async function GET(request: NextRequest) {
                     row[`PriceAboveStreak${period}`] = r.value;
                     row[`PriceAbovePercentile${period}`] = r.percentile_rank;
                 }
-            }
-
-            db.close();
+            }));
         }
 
         const data = Array.from(dateMap.entries())

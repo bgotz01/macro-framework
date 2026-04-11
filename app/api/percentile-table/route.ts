@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -10,90 +9,39 @@ export async function GET(request: NextRequest) {
     const seriesName = searchParams.get('seriesName') || 'CPI';
     const year = searchParams.get('year') || 'all';
 
-    if (page < 1 || pageSize < 1 || pageSize > 100) {
+    if (page < 1 || pageSize < 1 || pageSize > 100)
         return NextResponse.json({ error: 'Invalid pagination parameters' }, { status: 400 });
-    }
 
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true, timeout: 10000 });
-
-        const offset = (page - 1) * pageSize;
-
-        // Build WHERE clause with optional year filter
-        let whereClause = `
-            WHERE asset_class = ?
-              AND series_name = ?
-        `;
-        const params: any[] = [assetClass, seriesName];
-
+        const where: any = { asset_class: assetClass, series_name: seriesName, column_name: 'Value' };
         if (year !== 'all') {
-            const yearNum = parseInt(year);
-            const yearStart = new Date(yearNum, 0, 1).getTime();
-            const yearEnd = new Date(yearNum, 11, 31, 23, 59, 59).getTime();
-            whereClause += ` AND date >= ? AND date <= ?`;
-            params.push(yearStart, yearEnd);
+            where.date = { gte: `${year}-01-01`, lte: `${year}-12-31` };
         }
 
-        // Get total count
-        const countQuery = `
-            SELECT COUNT(*) as total
-            FROM percentile_analysis
-            ${whereClause}
-        `;
-        const countResult = db.prepare(countQuery).get(...params) as any;
-        const totalRecords = countResult.total;
-        const totalPages = Math.ceil(totalRecords / pageSize);
+        const [totalRecords, rows, yearsRaw] = await Promise.all([
+            prisma.macro_percentile_analysis.count({ where }),
+            prisma.macro_percentile_analysis.findMany({
+                where,
+                orderBy: { date: 'desc' },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+                select: { date: true, value: true, percentile_rank: true, yoy_percentile_change: true },
+            }),
+            prisma.macro_percentile_analysis.findMany({
+                where: { asset_class: assetClass, series_name: seriesName, column_name: 'Value' },
+                distinct: ['date'],
+                select: { date: true },
+                orderBy: { date: 'desc' },
+            }),
+        ]);
 
-        // Get paginated data
-        const dataQuery = `
-            SELECT 
-                date,
-                value,
-                percentile_rank,
-                yoy_percentile_change
-            FROM percentile_analysis
-            ${whereClause}
-            ORDER BY date DESC
-            LIMIT ? OFFSET ?
-        `;
-
-        const rows = db.prepare(dataQuery).all(...params, pageSize, offset) as any[];
-
-        const data = rows.map(row => ({
-            date: row.date,
-            dateStr: new Date(row.date).toISOString().split('T')[0],
-            value: row.value,
-            percentileRank: row.percentile_rank,
-            yoyPercentileChange: row.yoy_percentile_change
-        }));
-
-        // Get available years for this series
-        const yearsQuery = `
-            SELECT DISTINCT strftime('%Y', datetime(date/1000, 'unixepoch')) as year
-            FROM percentile_analysis
-            WHERE asset_class = ?
-              AND series_name = ?
-            ORDER BY year DESC
-        `;
-        const yearsResult = db.prepare(yearsQuery).all(assetClass, seriesName) as any[];
-        const availableYears = yearsResult.map(r => parseInt(r.year));
-
-        db.close();
+        const availableYears = [...new Set(yearsRaw.map(r => parseInt(r.date.substring(0, 4))))].sort((a, b) => b - a);
 
         return NextResponse.json({
-            data,
-            pagination: {
-                page,
-                pageSize,
-                totalRecords,
-                totalPages
-            },
-            series: {
-                assetClass,
-                seriesName
-            },
-            availableYears
+            data: rows.map(r => ({ date: r.date, dateStr: r.date, value: r.value, percentileRank: r.percentile_rank, yoyPercentileChange: r.yoy_percentile_change })),
+            pagination: { page, pageSize, totalRecords, totalPages: Math.ceil(totalRecords / pageSize) },
+            series: { assetClass, seriesName },
+            availableYears,
         });
     } catch (error) {
         console.error('Error fetching percentile data:', error);

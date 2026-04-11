@@ -13,7 +13,6 @@ import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
 import RegimeProximity from './regime-proximity';
 import RegimePercentileChanges from './regime-percentile-changes';
-import CapitalAllocation from './capital-allocation';
 import { emptyMetric } from './regime-parameters-utils';
 import type { RegimeData } from './regime-parameters-types';
 import {
@@ -345,10 +344,6 @@ export default function CustomRegimeParameters() {
                     />
                 </div>
             )}
-
-            <div className="mb-6">
-                <CapitalAllocation regime={customRegimeState.regime} />
-            </div>
 
             <TimelineSlider
                 sliderValue={sliderValue} totalMonths={totalMonths}

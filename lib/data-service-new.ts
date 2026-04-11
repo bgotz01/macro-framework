@@ -1,4 +1,4 @@
-// Server-side data service using SQLite
+// Server-side data service using Postgres via Prisma
 import { dbService, SeriesInfo } from './db-service';
 
 export interface DataPoint {
@@ -29,7 +29,7 @@ export class DataServiceNew {
         const assetClass = parts[0];
         const seriesName = parts.slice(1).join('/').replace('.csv', '');
 
-        const data = dbService.loadSeries(assetClass, seriesName, columns);
+        const data = await dbService.loadSeries(assetClass, seriesName, columns);
 
         // Dates are already ISO strings in the database, no conversion needed
         return data;

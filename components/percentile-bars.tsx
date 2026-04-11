@@ -37,13 +37,14 @@ const METRICS: MetricConfig[] = [
     { key: 'realYield', label: 'Real Yield (10Y-CPI)', shortLabel: '10Y-CPI', category: 'Bond Yields', format: fmt(2, '%') },
     { key: 'yieldCurve', label: 'Yield Curve (10Y-2Y)', shortLabel: '10Y-2Y', category: 'Bond Yields', format: fmt(2, '%') },
     { key: 'yieldCurve3M', label: 'Yield Curve (10Y-3M)', shortLabel: '10Y-3M', category: 'Bond Yields', format: fmt(2, '%') },
-    { key: 'shillerPE', label: 'Shiller P/E (CAPE)', shortLabel: 'CAPE', category: 'Equity Valuation', format: fmt(1, 'x') },
     { key: 'pe5yr', label: 'P/E-5yr', shortLabel: 'P/E-5yr', category: 'Equity Valuation', format: fmt(1, 'x') },
-    { key: 'eyCAPE', label: 'Earnings Yield CAPE (1/CAPE)', shortLabel: 'EY CAPE', category: 'Equity Valuation', format: fmt(2, '%') },
+    { key: 'pe2yr', label: 'P/E-2yr', shortLabel: 'P/E-2yr', category: 'Equity Valuation', format: fmt(1, 'x') },
     { key: 'ey5yr', label: 'Earnings Yield 5yr (1/P/E-5yr)', shortLabel: 'EY-5yr', category: 'Equity Valuation', format: fmt(2, '%') },
-
+    { key: 'ey2yr', label: 'Earnings Yield 2yr (1/P/E-2yr)', shortLabel: 'EY-2yr', category: 'Equity Valuation', format: fmt(2, '%') },
     { key: 'eyp5yr', label: 'EYP-5yr', shortLabel: 'EYP-5yr', category: 'Equity Spreads', format: fmt(2, '%') },
+    { key: 'eyp2yr', label: 'EYP-2yr', shortLabel: 'EYP-2yr', category: 'Equity Spreads', format: fmt(2, '%') },
     { key: 'rey5yr', label: 'Real Earnings Yield 5yr (EY5yr-CPI)', shortLabel: 'Real EY-5yr', category: 'Equity Spreads', format: fmt(2, '%') },
+    { key: 'rey2yr', label: 'Real Earnings Yield 2yr (EY2yr-CPI)', shortLabel: 'Real EY-2yr', category: 'Equity Spreads', format: fmt(2, '%') },
 ];
 
 export default function PercentileBars({ initialData, availableYears, initialYear = 9999 }: PercentileBarsProps) {

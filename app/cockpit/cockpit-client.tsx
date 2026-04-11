@@ -11,6 +11,7 @@ interface MetricVal {
 
 interface CockpitData {
     refDate: string | null;
+    sp500Date: string | null;
     sp500: { price: number; date: string } | null;
     regime: {
         name: string; entryDate: string; months: number;
@@ -325,7 +326,7 @@ function getTop2Proximity(data: RegimeData, currentRegime?: string) {
 // ────────────────────────────────────────────────────────────────────────────
 
 export default function CockpitClient({ data }: { data: CockpitData }) {
-    const { regime, liquidity, valuation, price, trend, signals, sp500, refDate, proximityData } = data;
+    const { regime, liquidity, valuation, price, trend, signals, sp500, sp500Date, refDate, proximityData } = data;
     const top2 = getTop2Proximity(proximityData, regime?.name);
 
     return (
@@ -339,7 +340,7 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
                     COCKPIT
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                    {refDate ? (() => { const [y, m, d] = refDate.split('-').map(Number); return `Data as of ${new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`; })() : ''}
+                    {sp500Date ? (() => { const [y, m, d] = sp500Date.split('-').map(Number); return `Data as of ${new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`; })() : ''}
                     {sp500 ? ` • S&P 500: ${sp500.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : ''}
                 </p>
             </div>
@@ -361,6 +362,9 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
                     <div className="flex items-start justify-between mb-4">
                         <div>
                             <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Active Regime — Monthly</div>
+                            <div className="text-[10px] text-muted-foreground/60 mb-1">
+                                {refDate ? (() => { const [y, m, d] = refDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })() : ''}
+                            </div>
                             <div className="text-2xl font-bold mb-1" style={{ color: regime?.color }}>{regime?.name ?? 'Unknown'}</div>
                             <p className="text-xs text-muted-foreground mb-2">{regime?.description}</p>
                             <p className="text-xs font-medium" style={{ color: regime?.color }}>{regime?.guidance}</p>

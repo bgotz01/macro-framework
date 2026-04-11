@@ -64,11 +64,8 @@ const AVAILABLE_SERIES: SeriesOption[] = [
     { value: 'yieldcurve', label: 'Yield Curve (10Y-2Y)', color: '#f97316', category: 'Bond Yields' },
     { value: 'yieldcurve3m', label: 'Yield Curve (10Y-3M)', color: '#fb923c', category: 'Bond Yields' },
     // Equity Valuation
-    { value: 'shillerpe', label: 'Shiller P/E (CAPE)', color: '#ec4899', category: 'Equity Valuation' },
     { value: 'pe5yr', label: 'P/E-5yr', color: '#f43f5e', category: 'Equity Valuation' },
-    { value: 'pe1yr', label: 'P/E-1yr (TTM)', color: '#e11d48', category: 'Equity Valuation' },
     { value: 'pe2yr', label: 'P/E-2yr', color: '#be123c', category: 'Equity Valuation' },
-    { value: 'eycape', label: 'EY CAPE', color: '#db2777', category: 'Equity Valuation' },
     { value: 'ey5yr', label: 'EY-5yr', color: '#fb7185', category: 'Equity Valuation' },
     { value: 'ey2yr', label: 'EY-2yr', color: '#14b8a6', category: 'Equity Valuation' },
     // Equity Spreads
