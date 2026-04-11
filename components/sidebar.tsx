@@ -102,6 +102,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime-active',
             },
             {
+                title: 'Regime Guide',
+                href: '/regime-guide',
+            },
+            {
                 title: 'Regime Historical',
                 href: '/regime/historical',
             },

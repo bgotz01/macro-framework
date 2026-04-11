@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Calculates percentile ranks for all SP500 MA-derived series and saves to Postgres.
+ * Calculates percentile ranks for all SP500 and NDX MA-derived series and saves to Postgres.
  */
 import { prisma } from '../../lib/prisma';
 
@@ -10,6 +10,11 @@ const SERIES = [
     'SP500-50MA-Slope', 'SP500-200MA-Slope', 'SP500-500MA-Slope',
     'SP500-50MA-SlopeStreak', 'SP500-200MA-SlopeStreak', 'SP500-500MA-SlopeStreak',
     'SP500-50MA-PriceAboveStreak', 'SP500-200MA-PriceAboveStreak', 'SP500-500MA-PriceAboveStreak',
+    'NDX-MA50', 'NDX-MA200', 'NDX-MA500',
+    'NDX-50MA-Div', 'NDX-200MA-Div', 'NDX-500MA-Div',
+    'NDX-50MA-Slope', 'NDX-200MA-Slope', 'NDX-500MA-Slope',
+    'NDX-50MA-SlopeStreak', 'NDX-200MA-SlopeStreak', 'NDX-500MA-SlopeStreak',
+    'NDX-50MA-PriceAboveStreak', 'NDX-200MA-PriceAboveStreak', 'NDX-500MA-PriceAboveStreak',
 ];
 
 async function processPercentiles(seriesName: string) {

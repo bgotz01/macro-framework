@@ -89,8 +89,9 @@ export function scoreCPI(value: number | null): number {
     if (value < 0.0) return 2;
     if (value < 2.0) return 1;
     if (value <= 3.0) return 0;
-    if (value <= 5.0) return -1;
-    return -2;
+    if (value <= 4.0) return -1;
+    if (value <= 6.0) return -2;
+    return -3;
 }
 
 /**
@@ -187,6 +188,18 @@ function getPriceRegime(score: number): LiquidityRegime {
 
     if (score >= -1) {
         return {
+            name: 'Moderate Inflation',
+            description: 'Inflation is moderately above target',
+            marketBehavior: [
+                'Mild erosion of real returns',
+                'Policy on watch',
+                'Some upward cost pressure'
+            ]
+        };
+    }
+
+    if (score >= -2) {
+        return {
             name: 'Elevated Inflation',
             description: 'Inflation is elevated above target',
             marketBehavior: [
@@ -249,7 +262,7 @@ function getValuationRegime(totalScore: number): LiquidityRegime {
         };
     }
 
-    if (totalScore >= -3) {
+    if (totalScore >= -2) {
         return {
             name: 'Expensive',
             description: 'Equities are overvalued',
@@ -257,6 +270,18 @@ function getValuationRegime(totalScore: number): LiquidityRegime {
                 'Limited upside potential',
                 'Elevated risk',
                 'Vulnerable to corrections'
+            ]
+        };
+    }
+
+    if (totalScore >= -3) {
+        return {
+            name: 'Very Expensive',
+            description: 'Equities are significantly overvalued',
+            marketBehavior: [
+                'Poor risk/reward',
+                'High vulnerability to repricing',
+                'Defensive positioning warranted'
             ]
         };
     }

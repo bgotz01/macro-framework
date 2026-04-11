@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
+// Parse YYYY-MM-DD without timezone shift
+function formatDate(dateStr: string) {
+    const [y, m, d] = dateStr.split('T')[0].split('-');
+    return new Date(+y, +m - 1, +d).toLocaleDateString();
+}
+
 interface LatestDataPoint {
     country: string;
     bankRate: { value: number | null; date: string | null };
@@ -151,7 +157,7 @@ export default function LatestData() {
                         </div>
                         {data.bankRate.date && (
                             <div className="text-xs text-muted-foreground mt-1">
-                                {new Date(data.bankRate.date).toLocaleDateString()}
+                                {formatDate(data.bankRate.date)}
                             </div>
                         )}
                     </div>
@@ -163,7 +169,7 @@ export default function LatestData() {
                         </div>
                         {data.threeMonth.date && (
                             <div className="text-xs text-muted-foreground mt-1">
-                                {new Date(data.threeMonth.date).toLocaleDateString()}
+                                {formatDate(data.threeMonth.date)}
                             </div>
                         )}
                     </div>
@@ -175,7 +181,7 @@ export default function LatestData() {
                         </div>
                         {data.tenYear.date && (
                             <div className="text-xs text-muted-foreground mt-1">
-                                {new Date(data.tenYear.date).toLocaleDateString()}
+                                {formatDate(data.tenYear.date)}
                             </div>
                         )}
                     </div>
@@ -187,7 +193,7 @@ export default function LatestData() {
                         </div>
                         {data.cpi.date && (
                             <div className="text-xs text-muted-foreground mt-1">
-                                {new Date(data.cpi.date).toLocaleDateString()}
+                                {formatDate(data.cpi.date)}
                             </div>
                         )}
                     </div>
@@ -195,7 +201,7 @@ export default function LatestData() {
 
                 {latestDate && (
                     <div className="mt-4 text-xs text-muted-foreground text-right">
-                        Most recent data: {new Date(latestDate).toLocaleDateString()}
+                        Most recent data: {formatDate(latestDate)}
                     </div>
                 )}
             </div>

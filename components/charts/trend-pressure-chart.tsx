@@ -173,21 +173,27 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
 
         const promise = ma === 'blend'
             ? Promise.all([fetchMA('200'), fetchMA('500')]).then(([d200, d500]) => {
-                // Merge by date, averaging the three percentile fields
-                const map = new Map<string, DataPoint>();
-                d200.forEach(d => map.set(d.date, { ...d }));
-                d500.forEach(d => {
-                    const existing = map.get(d.date);
-                    if (existing) {
-                        map.set(d.date, {
-                            ...existing,
-                            divergence_percentile: (existing.divergence_percentile + d.divergence_percentile) / 2,
-                            days_above_percentile: (existing.days_above_percentile + d.days_above_percentile) / 2,
-                            slope_percentile: (existing.slope_percentile + d.slope_percentile) / 2,
-                        });
-                    }
-                });
-                return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+                const map500 = new Map(d500.map(d => [d.date, d]));
+                return d200
+                    .map(a => {
+                        const b = map500.get(a.date);
+                        if (!b) return null;
+                        return {
+                            ...a,
+                            divergence_value: (a.divergence_value + b.divergence_value) / 2,
+                            divergence_percentile: (a.divergence_percentile + b.divergence_percentile) / 2,
+                            days_above_value: (a.days_above_value + b.days_above_value) / 2,
+                            days_above_percentile: (a.days_above_percentile + b.days_above_percentile) / 2,
+                            slope_value: (a.slope_value + b.slope_value) / 2,
+                            slope_percentile: (a.slope_percentile + b.slope_percentile) / 2,
+                            ma50_200_value: a.ma50_200_value != null && b.ma50_200_value != null
+                                ? (a.ma50_200_value + b.ma50_200_value) / 2
+                                : (a.ma50_200_value ?? b.ma50_200_value),
+                            ma50_200_percentile: (a.ma50_200_percentile + b.ma50_200_percentile) / 2,
+                        } as DataPoint;
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => a!.date.localeCompare(b!.date)) as DataPoint[];
             })
             : fetchMA(ma);
 
@@ -345,7 +351,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                     <div>
                         <h3 className="text-lg font-semibold">Trend Pressure Score</h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                            Average of selected {ma === 'blend' ? '200MA+500MA blended' : `${ma}MA`} percentiles{fetching && <span className="ml-2 opacity-60">updating…</span>}
+                            Average of selected {ma === 'blend' ? '200MA+500MA blended' : `${ma}MA`} percentiles
                         </p>
                     </div>
                     {latest && (
@@ -407,6 +413,11 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                     </div>
                 </div>
             </div>
+
+            {/* Fetching indicator */}
+            {fetching && (
+                <div className="text-xs text-muted-foreground opacity-60 mb-2 -mt-1">updating…</div>
+            )}
 
             {/* Show Lines row */}
             <div className="flex items-center gap-2 mb-4">

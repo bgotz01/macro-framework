@@ -1,12 +1,14 @@
 #!/usr/bin/env tsx
 /**
- * Calculates daily % slope of SP500 50/200/500-day MAs and saves to Postgres.
+ * Calculates daily % slope of SP500 and NDX 50/200/500-day MAs and saves to Postgres.
  */
 import { prisma } from '../../lib/prisma';
 
-async function calculateSlope(maPeriod: string) {
-    const slopeName = `SP500-${maPeriod}MA-Slope`;
-    const maName = `SP500-MA${maPeriod}`;
+const INDEXES = ['SP500', 'NDX'];
+
+async function calculateSlope(prefix: string, maPeriod: string) {
+    const slopeName = `${prefix}-${maPeriod}MA-Slope`;
+    const maName = `${prefix}-MA${maPeriod}`;
 
     const latest = await prisma.macro_time_series.aggregate({
         where: { asset_class: 'derived', series_name: slopeName },
@@ -14,7 +16,6 @@ async function calculateSlope(maPeriod: string) {
     });
     const latestComputed = latest._max.date;
 
-    // Load one row before cutoff to compute first slope
     const maData = await prisma.macro_time_series.findMany({
         where: {
             asset_class: 'derived', series_name: maName,
@@ -41,7 +42,7 @@ async function calculateSlope(maPeriod: string) {
 
     await prisma.macro_series_metadata.upsert({
         where: { asset_class_series_name: { asset_class: 'derived', series_name: slopeName } },
-        create: { asset_class: 'derived', series_name: slopeName, display_name: `S&P 500 ${maPeriod}-Day MA Slope`, units: '%' },
+        create: { asset_class: 'derived', series_name: slopeName, display_name: `${prefix} ${maPeriod}-Day MA Slope`, units: '%' },
         update: {},
     });
 
@@ -49,10 +50,13 @@ async function calculateSlope(maPeriod: string) {
 }
 
 async function main() {
-    console.log('📈 Calculating SP500 MA slopes in Postgres...');
-    for (const period of ['50', '200', '500']) {
-        try { await calculateSlope(period); }
-        catch (e) { console.error(`  ✗ ${period}MA slope:`, e); }
+    console.log('📈 Calculating MA slopes in Postgres...');
+    for (const prefix of INDEXES) {
+        console.log(`\n  ${prefix}:`);
+        for (const period of ['50', '200', '500']) {
+            try { await calculateSlope(prefix, period); }
+            catch (e) { console.error(`  ✗ ${prefix} ${period}MA slope:`, e); }
+        }
     }
     console.log('\n✅ MA slopes complete!');
 }

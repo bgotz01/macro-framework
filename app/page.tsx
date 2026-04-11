@@ -1,3 +1,5 @@
+import DataPipeline from '@/components/data-pipeline';
+
 export default function Home() {
   return (
     <div className="max-w-6xl mx-auto">
@@ -6,7 +8,7 @@ export default function Home() {
         <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
           Economic Analysis Framework
         </div>
-        <h1 className="text-5xl lg:text-6xl font-light tracking-wider mb-1 leading-tight" style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+        <h1 className="page-title text-5xl lg:text-6xl mb-1 leading-tight">
           CAPITAL PHYSICS
         </h1>
         <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-6" style={{ letterSpacing: '0.2em' }}>
@@ -19,118 +21,52 @@ export default function Home() {
 
       </div>
 
-      {/* Feature Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-        {/* Macro Data Card */}
-        <div className="group p-8 rounded-2xl border border-border/50 bg-card hover:shadow-elegant hover:border-border transition-all duration-300">
-          <div className="flex items-center mb-4">
-            <div className="h-12 w-12 rounded-xl gradient-primary flex items-center justify-center mr-4">
-              <div className="w-6 h-6 border-2 border-primary-foreground rounded opacity-80"></div>
-            </div>
-            <h3 className="text-xl font-semibold text-card-foreground">Macro Data</h3>
-          </div>
-          <p className="text-muted-foreground mb-6 leading-relaxed">
-            Economic data from major economies including bond yields, FX rates, and equity indexes.
-          </p>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-              US, Japan, UK, Canada
-            </div>
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-              Bond Yields by Country
-            </div>
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-              FX & Equity Indexes
-            </div>
-          </div>
-        </div>
 
-        {/* Framework Card */}
-        <div className="group p-8 rounded-2xl border border-border/50 bg-card hover:shadow-elegant hover:border-border transition-all duration-300">
-          <div className="flex items-center mb-4">
-            <div className="h-12 w-12 rounded-xl gradient-accent flex items-center justify-center mr-4">
-              <div className="w-6 h-6 border-2 border-accent-foreground rounded-full opacity-80"></div>
-            </div>
-            <h3 className="text-xl font-semibold text-card-foreground">Framework</h3>
-          </div>
-          <p className="text-muted-foreground mb-6 leading-relaxed">
-            The three fundamental laws governing market behavior and economic cycles.
-          </p>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-              O1: Swing
-            </div>
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-              O2: Signal
-            </div>
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-primary mr-3"></span>
-              O3: Story
-            </div>
-          </div>
-        </div>
 
-        {/* Major Events Card */}
-        <div className="group p-8 rounded-2xl border border-border/50 bg-card hover:shadow-elegant hover:border-border transition-all duration-300 md:col-span-2 lg:col-span-1">
-          <div className="flex items-center mb-4">
-            <div className="h-12 w-12 rounded-xl gradient-secondary flex items-center justify-center mr-4">
-              <div className="w-6 h-6 border-2 border-secondary-foreground rounded-sm opacity-80"></div>
-            </div>
-            <h3 className="text-xl font-semibold text-card-foreground">Major Events</h3>
-          </div>
-          <p className="text-muted-foreground mb-6 leading-relaxed">
-            Critical monetary policy decisions that shaped modern markets.
-          </p>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-secondary-foreground mr-3"></span>
-              1971 Gold Depeg
-            </div>
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-secondary-foreground mr-3"></span>
-              1979 Volcker Rate Hikes
-            </div>
-            <div className="flex items-center">
-              <span className="w-2 h-2 rounded-full bg-secondary-foreground mr-3"></span>
-              2008 QE Implementation
-            </div>
-          </div>
-        </div>
+      {/* Data Pipeline */}
+      <div className="mb-16">
+        <DataPipeline />
       </div>
 
-      {/* CTA Section */}
-      <div className="relative p-12 rounded-3xl gradient-primary text-primary-foreground overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="relative z-10 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Explore?</h2>
-          <p className="text-primary-foreground/90 mb-8 text-lg max-w-2xl mx-auto">
-            Dive into the macro framework and discover how economic patterns shape investment opportunities.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/framework"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-white text-black hover:bg-white/90 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-            >
-              Explore Framework
-            </a>
-            <a
-              href="/macro-data"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-xl border-2 border-white/30 text-white hover:bg-white/10 transition-all duration-200 font-semibold"
-            >
-              View Data
-            </a>
+      {/* Regime Cards */}
+      <div className="grid md:grid-cols-3 gap-6 mb-16">
+        <a href="/regime-guide" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-violet-500/40 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative">
+            <div className="text-xs font-medium text-violet-500 uppercase tracking-widest mb-3">Learn</div>
+            <h3 className="text-xl font-semibold text-card-foreground mb-3">Regime Guide</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              How each regime is defined, what drives transitions, and how to interpret the signals.
+            </p>
+            <div className="text-xs text-violet-500 font-medium group-hover:translate-x-1 transition-transform duration-200">Explore →</div>
           </div>
-        </div>
+        </a>
 
-        {/* Decorative elements */}
-        <div className="absolute top-4 right-4 w-32 h-32 rounded-full bg-white/5 blur-2xl"></div>
-        <div className="absolute bottom-4 left-4 w-24 h-24 rounded-full bg-white/5 blur-xl"></div>
+        <a href="/regime-active" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-emerald-500/40 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative">
+            <div className="text-xs font-medium text-emerald-500 uppercase tracking-widest mb-3">Live</div>
+            <h3 className="text-xl font-semibold text-card-foreground mb-3">Active Regime</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              Current regime state, live signal readings, and capital allocation recommendations.
+            </p>
+            <div className="text-xs text-emerald-500 font-medium group-hover:translate-x-1 transition-transform duration-200">View signals →</div>
+          </div>
+        </a>
+
+        <a href="/cockpit" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-amber-500/40 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative">
+            <div className="text-xs font-medium text-amber-500 uppercase tracking-widest mb-3">Dashboard</div>
+            <h3 className="text-xl font-semibold text-card-foreground mb-3">Cockpit</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+              Full macro dashboard — liquidity, valuation, price regime and trend pressure in one view.
+            </p>
+            <div className="text-xs text-amber-500 font-medium group-hover:translate-x-1 transition-transform duration-200">Open cockpit →</div>
+          </div>
+        </a>
       </div>
+
     </div>
   );
 }

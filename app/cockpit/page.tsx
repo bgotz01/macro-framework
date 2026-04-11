@@ -16,19 +16,23 @@ interface MetricRow {
     percentile_rank: number | null;
 }
 
-function getMetric(db: Database.Database, assetClass: string, seriesName: string, refDate?: string): MetricRow | null {
-    const query = refDate
-        ? `SELECT date, value, percentile_rank FROM percentile_analysis WHERE asset_class = ? AND series_name = ? AND date <= ? ORDER BY date DESC LIMIT 1`
-        : `SELECT date, value, percentile_rank FROM percentile_analysis WHERE asset_class = ? AND series_name = ? ORDER BY date DESC LIMIT 1`;
-    const params = refDate ? [assetClass, seriesName, refDate] : [assetClass, seriesName];
-    return db.prepare(query).get(...params) as MetricRow | null;
+async function getMetric(assetClass: string, seriesName: string, refDate?: string): Promise<MetricRow | null> {
+    type RawRow = { date: string; value: number; percentile_rank: number | null };
+    const rows = refDate
+        ? await prisma.$queryRaw<RawRow[]>`
+            SELECT date::text as date, value, percentile_rank FROM macro_percentile_analysis
+            WHERE asset_class = ${assetClass} AND series_name = ${seriesName} AND date::text <= ${refDate}
+            ORDER BY date DESC LIMIT 1`
+        : await prisma.$queryRaw<RawRow[]>`
+            SELECT date::text as date, value, percentile_rank FROM macro_percentile_analysis
+            WHERE asset_class = ${assetClass} AND series_name = ${seriesName}
+            ORDER BY date DESC LIMIT 1`;
+    if (!rows[0]) return null;
+    return { date: rows[0].date.slice(0, 10), value: rows[0].value, percentile_rank: rows[0].percentile_rank };
 }
 
 export default async function CockpitPage() {
-    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-    const db = new Database(dbPath, { readonly: true });
-
-    // Get latest S&P 500 date from Postgres (most up-to-date)
+    // Get latest S&P 500 date from Postgres
     const gspcRows = await prisma.$queryRaw<{ date: string }[]>`
         SELECT date::text as date FROM macro_time_series
         WHERE asset_class = 'equities' AND series_name = 'US/GSPC' AND column_name = 'Value'
@@ -36,36 +40,43 @@ export default async function CockpitPage() {
     `;
     const sp500Date = gspcRows[0]?.date ?? null;
 
-    // Get reference date from REY (monthly aligned)
-    const refRow = db.prepare(`SELECT date FROM percentile_analysis WHERE asset_class='derived' AND series_name='Real-Earnings-Yield-5yr' ORDER BY date DESC LIMIT 1`).get() as { date: string } | undefined;
-    const refDate = refRow?.date;
+    // Reference date from REY (monthly aligned) — from Postgres
+    const refRow = await prisma.$queryRaw<{ date: string }[]>`
+        SELECT date::text as date FROM macro_percentile_analysis
+        WHERE asset_class = 'derived' AND series_name = 'Real-Earnings-Yield-5yr'
+        ORDER BY date DESC LIMIT 1`;
+    const refDate = refRow[0]?.date?.slice(0, 10);
 
-    // Core metrics
-    const real10Y = getMetric(db, 'derived', 'Real-10Y', refDate);
-    const real3M = getMetric(db, 'derived', 'Real-3M', refDate);
-    const realM2 = getMetric(db, 'economic', 'Real-M2-YoY', refDate);
-    const yieldCurve = getMetric(db, 'derived', 'Yield-Curve-10Y-3M', refDate);
-    const eyp5yr = getMetric(db, 'derived', 'Earnings-Yield-Premium-5yr', refDate);
-    const rey5yr = getMetric(db, 'derived', 'Real-Earnings-Yield-5yr', refDate);
-    const cpi = getMetric(db, 'economic', 'CPI', refDate);
-    const pe5yr = getMetric(db, 'valuations', 'PE-5yr', refDate);
-    const ey5yr = getMetric(db, 'valuations', 'Earnings-Yield-5yr', refDate);
-    const fedFunds = getMetric(db, 'economic', 'US/FEDFUNDS', refDate);
-    const tnx = getMetric(db, 'bonds', 'US/TNX-Monthly', refDate);
-    const irx = getMetric(db, 'bonds', 'US/IRX-Monthly', refDate);
+    // All metrics from Postgres
+    const [
+        real10Y, real3M, realM2, yieldCurve, eyp5yr, rey5yr,
+        cpi, pe5yr, ey5yr, fedFunds, tnx, irx,
+        slope200MA, div200MA, slopeStreak, daysAbove,
+    ] = await Promise.all([
+        getMetric('derived', 'Real-10Y', refDate),
+        getMetric('derived', 'Real-3M', refDate),
+        getMetric('economic', 'Real-M2-YoY', refDate),
+        getMetric('derived', 'Yield-Curve-10Y-3M', refDate),
+        getMetric('derived', 'Earnings-Yield-Premium-5yr', refDate),
+        getMetric('derived', 'Real-Earnings-Yield-5yr', refDate),
+        getMetric('economic', 'CPI', refDate),
+        getMetric('valuations', 'PE-5yr', refDate),
+        getMetric('valuations', 'Earnings-Yield-5yr', refDate),
+        getMetric('economic', 'US/FEDFUNDS', refDate),
+        getMetric('bonds', 'US/TNX-Monthly', refDate),
+        getMetric('bonds', 'US/IRX-Monthly', refDate),
+        // Trend metrics — daily, no refDate cap
+        getMetric('derived', 'SP500-200MA-Slope'),
+        getMetric('derived', 'SP500-200MA-Div'),
+        getMetric('derived', 'SP500-200MA-SlopeStreak'),
+        getMetric('derived', 'SP500-200MA-PriceAboveStreak'),
+    ]);
 
-    // Trend metrics (daily — latest)
-    const slope200MA = getMetric(db, 'derived', 'SP500-200MA-Slope');
-    const div200MA = getMetric(db, 'derived', 'SP500-200MA-Div');
-    const slopeStreak = getMetric(db, 'derived', 'SP500-200MA-SlopeStreak');
-    const daysAbove = getMetric(db, 'derived', 'SP500-200MA-PriceAboveStreak');
-
-    // S&P 500 latest price (from SQLite fallback — real date comes from Postgres via cockpit-live)
+    // S&P 500 latest price + regime state from SQLite (not in Postgres)
+    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
+    const db = new Database(dbPath, { readonly: true });
     const sp500Sqlite = db.prepare(`SELECT date, value FROM time_series WHERE asset_class='equities' AND series_name='US/GSPC' AND column_name='Value' AND date LIKE '____-__-__' ORDER BY date DESC LIMIT 1`).get() as { date: string; value: number } | undefined;
-
-    // Regime state
     const regimeRow = db.prepare(`SELECT date, regime, entry_date, trigger_reason FROM regime_timeline ORDER BY date DESC LIMIT 1`).get() as { date: string; regime: string; entry_date: string; trigger_reason: string } | undefined;
-
     db.close();
 
     // Calculate classifications
@@ -88,51 +99,56 @@ export default async function CockpitPage() {
     }
 
     // Detect active signals
-    const signals: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string }[] = [
+    const signals: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string; date: string | null }[] = [
         {
-            id: 'system-stress', title: 'System Stress', level: 'risk-off', priority: 1,
+            id: 'system-stress', title: 'Bond Stress', level: 'risk-off', priority: 1,
             active: real10Y !== null && real10Y.value < -0.5,
             detail: `Real 10Y: ${real10Y?.value?.toFixed(2) ?? 'N/A'}% (trigger: < -0.5%)`,
             tooltip: 'Financial system unanchored — bonds fail to preserve purchasing power. Rotate to gold / real assets.',
+            date: real10Y?.date ?? null,
         },
         {
             id: 'real-ey-warning', title: 'Real EY Warning', level: 'risk-off', priority: 2,
             active: rey5yr !== null && rey5yr.value < 0.5,
             detail: `Real EY: ${rey5yr?.value?.toFixed(2) ?? 'N/A'}% (trigger: < +0.5%)`,
             tooltip: 'Equities barely clearing inflation — reduce equity aggressiveness. First level of the multi-level valuation signal.',
+            date: rey5yr?.date ?? null,
         },
         {
             id: 'real-ey-sell', title: 'Real EY Sell', level: 'risk-off', priority: 2,
             active: rey5yr !== null && rey5yr.value < -1,
             detail: `Real EY: ${rey5yr?.value?.toFixed(2) ?? 'N/A'}% (trigger: < -1%)`,
             tooltip: 'Equities failing to clear inflation — SELL / underweight equities. Rotate to bonds (if Real 10Y > 0%) or gold.',
+            date: rey5yr?.date ?? null,
         },
         {
             id: 'equity-danger', title: 'Equity Danger', level: 'risk-off', priority: 3,
             active: eyp5yr !== null && yieldCurve !== null && eyp5yr.value < -1 && yieldCurve.value < 0,
             detail: `EYP: ${eyp5yr?.value?.toFixed(2) ?? 'N/A'}%, YC: ${yieldCurve?.value?.toFixed(2) ?? 'N/A'}%`,
             tooltip: 'Expensive equities + inverted yield curve = broken liquidity transmission. Poor carry and growth cannot be financed.',
+            date: eyp5yr?.date ?? null,
         },
         {
             id: 'growth', title: 'Growth Signal', level: 'risk-on', priority: 4,
             active: eyp5yr !== null && yieldCurve !== null && eyp5yr.value < -1 && yieldCurve.value > 0,
             detail: `EYP: ${eyp5yr?.value?.toFixed(2) ?? 'N/A'}%, YC: ${yieldCurve?.value?.toFixed(2) ?? 'N/A'}%`,
             tooltip: 'Positive yield curve enables financing of duration — growth compensates for weak carry. Favor high-growth equities.',
+            date: eyp5yr?.date ?? null,
         },
         {
             id: 'equity-value', title: 'Equity Value', level: 'risk-on', priority: 5,
             active: rey5yr !== null && rey5yr.value >= 3.0,
             detail: `Real EY: ${rey5yr?.value?.toFixed(2) ?? 'N/A'}% (trigger: ≥ 3%)`,
             tooltip: 'Attractive real earnings yield — equities offer good compensation above inflation. BUY signal for broad equity exposure.',
+            date: rey5yr?.date ?? null,
         },
     ];
 
     const activeSignals = signals.filter(s => s.active);
     const highestSignal = activeSignals.length > 0
         ? activeSignals.sort((a, b) => a.priority - b.priority)[0]
-        : { id: 'normal', title: 'Normal', level: 'risk-on' as const, priority: 6, active: true, detail: 'No stress signals active', tooltip: 'All metrics healthy — no stress signals firing. Standard balanced allocation applies.' };
+        : { id: 'normal', title: 'Normal', level: 'risk-on' as const, priority: 6, active: true, detail: 'No stress signals active', tooltip: 'All metrics healthy — no stress signals firing. Standard balanced allocation applies.', date: null };
 
-    // Build props for client component
     const data = {
         refDate: refDate ?? null,
         sp500: sp500Sqlite ? { price: sp500Sqlite.value, date: sp500Sqlite.date } : null,

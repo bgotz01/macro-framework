@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { REGIME_METADATA, determineNextRegime, type RegimeFamily } from '@/lib/regime-state-machine';
 import type { RegimeData } from '@/components/regime/regime-parameters-types';
+import CockpitGlossary from './cockpit-glossary';
 
 interface MetricVal {
     value: number | null;
@@ -33,9 +34,9 @@ interface CockpitData {
     };
     inputs: { fedFunds: MetricVal; irx: MetricVal; tnx: MetricVal; cpi: MetricVal };
     signals: {
-        all: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string }[];
-        active: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string }[];
-        highest: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string };
+        all: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string; date: string | null }[];
+        active: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string; date: string | null }[];
+        highest: { id: string; title: string; level: 'risk-off' | 'risk-on'; priority: number; active: boolean; detail: string; tooltip: string; date: string | null };
     };
     proximityData: RegimeData;
 }
@@ -55,12 +56,19 @@ function pctColor(p: number | null, invert = false): string {
     return 'text-muted-foreground';
 }
 
-function Metric({ label, value, unit = '%', percentile, invert = false }: {
-    label: string; value: number | null; unit?: string; percentile: number | null; invert?: boolean;
+function Metric({ label, value, unit = '%', percentile, invert = false, date = null }: {
+    label: string; value: number | null; unit?: string; percentile: number | null; invert?: boolean; date?: string | null;
 }) {
+    const fmtDate = (d: string) => {
+        const [y, m] = d.split('-');
+        return `${new Date(+y, +m - 1).toLocaleString('default', { month: 'short' })} ${y}`;
+    };
     return (
         <div className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
-            <span className="text-xs text-muted-foreground">{label}</span>
+            <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">{label}</span>
+                {date && <span className="text-[9px] font-mono text-muted-foreground/50">{fmtDate(date)}</span>}
+            </div>
             <div className="flex items-center gap-2">
                 <span className="text-sm font-mono font-medium">{fmt(value)}{value !== null ? unit : ''}</span>
                 {percentile !== null && (
@@ -75,6 +83,11 @@ function Metric({ label, value, unit = '%', percentile, invert = false }: {
 
 function SignalRow({ signal: s }: { signal: CockpitData['signals']['all'][0] }) {
     const [showTooltip, setShowTooltip] = useState(false);
+    const fmtDate = (d: string | null) => {
+        if (!d) return null;
+        const [y, m] = d.split('-');
+        return `${new Date(+y, +m - 1).toLocaleString('default', { month: 'short' })} ${y}`;
+    };
     return (
         <div
             className="relative"
@@ -101,6 +114,9 @@ function SignalRow({ signal: s }: { signal: CockpitData['signals']['all'][0] }) 
                     <div className="font-semibold mb-1">{s.title}</div>
                     <p className="text-muted-foreground mb-1.5">{s.tooltip}</p>
                     <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono">{s.detail}</code>
+                    {s.date && (
+                        <div className="mt-1.5 text-[10px] text-muted-foreground/70 font-mono">as of {fmtDate(s.date)}</div>
+                    )}
                 </div>
             )}
         </div>
@@ -125,14 +141,14 @@ interface LiveData {
     cpi: { value: number | null; date: string | null };
     m2yoy: { value: number | null; date: string | null };
     eps5yr: { value: number | null; date: string | null };
+    eps2yr: { value: number | null; date: string | null };
 }
 
 function LiveSnapshot() {
     const [live, setLive] = useState<LiveData | null>(null);
     const [cpiOverride, setCpiOverride] = useState<string>('');
     const [m2Override, setM2Override] = useState<string>('');
-    const [epsOverride, setEpsOverride] = useState<string>('');
-    const [defaults, setDefaults] = useState({ cpi: '', m2: '', eps: '' });
+    const [defaults, setDefaults] = useState({ cpi: '', m2: '' });
 
     useEffect(() => {
         fetch('/api/cockpit-live')
@@ -140,17 +156,15 @@ function LiveSnapshot() {
             .then((d: LiveData) => {
                 const cpi = d.cpi.value?.toFixed(1) ?? '';
                 const m2 = d.m2yoy.value?.toFixed(2) ?? '';
-                const eps = d.eps5yr.value?.toFixed(2) ?? '';
                 setLive(d);
                 setCpiOverride(cpi);
                 setM2Override(m2);
-                setEpsOverride(eps);
-                setDefaults({ cpi, m2, eps });
+                setDefaults({ cpi, m2 });
             });
     }, []);
 
-    const isDirty = live && (cpiOverride !== defaults.cpi || m2Override !== defaults.m2 || epsOverride !== defaults.eps);
-    const reset = () => { setCpiOverride(defaults.cpi); setM2Override(defaults.m2); setEpsOverride(defaults.eps); };
+    const isDirty = live && (cpiOverride !== defaults.cpi || m2Override !== defaults.m2);
+    const reset = () => { setCpiOverride(defaults.cpi); setM2Override(defaults.m2); };
 
     if (!live) return (
         <div className="rounded-xl border border-border bg-card p-4 mt-3 animate-pulse h-32" />
@@ -158,7 +172,8 @@ function LiveSnapshot() {
 
     const cpi = parseFloat(cpiOverride) || live.cpi.value || 0;
     const m2yoy = parseFloat(m2Override) || live.m2yoy.value || 0;
-    const eps = parseFloat(epsOverride) || live.eps5yr.value || 0;
+    const eps5yr = live.eps5yr.value || 0;
+    const eps2yr = live.eps2yr.value || 0;
     const tnx = live.tnx.value ?? 0;
     const irx = live.irx.value ?? 0;
     const price = live.gspc.value ?? 0;
@@ -166,8 +181,10 @@ function LiveSnapshot() {
     const real10Y = tnx - cpi;
     const real3M = irx - cpi;
     const realM2 = m2yoy - cpi;
-    const pe5yr = eps > 0 && price > 0 ? price / eps : null;
+    const pe5yr = eps5yr > 0 && price > 0 ? price / eps5yr : null;
     const ey5yr = pe5yr !== null ? (1 / pe5yr) * 100 : null;
+    const pe2yr = eps2yr > 0 && price > 0 ? price / eps2yr : null;
+    const ey2yr = pe2yr !== null ? (1 / pe2yr) * 100 : null;
     const eyp = ey5yr !== null ? ey5yr - irx : null;
     const realEY = ey5yr !== null ? ey5yr - cpi : null;
 
@@ -253,8 +270,10 @@ function LiveSnapshot() {
                     </div>
                     {editRow('CPI YoY', live.cpi.date, cpiOverride, setCpiOverride)}
                     {editRow('M2 YoY', live.m2yoy.date, m2Override, setM2Override)}
-                    {editRow('EPS 5yr', live.eps5yr.date, epsOverride, setEpsOverride)}
+                    {row('EY 5yr', ey5yr, live.eps5yr.date, '%', 2, signColor(ey5yr))}
+                    {row('EY 2yr', ey2yr, live.eps2yr.date, '%', 2, signColor(ey2yr))}
                     {row('PE 5yr', pe5yr, live.gspc.date, 'x', 1, peColor(pe5yr))}
+                    {row('PE 2yr', pe2yr, live.gspc.date, 'x', 1, peColor(pe2yr))}
                 </div>
 
                 {/* Market */}
@@ -353,6 +372,7 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Monthly — Last Close</span>
                 <div className="flex-1 h-px bg-border" />
+                <CockpitGlossary />
             </div>
 
             {/* Row 1: Regime + Signals */}
@@ -423,36 +443,31 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
                 <Card title="Liquidity">
                     <div className="text-center mb-3">
                         <div className="text-lg font-bold">{liquidity.regime}</div>
-                        <div className="text-xs text-muted-foreground">Score: {liquidity.score}</div>
                     </div>
-                    <Metric label="Real 3M" value={liquidity.metrics.real3M.value} percentile={liquidity.metrics.real3M.percentile} />
-                    <Metric label="Real 10Y" value={liquidity.metrics.real10Y.value} percentile={liquidity.metrics.real10Y.percentile} />
-                    <Metric label="Yield Curve" value={liquidity.metrics.yieldCurve.value} percentile={liquidity.metrics.yieldCurve.percentile} />
-                    <Metric label="Real M2" value={liquidity.metrics.realM2.value} percentile={liquidity.metrics.realM2.percentile} invert />
+                    <Metric label="Real 3M" value={liquidity.metrics.real3M.value} percentile={liquidity.metrics.real3M.percentile} date={proximityData.real3M.date} />
+                    <Metric label="Real 10Y" value={liquidity.metrics.real10Y.value} percentile={liquidity.metrics.real10Y.percentile} date={proximityData.real10Y.date} />
+                    <Metric label="Yield Curve" value={liquidity.metrics.yieldCurve.value} percentile={liquidity.metrics.yieldCurve.percentile} date={proximityData.yieldCurve.date} />
+                    <Metric label="Real M2" value={liquidity.metrics.realM2.value} percentile={liquidity.metrics.realM2.percentile} invert date={proximityData.realM2.date} />
                 </Card>
 
                 {/* Valuation */}
                 <Card title="Valuation">
                     <div className="text-center mb-3">
                         <div className="text-lg font-bold">{valuation.regime}</div>
-                        <div className="text-xs text-muted-foreground">Score: {valuation.score}</div>
                     </div>
-                    <Metric label="EYP 5yr" value={valuation.metrics.eyp5yr.value} percentile={valuation.metrics.eyp5yr.percentile} invert />
-                    <Metric label="Real EY 5yr" value={valuation.metrics.rey5yr.value} percentile={valuation.metrics.rey5yr.percentile} invert />
-                    <Metric label="PE 5yr" value={valuation.metrics.pe5yr.value} unit="x" percentile={valuation.metrics.pe5yr.percentile} />
-                    <Metric label="EY 5yr" value={valuation.metrics.ey5yr.value} percentile={valuation.metrics.ey5yr.percentile} invert />
+                    <Metric label="EYP 5yr" value={valuation.metrics.eyp5yr.value} percentile={valuation.metrics.eyp5yr.percentile} invert date={proximityData.eyp5yr.date} />
+                    <Metric label="Real EY 5yr" value={valuation.metrics.rey5yr.value} percentile={valuation.metrics.rey5yr.percentile} invert date={proximityData.rey5yr.date} />
+                    <Metric label="PE 5yr" value={valuation.metrics.pe5yr.value} unit="x" percentile={valuation.metrics.pe5yr.percentile} date={proximityData.pe5yr.date} />
+                    <Metric label="EY 5yr" value={valuation.metrics.ey5yr.value} percentile={valuation.metrics.ey5yr.percentile} invert date={proximityData.ey5yr.date} />
                 </Card>
 
                 {/* Price Environment */}
                 <Card title="Price Environment">
                     <div className="text-center mb-3">
                         <div className="text-lg font-bold">{price.regime}</div>
-                        <div className="text-xs text-muted-foreground">Score: {price.score}</div>
                     </div>
-                    <Metric label="CPI YoY" value={price.cpi.value} percentile={price.cpi.percentile} />
-                    <Metric label="Fed Funds" value={data.inputs.fedFunds.value} percentile={data.inputs.fedFunds.percentile} />
-                    <Metric label="3M Yield" value={data.inputs.irx.value} percentile={data.inputs.irx.percentile} />
-                    <Metric label="10Y Yield" value={data.inputs.tnx.value} percentile={data.inputs.tnx.percentile} />
+                    <Metric label="CPI YoY" value={price.cpi.value} percentile={price.cpi.percentile} date={proximityData.cpi.date} />
+                    <Metric label="Fed Funds" value={data.inputs.fedFunds.value} percentile={data.inputs.fedFunds.percentile} date={proximityData.fedFunds.date} />
                 </Card>
 
                 {/* Trend Pressure */}

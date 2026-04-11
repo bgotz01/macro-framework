@@ -1,14 +1,19 @@
 #!/usr/bin/env tsx
 /**
- * Calculates SP500 MA slope streaks and price-above-MA streaks, saves to Postgres.
+ * Calculates SP500 and NDX MA slope streaks and price-above-MA streaks, saves to Postgres.
  */
 import { prisma } from '../../lib/prisma';
 
-async function calculateStreaks(maPeriod: string) {
-    const slopeStreakName = `SP500-${maPeriod}MA-SlopeStreak`;
-    const priceStreakName = `SP500-${maPeriod}MA-PriceAboveStreak`;
-    const slopeName = `SP500-${maPeriod}MA-Slope`;
-    const maName = `SP500-MA${maPeriod}`;
+const INDEXES = [
+    { prefix: 'SP500', priceSeriesName: 'US/GSPC', priceAssetClass: 'equities' as const },
+    { prefix: 'NDX', priceSeriesName: 'NDX', priceAssetClass: 'equities' as const },
+];
+
+async function calculateStreaks(prefix: string, priceSeriesName: string, priceAssetClass: string, maPeriod: string) {
+    const slopeStreakName = `${prefix}-${maPeriod}MA-SlopeStreak`;
+    const priceStreakName = `${prefix}-${maPeriod}MA-PriceAboveStreak`;
+    const slopeName = `${prefix}-${maPeriod}MA-Slope`;
+    const maName = `${prefix}-MA${maPeriod}`;
 
     const latest = await prisma.macro_time_series.aggregate({
         where: { asset_class: 'derived', series_name: slopeStreakName },
@@ -26,7 +31,6 @@ async function calculateStreaks(maPeriod: string) {
         currentPriceStreak = ps?.value ?? 0;
     }
 
-    // Load new rows joining price, MA, slope
     const slopeRows = await prisma.macro_time_series.findMany({
         where: { asset_class: 'derived', series_name: slopeName, ...(latestComputed ? { date: { gt: latestComputed } } : {}) },
         orderBy: { date: 'asc' },
@@ -37,7 +41,7 @@ async function calculateStreaks(maPeriod: string) {
 
     const dates = slopeRows.map(r => r.date);
     const [prices, mas] = await Promise.all([
-        prisma.macro_time_series.findMany({ where: { asset_class: 'equities', series_name: 'US/GSPC', column_name: 'Value', date: { in: dates } }, select: { date: true, value: true } }),
+        prisma.macro_time_series.findMany({ where: { asset_class: priceAssetClass as any, series_name: priceSeriesName, column_name: 'Value', date: { in: dates } }, select: { date: true, value: true } }),
         prisma.macro_time_series.findMany({ where: { asset_class: 'derived', series_name: maName, date: { in: dates } }, select: { date: true, value: true } }),
     ]);
 
@@ -69,7 +73,7 @@ async function calculateStreaks(maPeriod: string) {
         await prisma.macro_time_series.createMany({ data: rows.slice(i, i + 1000), skipDuplicates: true });
     }
 
-    for (const [name, label] of [[slopeStreakName, `${maPeriod}-Day MA Slope Streak`], [priceStreakName, `Price vs ${maPeriod}-Day MA Streak`]] as [string, string][]) {
+    for (const [name, label] of [[slopeStreakName, `${prefix} ${maPeriod}-Day MA Slope Streak`], [priceStreakName, `${prefix} Price vs ${maPeriod}-Day MA Streak`]] as [string, string][]) {
         await prisma.macro_series_metadata.upsert({
             where: { asset_class_series_name: { asset_class: 'derived', series_name: name } },
             create: { asset_class: 'derived', series_name: name, display_name: label, units: 'days' },
@@ -81,10 +85,13 @@ async function calculateStreaks(maPeriod: string) {
 }
 
 async function main() {
-    console.log('📊 Calculating SP500 MA streaks in Postgres...');
-    for (const period of ['50', '200', '500']) {
-        try { await calculateStreaks(period); }
-        catch (e) { console.error(`  ✗ ${period}MA streaks:`, e); }
+    console.log('📊 Calculating MA streaks in Postgres...');
+    for (const { prefix, priceSeriesName, priceAssetClass } of INDEXES) {
+        console.log(`\n  ${prefix}:`);
+        for (const period of ['50', '200', '500']) {
+            try { await calculateStreaks(prefix, priceSeriesName, priceAssetClass, period); }
+            catch (e) { console.error(`  ✗ ${prefix} ${period}MA streaks:`, e); }
+        }
     }
     console.log('\n✅ MA streaks complete!');
 }

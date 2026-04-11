@@ -256,6 +256,13 @@ html {
   background: var(--gradient-primary);
 }
 
+/* Page title — serif display font used across all page headings */
+.page-title {
+  font-family: var(--font-display);
+  letter-spacing: 0.15em;
+  font-weight: 300;
+}
+
 .gradient-secondary {
   background: var(--gradient-secondary);
 }

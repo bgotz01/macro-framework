@@ -15,13 +15,14 @@ export async function GET() {
         return rows[0] ?? undefined;
     };
 
-    const [tnx, irx, gspc, cpi, m2yoy, eps5yr] = await Promise.all([
+    const [tnx, irx, gspc, cpi, m2yoy, eps5yr, eps2yr] = await Promise.all([
         get('bonds', 'US/TNX'),
         get('bonds', 'US/IRX'),
         get('equities', 'US/GSPC'),
         get('economic', 'CPI'),
         get('economic', 'M2-YoY'),
         get('valuations', 'SP500-EPS-5yr'),
+        get('valuations', 'SP500-EPS-2yr'),
     ]);
 
     return NextResponse.json({
@@ -31,5 +32,6 @@ export async function GET() {
         cpi: { value: cpi?.value ?? null, date: cpi?.date ?? null },
         m2yoy: { value: m2yoy?.value ?? null, date: m2yoy?.date ?? null },
         eps5yr: { value: eps5yr?.value ?? null, date: eps5yr?.date ?? null },
+        eps2yr: { value: eps2yr?.value ?? null, date: eps2yr?.date ?? null },
     });
 }
