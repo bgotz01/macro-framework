@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStockdataPool } from '@/lib/stockdata-db';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -10,31 +10,24 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'startDate is required' }, { status: 400 });
     }
 
-    const pool = getStockdataPool();
-    if (!pool) {
-        return NextResponse.json({ error: 'Stock data database not configured' }, { status: 503 });
-    }
-
     try {
         const start = new Date(startDate);
         const end = new Date(start);
         end.setMonth(end.getMonth() + months);
-        const endDate = end.toISOString().split('T')[0];
 
-        // time_series stores dates as Unix timestamps (milliseconds) in the original SQLite schema.
-        // In Postgres the column is a bigint; convert to/from ISO dates accordingly.
-        const result = await pool.query<{ date: string; value: number }>(
-            `SELECT to_char(to_timestamp(date / 1000), 'YYYY-MM-DD') AS date, value
-             FROM time_series
-             WHERE asset_class = 'equities'
-               AND series_name = 'US/GSPC'
-               AND to_timestamp(date / 1000)::date >= $1::date
-               AND to_timestamp(date / 1000)::date <= $2::date
-             ORDER BY date ASC`,
-            [startDate, endDate]
-        );
+        // time_series stores dates as Unix timestamps (milliseconds)
+        const startTimestamp = BigInt(start.getTime());
+        const endTimestamp = BigInt(end.getTime());
 
-        const data = result.rows;
+        const data = await prisma.$queryRaw<Array<{ date: bigint; value: number }>>`
+            SELECT date, value
+            FROM time_series
+            WHERE asset_class = 'equities'
+              AND series_name = 'US/GSPC'
+              AND date >= ${startTimestamp}
+              AND date <= ${endTimestamp}
+            ORDER BY date ASC
+        `;
 
         if (data.length === 0) {
             return NextResponse.json({ error: 'No data found for date range' }, { status: 404 });
@@ -45,7 +38,7 @@ export async function GET(request: NextRequest) {
         const returnPct = ((endValue - startValue) / startValue) * 100;
 
         const formattedData = data.map(d => ({
-            date: d.date,
+            date: new Date(Number(d.date)).toISOString().split('T')[0],
             value: d.value,
             returnPct: ((d.value - startValue) / startValue) * 100,
         }));
