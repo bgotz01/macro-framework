@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
                 take: 32,
                 select: { date: true, value: true },
             });
-            quarterly = qRows.filter(r => r.value !== null).map(r => ({ date: r.date, eps: r.value! }));
+            quarterly = qRows.filter((r: { date: string; value: number | null }) => r.value !== null).map((r: { date: string; value: number | null }) => ({ date: r.date, eps: r.value! }));
         }
 
         return NextResponse.json({ series, data, quarterly });
