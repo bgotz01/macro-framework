@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/macro-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("MACRO_DATABASE_URL")
+}
+
+model macro_time_series {
+  id          Int    @id @default(autoincrement())
+  date        String
+  asset_class String
+  series_name String
+  column_name String
+  value       Float?
+
+  @@unique([date, asset_class, series_name, column_name])
+  @@index([date])
+  @@index([asset_class])
+  @@index([series_name])
+  @@index([asset_class, series_name, date])
+  @@map("macro_time_series")
+}
+
+model macro_percentile_analysis {
+  id                    Int    @id @default(autoincrement())
+  date                  String
+  asset_class           String
+  series_name           String
+  column_name           String
+  value                 Float?
+  percentile_rank       Float?
+  yoy_percentile_change Float?
+
+  @@unique([date, asset_class, series_name, column_name])
+  @@index([date])
+  @@index([asset_class, series_name, date])
+  @@map("macro_percentile_analysis")
+}
+
+model macro_regime_timeline {
+  date            String  @id
+  regime          String
+  entry_date      String
+  trigger_reason  String
+  liquidity_score Float?
+  rey             Float?
+  eyp             Float?
+  real10Y         Float?
+  real3M          Float?
+  realM2          Float?
+
+  @@index([regime])
+  @@index([entry_date])
+  @@map("macro_regime_timeline")
+}
+
+model macro_series_metadata {
+  asset_class  String
+  series_name  String
+  display_name String?
+  description  String?
+  source       String?
+  last_updated BigInt?
+  geography    String?
+  units        String?
+  currency     String?
+
+  @@id([asset_class, series_name])
+  @@map("macro_series_metadata")
+}

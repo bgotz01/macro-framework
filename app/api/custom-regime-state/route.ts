@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
                 LEFT JOIN macro_percentile_analysis m2 ON r.date = m2.date AND m2.asset_class = 'economic'  AND m2.series_name = 'Real-M2-YoY'
                 WHERE r.asset_class = 'derived'
                   AND r.series_name = 'Real-Earnings-Yield-5yr'
-                  AND r.date <= ${targetDate}::date
+                  AND r.date <= ${targetDate}
                 ORDER BY r.date ASC
             `
             : prisma.$queryRaw<Array<{ date: string; rey: number | null; eyp: number | null; real10y: number | null; real3m: number | null; realM2: number | null }>>`

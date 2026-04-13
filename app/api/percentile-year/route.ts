@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
                            value, percentile_rank, yoy_percentile_change
                     FROM macro_percentile_analysis
                     WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                      AND date >= ${monthStart}::date AND date <= ${monthEnd}::date
+                      AND date >= ${monthStart} AND date <= ${monthEnd}
                     ORDER BY date DESC LIMIT 1
                 `;
             } else {
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
                            value, percentile_rank, yoy_percentile_change
                     FROM macro_percentile_analysis
                     WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                      AND date >= ${q4Start}::date AND date <= ${yearEnd}::date
+                      AND date >= ${q4Start} AND date <= ${yearEnd}
                     ORDER BY date DESC LIMIT 1
                 `;
             }

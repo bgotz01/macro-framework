@@ -1,5 +1,3 @@
-import Database from 'better-sqlite3';
-import path from 'path';
 import { prisma } from '@/lib/prisma';
 import {
     calculateLiquidityRegime,
@@ -72,12 +70,19 @@ export default async function CockpitPage() {
         getMetric('derived', 'SP500-200MA-PriceAboveStreak'),
     ]);
 
-    // S&P 500 latest price + regime state from SQLite (not in Postgres)
-    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-    const db = new Database(dbPath, { readonly: true });
-    const sp500Sqlite = db.prepare(`SELECT date, value FROM time_series WHERE asset_class='equities' AND series_name='US/GSPC' AND column_name='Value' AND date LIKE '____-__-__' ORDER BY date DESC LIMIT 1`).get() as { date: string; value: number } | undefined;
-    const regimeRow = db.prepare(`SELECT date, regime, entry_date, trigger_reason FROM regime_timeline ORDER BY date DESC LIMIT 1`).get() as { date: string; regime: string; entry_date: string; trigger_reason: string } | undefined;
-    db.close();
+    // S&P 500 latest price + regime state from Postgres
+    const [sp500Row, regimeRow] = await Promise.all([
+        prisma.$queryRaw<{ date: string; value: number }[]>`
+            SELECT date::text as date, value FROM macro_time_series
+            WHERE asset_class = 'equities' AND series_name = 'US/GSPC' AND column_name = 'Value'
+            AND date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+            ORDER BY date DESC LIMIT 1`,
+        prisma.$queryRaw<{ date: string; regime: string; entry_date: string; trigger_reason: string }[]>`
+            SELECT date::text as date, regime, entry_date::text as entry_date, trigger_reason
+            FROM macro_regime_timeline ORDER BY date DESC LIMIT 1`,
+    ]);
+    const sp500Sqlite = sp500Row[0];
+    const regimeRowData = regimeRow[0];
 
     // Calculate classifications
     const liquidityRegime = calculateLiquidityRegime(
@@ -92,9 +97,9 @@ export default async function CockpitPage() {
 
     // Regime months
     let regimeMonths = 0;
-    if (regimeRow) {
-        const entry = new Date(regimeRow.entry_date);
-        const current = new Date(regimeRow.date);
+    if (regimeRowData) {
+        const entry = new Date(regimeRowData.entry_date);
+        const current = new Date(regimeRowData.date);
         regimeMonths = (current.getFullYear() - entry.getFullYear()) * 12 + (current.getMonth() - entry.getMonth());
     }
 
@@ -153,14 +158,14 @@ export default async function CockpitPage() {
         refDate: refDate ?? null,
         sp500: sp500Sqlite ? { price: sp500Sqlite.value, date: sp500Sqlite.date } : null,
         sp500Date,
-        regime: regimeRow ? {
-            name: regimeRow.regime,
-            entryDate: regimeRow.entry_date,
+        regime: regimeRowData ? {
+            name: regimeRowData.regime,
+            entryDate: regimeRowData.entry_date,
             months: regimeMonths,
-            trigger: regimeRow.trigger_reason,
-            color: REGIME_METADATA[regimeRow.regime as RegimeFamily]?.color ?? '#6b7280',
-            description: REGIME_METADATA[regimeRow.regime as RegimeFamily]?.description ?? '',
-            guidance: REGIME_METADATA[regimeRow.regime as RegimeFamily]?.guidance ?? '',
+            trigger: regimeRowData.trigger_reason,
+            color: REGIME_METADATA[regimeRowData.regime as RegimeFamily]?.color ?? '#6b7280',
+            description: REGIME_METADATA[regimeRowData.regime as RegimeFamily]?.description ?? '',
+            guidance: REGIME_METADATA[regimeRowData.regime as RegimeFamily]?.guidance ?? '',
         } : null,
         liquidity: {
             regime: liquidityRegime.regime.name,

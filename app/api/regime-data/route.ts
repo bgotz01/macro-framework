@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
                     SELECT date, value, percentile_rank
                     FROM macro_percentile_analysis
                     WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                      AND to_char(date::date, 'YYYY-MM') = to_char(${targetDate}::date, 'YYYY-MM')
+                      AND LEFT(date, 7) = LEFT(${targetDate}, 7)
                     ORDER BY date DESC LIMIT 1
                 `;
             }

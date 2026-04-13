@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
         const conditions: Prisma.Sql[] = [Prisma.sql`ts.column_name = ${columnName}`];
         if (assetClass) conditions.push(Prisma.sql`ts.asset_class = ${assetClass}`);
         if (seriesName) conditions.push(Prisma.sql`ts.series_name = ${seriesName}`);
-        if (startDate) conditions.push(Prisma.sql`ts.date >= ${startDate}::date`);
-        if (endDate) conditions.push(Prisma.sql`ts.date <= ${endDate}::date`);
+        if (startDate) conditions.push(Prisma.sql`ts.date >= ${startDate}`);
+        if (endDate) conditions.push(Prisma.sql`ts.date <= ${endDate}`);
 
         const where = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`;
 

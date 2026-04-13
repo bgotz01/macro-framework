@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
                     FROM macro_percentile_analysis
                     WHERE asset_class = ${s.asset_class}
                       AND series_name = ${s.series_name}
-                      AND to_char(date, 'YYYY-MM') = to_char(${refDate}::date, 'YYYY-MM')
+                      AND LEFT(date, 7) = LEFT(${refDate}, 7)
                     ORDER BY date DESC LIMIT 1
                 `,
                 prisma.$queryRaw<{ date: string; percentile_rank: number }[]>`
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
                     FROM macro_percentile_analysis
                     WHERE asset_class = ${s.asset_class}
                       AND series_name = ${s.series_name}
-                      AND date::text < to_char(date_trunc('month', ${refDate}::date), 'YYYY-MM-DD')
+                      AND date < LEFT(${refDate}, 7)
                     ORDER BY date DESC LIMIT 1
                 `,
             ]);
