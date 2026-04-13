@@ -213,7 +213,7 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
         const newMetrics = new Set(selectedMetrics);
         if (newMetrics.has(metric)) {
             // Don't allow deselecting if it's the last one
-            if (newMetrics.size === 1) return;
+            if (newMetrics.size <= 2) return;
             newMetrics.delete(metric);
         } else {
             newMetrics.add(metric);
@@ -239,7 +239,7 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
         },
         relative: {
             label: 'Relative',
-            metrics: ['realYield', 'yieldCurve', 'eyp5yr', 'rey5yr']
+            metrics: ['yieldCurve', 'realYield', 'eyp5yr', 'rey5yr']
         }
     };
 
@@ -327,8 +327,8 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
             }
         }
 
-        // Require at least 3 metrics to have percentile data
-        if (countPercentile < 3) return null;
+        // Require at least 2 metrics to have percentile data
+        if (countPercentile < 2) return null;
 
         // Calculate weighted distance
         const percentileWeight = (100 - yoyWeightPercent) / 100;
@@ -467,6 +467,40 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                         {selectedMetrics.size} metrics selected
                     </div>
                 </div>
+
+                {/* Methodology note */}
+                <details className="mt-3 text-xs text-muted-foreground">
+                    <summary className="cursor-pointer hover:text-foreground transition-colors font-medium select-none">
+                        How similarity is calculated
+                    </summary>
+                    <div className="mt-2 p-3 rounded-lg bg-muted/30 space-y-2 leading-relaxed">
+                        <p>
+                            Each metric is converted to a <strong>percentile rank</strong> (0–100) across the full historical dataset.
+                            Distance between two periods is the <strong>normalized Euclidean distance</strong> across selected metrics:
+                        </p>
+                        <p className="font-mono bg-background rounded px-2 py-1 text-[11px]">
+                            d_levels = √( Σ (pct_A − pct_B)² / n )
+                        </p>
+                        <p>
+                            If YoY weight &gt; 0, a momentum component is blended in using the year-over-year change in each percentile rank:
+                        </p>
+                        <p className="font-mono bg-background rounded px-2 py-1 text-[11px]">
+                            d_momentum = √( Σ (yoy_A − yoy_B)² / n )
+                        </p>
+                        <p className="font-mono bg-background rounded px-2 py-1 text-[11px]">
+                            distance = (1 − w) × d_levels + w × d_momentum
+                        </p>
+                        <p>
+                            where <em>w</em> is the YoY weight (default 10%). The <strong>similarity score</strong> is then:
+                        </p>
+                        <p className="font-mono bg-background rounded px-2 py-1 text-[11px]">
+                            similarity = 100 − distance
+                        </p>
+                        <p>
+                            Periods within 6 months of the target are excluded. At least 2 metrics must have data for a period to qualify.
+                        </p>
+                    </div>
+                </details>
             </div>
 
             {/* Current Period Display */}
@@ -483,111 +517,94 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                        {/* Nominal Metrics */}
-                        <div>
-                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                                Nominal
+                    <div className="grid grid-cols-8 gap-2 text-xs">
+                        <div className={!selectedMetrics.has('cpi') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excl)</span>}
                             </div>
-                            <div className="grid grid-cols-4 gap-2 text-xs">
-                                <div className={!selectedMetrics.has('cpi') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.cpi, targetValues.cpi, 'cpi')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.cpi)}`}>
-                                            YoY: {formatYoyChange(targetYoy.cpi)}
-                                        </div>
-                                    )}
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.cpi, targetValues.cpi, 'cpi')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.cpi)}`}>
+                                    YoY: {formatYoyChange(targetYoy.cpi)}
                                 </div>
-                                <div className={!selectedMetrics.has('treasury3M') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        3M {!selectedMetrics.has('treasury3M') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.treasury3M, targetValues.treasury3M, 'treasury3M')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.treasury3M)}`}>
-                                            YoY: {formatYoyChange(targetYoy.treasury3M)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className={!selectedMetrics.has('tnx') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        10Y {!selectedMetrics.has('tnx') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.tnx, targetValues.tnx, 'tnx')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.tnx)}`}>
-                                            YoY: {formatYoyChange(targetYoy.tnx)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className={!selectedMetrics.has('pe5yr') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        P/E 5yr {!selectedMetrics.has('pe5yr') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.pe5yr, targetValues.pe5yr, 'pe5yr')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.pe5yr)}`}>
-                                            YoY: {formatYoyChange(targetYoy.pe5yr)}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            )}
                         </div>
-
-                        {/* Relative Metrics */}
-                        <div>
-                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                                Relative
+                        <div className={!selectedMetrics.has('treasury3M') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                3M {!selectedMetrics.has('treasury3M') && <span className="text-[10px]">(excl)</span>}
                             </div>
-                            <div className="grid grid-cols-4 gap-2 text-xs">
-                                <div className={!selectedMetrics.has('realYield') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        Real 10Y {!selectedMetrics.has('realYield') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.realYield, targetValues.realYield, 'realYield')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.realYield)}`}>
-                                            YoY: {formatYoyChange(targetYoy.realYield)}
-                                        </div>
-                                    )}
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.treasury3M, targetValues.treasury3M, 'treasury3M')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.treasury3M)}`}>
+                                    YoY: {formatYoyChange(targetYoy.treasury3M)}
                                 </div>
-                                <div className={!selectedMetrics.has('yieldCurve') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        Curve {!selectedMetrics.has('yieldCurve') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.yieldCurve, targetValues.yieldCurve, 'yieldCurve')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.yieldCurve)}`}>
-                                            YoY: {formatYoyChange(targetYoy.yieldCurve)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className={!selectedMetrics.has('eyp5yr') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        EYP 5yr {!selectedMetrics.has('eyp5yr') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.eyp5yr, targetValues.eyp5yr, 'eyp5yr')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.eyp5yr)}`}>
-                                            YoY: {formatYoyChange(targetYoy.eyp5yr)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className={!selectedMetrics.has('rey5yr') ? 'opacity-40' : ''}>
-                                    <div className="text-muted-foreground">
-                                        Real EY {!selectedMetrics.has('rey5yr') && <span className="text-[10px]">(excluded)</span>}
-                                    </div>
-                                    <div className="font-medium">{formatDisplayValue(targetPeriod.rey5yr, targetValues.rey5yr, 'rey5yr')}</div>
-                                    {showPercentiles && (
-                                        <div className={`text-[10px] ${getYoyColor(targetYoy.rey5yr)}`}>
-                                            YoY: {formatYoyChange(targetYoy.rey5yr)}
-                                        </div>
-                                    )}
-                                </div>
+                            )}
+                        </div>
+                        <div className={!selectedMetrics.has('tnx') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                10Y {!selectedMetrics.has('tnx') && <span className="text-[10px]">(excl)</span>}
                             </div>
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.tnx, targetValues.tnx, 'tnx')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.tnx)}`}>
+                                    YoY: {formatYoyChange(targetYoy.tnx)}
+                                </div>
+                            )}
+                        </div>
+                        <div className={!selectedMetrics.has('pe5yr') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                P/E 5yr {!selectedMetrics.has('pe5yr') && <span className="text-[10px]">(excl)</span>}
+                            </div>
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.pe5yr, targetValues.pe5yr, 'pe5yr')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.pe5yr)}`}>
+                                    YoY: {formatYoyChange(targetYoy.pe5yr)}
+                                </div>
+                            )}
+                        </div>
+                        <div className={!selectedMetrics.has('yieldCurve') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                Curve {!selectedMetrics.has('yieldCurve') && <span className="text-[10px]">(excl)</span>}
+                            </div>
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.yieldCurve, targetValues.yieldCurve, 'yieldCurve')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.yieldCurve)}`}>
+                                    YoY: {formatYoyChange(targetYoy.yieldCurve)}
+                                </div>
+                            )}
+                        </div>
+                        <div className={!selectedMetrics.has('realYield') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                Real 10Y {!selectedMetrics.has('realYield') && <span className="text-[10px]">(excl)</span>}
+                            </div>
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.realYield, targetValues.realYield, 'realYield')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.realYield)}`}>
+                                    YoY: {formatYoyChange(targetYoy.realYield)}
+                                </div>
+                            )}
+                        </div>
+                        <div className={!selectedMetrics.has('eyp5yr') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                EYP 5yr {!selectedMetrics.has('eyp5yr') && <span className="text-[10px]">(excl)</span>}
+                            </div>
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.eyp5yr, targetValues.eyp5yr, 'eyp5yr')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.eyp5yr)}`}>
+                                    YoY: {formatYoyChange(targetYoy.eyp5yr)}
+                                </div>
+                            )}
+                        </div>
+                        <div className={!selectedMetrics.has('rey5yr') ? 'opacity-40' : ''}>
+                            <div className="text-muted-foreground">
+                                Real EY {!selectedMetrics.has('rey5yr') && <span className="text-[10px]">(excl)</span>}
+                            </div>
+                            <div className="font-medium">{formatDisplayValue(targetPeriod.rey5yr, targetValues.rey5yr, 'rey5yr')}</div>
+                            {showPercentiles && (
+                                <div className={`text-[10px] ${getYoyColor(targetYoy.rey5yr)}`}>
+                                    YoY: {formatYoyChange(targetYoy.rey5yr)}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -620,111 +637,94 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                             </div>
                         </div>
 
-                        <div className="space-y-3">
-                            {/* Nominal Metrics */}
-                            <div>
-                                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                                    Nominal
+                        <div className="grid grid-cols-8 gap-2 text-xs">
+                            <div className={!selectedMetrics.has('cpi') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excl)</span>}
                                 </div>
-                                <div className="grid grid-cols-4 gap-2 text-xs">
-                                    <div className={!selectedMetrics.has('cpi') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.cpi, period.values.cpi, 'cpi')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.cpi)}`}>
-                                                YoY: {formatYoyChange(period.yoy.cpi)}
-                                            </div>
-                                        )}
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.cpi, period.values.cpi, 'cpi')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.cpi)}`}>
+                                        YoY: {formatYoyChange(period.yoy.cpi)}
                                     </div>
-                                    <div className={!selectedMetrics.has('treasury3M') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            3M {!selectedMetrics.has('treasury3M') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.treasury3M, period.values.treasury3M, 'treasury3M')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.treasury3M)}`}>
-                                                YoY: {formatYoyChange(period.yoy.treasury3M)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={!selectedMetrics.has('tnx') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            10Y {!selectedMetrics.has('tnx') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.tnx, period.values.tnx, 'tnx')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.tnx)}`}>
-                                                YoY: {formatYoyChange(period.yoy.tnx)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={!selectedMetrics.has('pe5yr') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            P/E 5yr {!selectedMetrics.has('pe5yr') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.pe5yr, period.values.pe5yr, 'pe5yr')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.pe5yr)}`}>
-                                                YoY: {formatYoyChange(period.yoy.pe5yr)}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                )}
                             </div>
-
-                            {/* Relative Metrics */}
-                            <div>
-                                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                                    Relative
+                            <div className={!selectedMetrics.has('treasury3M') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    3M {!selectedMetrics.has('treasury3M') && <span className="text-[10px]">(excl)</span>}
                                 </div>
-                                <div className="grid grid-cols-4 gap-2 text-xs">
-                                    <div className={!selectedMetrics.has('realYield') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            Real 10Y {!selectedMetrics.has('realYield') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.realYield, period.values.realYield, 'realYield')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.realYield)}`}>
-                                                YoY: {formatYoyChange(period.yoy.realYield)}
-                                            </div>
-                                        )}
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.treasury3M, period.values.treasury3M, 'treasury3M')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.treasury3M)}`}>
+                                        YoY: {formatYoyChange(period.yoy.treasury3M)}
                                     </div>
-                                    <div className={!selectedMetrics.has('yieldCurve') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            Curve {!selectedMetrics.has('yieldCurve') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.yieldCurve, period.values.yieldCurve, 'yieldCurve')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.yieldCurve)}`}>
-                                                YoY: {formatYoyChange(period.yoy.yieldCurve)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={!selectedMetrics.has('eyp5yr') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            EYP 5yr {!selectedMetrics.has('eyp5yr') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.eyp5yr, period.values.eyp5yr, 'eyp5yr')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.eyp5yr)}`}>
-                                                YoY: {formatYoyChange(period.yoy.eyp5yr)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={!selectedMetrics.has('rey5yr') ? 'opacity-40' : ''}>
-                                        <div className="text-muted-foreground">
-                                            Real EY {!selectedMetrics.has('rey5yr') && <span className="text-[10px]">(excluded)</span>}
-                                        </div>
-                                        <div className="font-medium">{formatDisplayValue(period.percentiles.rey5yr, period.values.rey5yr, 'rey5yr')}</div>
-                                        {showPercentiles && (
-                                            <div className={`text-[10px] ${getYoyColor(period.yoy.rey5yr)}`}>
-                                                YoY: {formatYoyChange(period.yoy.rey5yr)}
-                                            </div>
-                                        )}
-                                    </div>
+                                )}
+                            </div>
+                            <div className={!selectedMetrics.has('tnx') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    10Y {!selectedMetrics.has('tnx') && <span className="text-[10px]">(excl)</span>}
                                 </div>
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.tnx, period.values.tnx, 'tnx')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.tnx)}`}>
+                                        YoY: {formatYoyChange(period.yoy.tnx)}
+                                    </div>
+                                )}
+                            </div>
+                            <div className={!selectedMetrics.has('pe5yr') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    P/E 5yr {!selectedMetrics.has('pe5yr') && <span className="text-[10px]">(excl)</span>}
+                                </div>
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.pe5yr, period.values.pe5yr, 'pe5yr')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.pe5yr)}`}>
+                                        YoY: {formatYoyChange(period.yoy.pe5yr)}
+                                    </div>
+                                )}
+                            </div>
+                            <div className={!selectedMetrics.has('yieldCurve') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    Curve {!selectedMetrics.has('yieldCurve') && <span className="text-[10px]">(excl)</span>}
+                                </div>
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.yieldCurve, period.values.yieldCurve, 'yieldCurve')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.yieldCurve)}`}>
+                                        YoY: {formatYoyChange(period.yoy.yieldCurve)}
+                                    </div>
+                                )}
+                            </div>
+                            <div className={!selectedMetrics.has('realYield') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    Real 10Y {!selectedMetrics.has('realYield') && <span className="text-[10px]">(excl)</span>}
+                                </div>
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.realYield, period.values.realYield, 'realYield')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.realYield)}`}>
+                                        YoY: {formatYoyChange(period.yoy.realYield)}
+                                    </div>
+                                )}
+                            </div>
+                            <div className={!selectedMetrics.has('eyp5yr') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    EYP 5yr {!selectedMetrics.has('eyp5yr') && <span className="text-[10px]">(excl)</span>}
+                                </div>
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.eyp5yr, period.values.eyp5yr, 'eyp5yr')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.eyp5yr)}`}>
+                                        YoY: {formatYoyChange(period.yoy.eyp5yr)}
+                                    </div>
+                                )}
+                            </div>
+                            <div className={!selectedMetrics.has('rey5yr') ? 'opacity-40' : ''}>
+                                <div className="text-muted-foreground">
+                                    Real EY {!selectedMetrics.has('rey5yr') && <span className="text-[10px]">(excl)</span>}
+                                </div>
+                                <div className="font-medium">{formatDisplayValue(period.percentiles.rey5yr, period.values.rey5yr, 'rey5yr')}</div>
+                                {showPercentiles && (
+                                    <div className={`text-[10px] ${getYoyColor(period.yoy.rey5yr)}`}>
+                                        YoY: {formatYoyChange(period.yoy.rey5yr)}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

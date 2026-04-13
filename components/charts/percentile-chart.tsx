@@ -153,7 +153,8 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
     const getFilteredData = () => {
         if (data.length === 0) return [];
 
-        let filtered = [...data];
+        // Always enforce minimum date of Jan 1, 1950
+        let filtered = data.filter(d => d.date >= '1950-01-01');
 
         if (datePreset === 'all') {
             return filtered;
@@ -384,6 +385,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                                 <input
                                     type="date"
                                     value={customStartDate}
+                                    min="1950-01-01"
                                     onChange={(e) => setCustomStartDate(e.target.value)}
                                     className="w-full px-3 py-2 rounded-lg bg-background text-foreground border-2 border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                                 />

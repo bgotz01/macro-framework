@@ -6,6 +6,21 @@ import fs from 'fs';
 
 export async function GET(request: NextRequest) {
     try {
+        // Check if required tables exist — return empty if not (e.g. macro-framework DB)
+        const tableCheck = await prisma.$queryRaw<{ exists: boolean }[]>`
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'sp500_constituents'
+            ) as exists
+        `;
+        if (!tableCheck[0]?.exists) {
+            return NextResponse.json({
+                stocks: [],
+                pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+                filters: { sectors: [], sectorSubIndustryMap: {} },
+                stats: null,
+            });
+        }
         const searchParams = request.nextUrl.searchParams;
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '50');

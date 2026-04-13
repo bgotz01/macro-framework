@@ -50,25 +50,25 @@ const sidebarData: SidebarCategory[] = [
         category: 'Markets',
         items: [
             {
-                title: 'Chart',
+                title: 'Charts',
                 href: '/chart',
                 children: [
                     { title: 'All Charts', href: '/chart' },
-                    { title: 'Percentile Analysis', href: '/chart/percentile' },
+                    { title: 'Percentile Chart', href: '/chart/percentile' },
                     { title: 'Data Explorer', href: '/chart/data' },
                 ],
             },
 
 
 
-            {
-                title: 'S&P 500',
-                href: '/sp500',
-                children: [
-                    { title: 'Constituents', href: '/sp500/constituents' },
-                    { title: 'Returns', href: '/sp500/returns' },
-                ],
-            },
+            // {
+            //     title: 'S&P 500',
+            //     href: '/sp500',
+            //     children: [
+            //         { title: 'Constituents', href: '/sp500/constituents' },
+            //         { title: 'Returns', href: '/sp500/returns' },
+            //     ],
+            // },
 
             {
                 title: 'Markets',
@@ -78,7 +78,7 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'US Annual Returns', href: '/markets/us-annual-returns' },
                     { title: 'Annual Filter', href: '/markets/annual-filter' },
 
-                    { title: 'FAANG', href: '/markets/faang' },
+
                     { title: 'Crude Oil', href: '/markets/crude-oil' },
                 ],
             },
@@ -86,10 +86,10 @@ const sidebarData: SidebarCategory[] = [
                 title: 'Hedge Funds',
                 href: '/hedge-funds',
             },
-            {
-                title: 'CFTC',
-                href: '/cftc',
-            },
+            // {
+            //     title: 'CFTC',
+            //     href: '/cftc',
+            // },
 
         ],
     },

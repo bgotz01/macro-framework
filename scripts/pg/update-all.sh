@@ -33,6 +33,10 @@ echo "Step 6/9: Recalculating percentiles..."
 npx tsx scripts/pg/calculate-percentiles.ts
 
 echo ""
+echo "Step 6b: Calculating YoY percentile changes..."
+npx tsx scripts/pg/calculate-yoy-percentile-change.ts
+
+echo ""
 echo "Step 6/9: Importing economic data..."
 npx tsx scripts/pg/import-economic-data.ts
 

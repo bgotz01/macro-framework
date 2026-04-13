@@ -45,7 +45,7 @@ async function processPercentiles(assetClass: string, seriesName: string, column
 
     const rows = newData.map(d => {
         const rank = sortedValues.filter(v => v < d.value!).length;
-        const percentile_rank = total > 1 ? (rank / (total - 1)) * 100 : 0;
+        const percentile_rank = total > 1 ? Math.round((rank / (total - 1)) * 10000) / 100 : 0;
         return { date: d.date, asset_class: assetClass, series_name: seriesName, column_name: columnName, value: d.value, percentile_rank };
     });
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface RegimeInfo {
     id: string;
@@ -11,6 +12,7 @@ interface RegimeInfo {
     entry: string;
     exit: string;
     guidance: string;
+    chartSrc?: string;
 }
 
 const REGIMES: RegimeInfo[] = [
@@ -23,6 +25,7 @@ const REGIMES: RegimeInfo[] = [
         entry: 'Real M2 ≥ 10%',
         exit: 'Real M2 < 8%',
         guidance: 'Massive liquidity injection — speculative assets thrive. Risk assets broadly outperform as capital seeks yield.',
+        chartSrc: '/regime-guide/charts/Liquidity-Shock.png',
     },
     {
         id: 'crisis',
@@ -33,6 +36,7 @@ const REGIMES: RegimeInfo[] = [
         entry: 'Real 10Y < -1% AND Real M2 < 5%',
         exit: 'Real 10Y ≥ 0.5% OR Real M2 ≥ 7%',
         guidance: 'Real rates negative but money tight — defensive positioning critical. Gold and short-duration assets preferred.',
+        chartSrc: '/regime-guide/charts/Crisis.png',
     },
     {
         id: 'bond-stress',
@@ -53,6 +57,7 @@ const REGIMES: RegimeInfo[] = [
         entry: 'EYP < -2.5% OR REY < -0.5%',
         exit: 'EYP > 0% AND REY > 0.5%',
         guidance: 'Rotate away from equities: favor bonds if Real 10Y > 0%, favor gold if Real 10Y < 0%.',
+        chartSrc: '/regime-guide/charts/Overvaluation.png',
     },
     {
         id: 'long-duration',
@@ -63,6 +68,7 @@ const REGIMES: RegimeInfo[] = [
         entry: 'EYP ≤ 0% AND Real 10Y ≥ 1% AND REY > 0%',
         exit: 'EYP ≥ 0% OR EYP ≤ -2.5% OR REY < -0.5%',
         guidance: 'Negative equity yield premium — investors buying duration and growth. Long-duration bonds and growth equities outperform.',
+        chartSrc: '/regime-guide/charts/Long-duration.png',
     },
     {
         id: 'broad-growth',
@@ -73,6 +79,7 @@ const REGIMES: RegimeInfo[] = [
         entry: 'REY > 3%',
         exit: 'REY < 1%',
         guidance: 'Earnings growing faster than inflation — lean into quality growth and broad equity exposure.',
+        chartSrc: '/regime-guide/charts/Broad-growth.png',
     },
     {
         id: 'normal',
@@ -187,8 +194,8 @@ export default function RegimeGuideClient() {
                         <h2 className="text-2xl font-bold mb-4">Key Metrics</h2>
                         <div className="p-6 rounded-2xl border border-blue-500/30 bg-blue-500/5 space-y-3">
                             {[
-                                { abbr: 'REY', full: 'Real Earnings Yield', def: 'S&P 500 earnings yield minus inflation — measures real equity returns' },
-                                { abbr: 'EYP', full: 'Equity Yield Premium', def: 'Equity earnings yield minus 10Y Treasury — equity yield premium over bonds' },
+                                { abbr: 'REY', full: 'Real Earnings Yield', def: 'S&P 500 earnings yield minus inflation — measures real equity returns. Uses trailing 5-year EPS.' },
+                                { abbr: 'EYP', full: 'Equity Yield Premium', def: 'Equity earnings yield minus 10Y Treasury — equity yield premium over bonds. Uses trailing 5-year EPS.' },
                                 { abbr: 'Real 10Y', full: '10Y Real Rate', def: '10Y Treasury yield minus inflation — real bond returns' },
                                 { abbr: 'Real 3M', full: '3M Real Rate', def: '3M Treasury yield minus inflation — short-end real rate' },
                                 { abbr: 'Real M2', full: 'Real M2 Growth', def: 'M2 money supply growth minus inflation — real liquidity growth' },
@@ -231,10 +238,18 @@ export default function RegimeGuideClient() {
                                         <p className="text-sm">{regime.guidance}</p>
                                     </div>
 
-                                    {/* Chart placeholder — drop charts here */}
-                                    <div className="h-48 rounded-xl border-2 border-dashed border-border/40 flex items-center justify-center text-muted-foreground/40 text-sm">
-                                        Chart coming soon
-                                    </div>
+                                    {/* Chart */}
+                                    {regime.chartSrc && (
+                                        <div className="rounded-xl overflow-hidden border border-border/40">
+                                            <Image
+                                                src={regime.chartSrc}
+                                                alt={`${regime.name} chart`}
+                                                width={900}
+                                                height={400}
+                                                className="w-full h-auto"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </section>

@@ -7,11 +7,11 @@ import { ThemeToggle } from './theme-toggle';
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navItems = [
-        { href: '/macro-data', label: 'Macro Data' },
+        { href: '/cockpit', label: 'Cockpit' },
         { href: '/chart', label: 'Charts' },
-        { href: '/sp500', label: 'S&P 500' },
-        { href: '/framework', label: 'Framework' },
-        { href: '/insights/mechanics', label: 'Mechanics' }
+
+        { href: '/regime-active', label: 'Regime' },
+
     ];
 
     return (
@@ -22,16 +22,16 @@ export default function Navbar() {
                     <Link href="/" className="flex items-center space-x-3 group">
                         <div className="relative">
                             <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-elegant group-hover:shadow-xl transition-all duration-300">
-                                <span className="text-primary-foreground font-bold text-xl">P</span>
+                                <span className="text-primary-foreground font-bold text-xl">CP</span>
                             </div>
                             <div className="absolute inset-0 rounded-xl gradient-primary opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300"></div>
                         </div>
                         <div className="flex flex-col">
                             <span className="font-bold text-xl tracking-tight text-foreground group-hover:text-primary transition-colors duration-200">
-                                Power Law
+                                Capital Physics
                             </span>
                             <span className="text-xs text-muted-foreground font-medium tracking-wide">
-                                Economic Analysis
+                                Regime Detection
                             </span>
                         </div>
                     </Link>

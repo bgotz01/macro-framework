@@ -88,15 +88,15 @@ export default function PeriodComparison() {
             }
         }
         fetchLatest();
-    });
+    }, []);
 
     // Recalculate similarity when yoyWeight or selectedMetrics change
-    useState(() => {
+    useEffect(() => {
         if (values && latestValues) {
             const score = calculateSimilarity(latestValues, values, yoyWeight, selectedMetrics);
             setSimilarityScore(score);
         }
-    });
+    }, [yoyWeight, selectedMetrics, values, latestValues]);
 
     const toggleMetric = (metric: string) => {
         const newMetrics = new Set(selectedMetrics);

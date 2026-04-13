@@ -15,7 +15,7 @@ export default function SimilarPeriodsPage() {
                         Historical Period Analysis
                     </h1>
                     <p className="text-muted-foreground">
-                        Compare current conditions with historical periods and analyze macro similarities
+                        Compare current conditions with historical periods using percentiles and analyze macro similarities
                     </p>
                 </div>
 

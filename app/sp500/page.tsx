@@ -65,8 +65,8 @@ export default function SP500StocksPage() {
 
             const res = await fetch(`/api/sp500-stocks?${params}`);
             const data = await res.json();
-            setStocks(data.stocks);
-            setPagination(data.pagination);
+            setStocks(data.stocks ?? []);
+            setPagination(data.pagination ?? pagination);
             if (data.filters) {
                 setSectors(data.filters.sectors);
                 setSectorSubIndustryMap(data.filters.sectorSubIndustryMap);

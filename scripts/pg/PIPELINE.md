@@ -44,6 +44,7 @@ After manual entry, run:
 npx tsx scripts/pg/calculate-pe5yr.ts
 npx tsx scripts/pg/calculate-derived-series.ts
 npx tsx scripts/pg/calculate-percentiles.ts
+npx tsx scripts/pg/calculate-yoy-percentile-change.ts
 ```
 
 ---
