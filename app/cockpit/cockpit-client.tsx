@@ -203,10 +203,10 @@ function LiveSnapshot() {
     const row = (label: string, value: number | null, date: string | null, unit = '%', decimals = 2, color?: string) => (
         <div className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
             <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">{label}</span>
-                <span className="text-[10px] text-muted-foreground/50 font-mono">{fmtDate(date)}</span>
+                <span className="text-xs text-foreground/80">{label}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">{fmtDate(date)}</span>
             </div>
-            <span className={`text-xs font-mono font-medium ${color ?? ''}`}>
+            <span className={`text-xs font-mono font-medium ${color ?? 'text-foreground'}`}>
                 {value !== null ? `${value.toFixed(decimals)}${unit}` : '—'}
             </span>
         </div>
@@ -228,8 +228,8 @@ function LiveSnapshot() {
     const editRow = (label: string, date: string | null, value: string, onChange: (v: string) => void) => (
         <div className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
             <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">{label}</span>
-                <span className="text-[10px] text-muted-foreground/50 font-mono">{fmtDate(date)}</span>
+                <span className="text-xs text-foreground/80">{label}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">{fmtDate(date)}</span>
             </div>
             <input
                 type="number" step="0.1" value={value}

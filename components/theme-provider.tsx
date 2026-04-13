@@ -34,9 +34,10 @@ export function ThemeProvider({
     useEffect(() => {
         setMounted(true);
         const stored = localStorage?.getItem(storageKey) as Theme;
-        if (stored) {
+        if (stored === 'dark' || stored === 'system') {
             setTheme(stored);
         }
+        // If stored is 'light' or missing, use defaultTheme
     }, [storageKey]);
 
     useEffect(() => {

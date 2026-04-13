@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider
-          defaultTheme="system"
+          defaultTheme="dark"
           storageKey="macro-framework-theme"
         >
           <LayoutWrapper>

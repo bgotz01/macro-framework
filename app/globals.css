@@ -429,3 +429,67 @@ html {
   overflow-x: auto;
   font-size: 0.8em;
 }
+
+/* ─── Table utilities ──────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Wrapper: rounded border, shadow, overflow clip */
+  .table-wrap {
+    @apply overflow-x-auto rounded-xl border border-border shadow-sm;
+  }
+
+  /* The <table> element itself */
+  .data-table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  /* <thead> row */
+  .table-head-row {
+    @apply bg-muted/50 border-b border-border;
+  }
+
+  /* <th> variants — each fully self-contained, no cross-@apply */
+  .table-th-left {
+    @apply px-4 py-3 text-xs font-medium uppercase tracking-widest text-muted-foreground text-left border-r border-border;
+  }
+
+  .table-th-center {
+    @apply px-4 py-3 text-xs font-medium uppercase tracking-widest text-muted-foreground text-center border-r border-border;
+  }
+
+  .table-th-last {
+    @apply px-4 py-3 text-xs font-medium uppercase tracking-widest text-muted-foreground text-center;
+  }
+
+  /* Sub-label inside a th (formula hints, units) */
+  .table-th-sub {
+    @apply text-[10px] font-normal normal-case tracking-normal opacity-60 mt-0.5;
+  }
+
+  /* Body rows */
+  .table-row-even {
+    @apply bg-background hover:bg-muted/50 transition-colors;
+  }
+
+  .table-row-odd {
+    @apply bg-muted/30 hover:bg-muted/50 transition-colors;
+  }
+
+  /* Highlighted row (e.g. "Latest" / "Current") */
+  .table-row-highlight {
+    @apply bg-primary/5 border-t-2 border-primary/30 hover:bg-muted/50 transition-colors;
+  }
+
+  /* <td> variants — each fully self-contained */
+  .table-td-label {
+    @apply px-4 py-3 border-t border-border align-middle font-semibold text-foreground whitespace-nowrap;
+  }
+
+  .table-td-muted {
+    @apply px-4 py-3 border-t border-border align-middle text-muted-foreground tabular-nums;
+  }
+
+  .table-td-center {
+    @apply px-4 py-3 border-t border-border align-middle text-center;
+  }
+}

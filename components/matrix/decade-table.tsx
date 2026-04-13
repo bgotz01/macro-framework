@@ -15,28 +15,93 @@ interface DecadeTableProps {
     };
 }
 
+function MetricCell({
+    level,
+    levelColor,
+    value,
+    percentile,
+}: {
+    level: string;
+    levelColor: string;
+    value: string;
+    percentile: number | null;
+}) {
+    return (
+        <div className="flex flex-col items-center gap-1.5 py-0.5">
+            <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-semibold tracking-wide ${levelColor}`}>
+                {level}
+            </span>
+            <span className="text-sm font-mono tabular-nums text-foreground">{value}</span>
+            {percentile !== null && (
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {percentile.toFixed(0)}th pct
+                </span>
+            )}
+        </div>
+    );
+}
+
+function OutlierCell({
+    metric,
+    value,
+    percentile,
+}: {
+    metric: string | undefined;
+    value: string;
+    percentile: number | null;
+}) {
+    if (!metric) return <span className="text-muted-foreground">—</span>;
+    return (
+        <div className="flex flex-col items-center gap-1.5 py-0.5">
+            <span className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">{metric}</span>
+            <span className="text-sm font-mono tabular-nums text-foreground">{value}</span>
+            {percentile !== null && (
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {percentile.toFixed(0)}th pct
+                </span>
+            )}
+        </div>
+    );
+}
+
 export function DecadeTable({ data, getLevelColor, getLevel, levels }: DecadeTableProps) {
     return (
-        <div className="overflow-x-auto rounded-2xl border border-border shadow-lg">
-            <table className="w-full border-collapse">
+        <div className="table-wrap">
+            <table className="data-table">
                 <thead>
-                    <tr className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                        <th className="border border-border p-4 text-left font-bold">Decade</th>
-                        <th className="border border-border p-4 text-left font-bold">Year</th>
-                        <th className="border border-border p-4 text-center font-bold bg-purple-50 dark:bg-purple-950/30">Outlier 1</th>
-                        <th className="border border-border p-4 text-center font-bold bg-indigo-50 dark:bg-indigo-950/30">Outlier 2</th>
-                        <th className="border border-border p-4 text-center font-bold">Inflation</th>
-                        <th className="border border-border p-4 text-center font-bold">Fed Funds</th>
-                        <th className="border border-border p-4 text-center font-bold">10Y Bond Yield</th>
-                        <th className="border border-border p-4 text-center font-bold">Real 10Y Yield</th>
-                        <th className="border border-border p-4 text-center font-bold">Yield Curve<br /><span className="text-xs font-normal">(10Y - 3M)</span></th>
-                        <th className="border border-border p-4 text-center font-bold">P/E 5yr</th>
-                        <th className="border border-border p-4 text-center font-bold">EY Premium 5yr<br /><span className="text-xs font-normal">(1/PE5yr - 3M)</span></th>
-                        <th className="border border-border p-4 text-center font-bold">Real EY 5yr<br /><span className="text-xs font-normal">(EY5yr - CPI)</span></th>
+                    <tr className="table-head-row">
+                        <th className="table-th-left">Decade</th>
+                        <th className="table-th-left">Year</th>
+                        <th className="table-th-center">Outlier 1</th>
+                        <th className="table-th-center">Outlier 2</th>
+                        <th className="table-th-center">Inflation</th>
+                        <th className="table-th-center">Fed Funds</th>
+                        <th className="table-th-center">10Y Yield</th>
+                        <th className="table-th-center">Real 10Y</th>
+                        <th className="table-th-center">
+                            Yield Curve
+                            <div className="table-th-sub">10Y − 3M</div>
+                        </th>
+                        <th className="table-th-center">P/E 5yr</th>
+                        <th className="table-th-center">
+                            EY Premium 5yr
+                            <div className="table-th-sub">1/PE5yr − 3M</div>
+                        </th>
+                        <th className="table-th-last">
+                            Real EY 5yr
+                            <div className="table-th-sub">EY5yr − CPI</div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((row) => {
+                    {data.map((row, i) => {
+                        const isLatest = row.decade === 'Latest';
+                        const rowClass = isLatest
+                            ? 'table-row-highlight'
+                            : i % 2 === 0
+                                ? 'table-row-even'
+                                : 'table-row-odd';
+
                         const inflationLevel = getLevel(row.inflation, levels.inflation);
                         const bondYieldLevel = getLevel(row.bondYield, levels.bondYieldsNominal);
                         const realYieldLevel = getLevel(row.realYield, levels.bondYieldsReal);
@@ -47,144 +112,70 @@ export function DecadeTable({ data, getLevelColor, getLevel, levels }: DecadeTab
                         const realEarningsYield5yrLevel = getLevel(row.realEarningsYield5yr, levels.earningsYield);
 
                         return (
-                            <tr key={row.decade} className={`transition-colors ${row.decade === 'Latest' ? 'bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50 border-t-2 border-blue-300 dark:border-blue-700' : 'hover:bg-muted/30'}`}>
-                                <td className="border border-border p-4 font-bold text-lg">{row.decade}</td>
-                                <td className="border border-border p-4 text-sm text-muted-foreground">
-                                    {row.date === 'latest' ? 'Current' : row.date.split('-')[0]}
+                            <tr key={row.decade} className={rowClass}>
+                                <td className="table-td-label">{row.decade}</td>
+                                <td className="table-td-muted">
+                                    {row.date === 'latest' ? 'Now' : row.date.split('-')[0]}
                                 </td>
-                                <td className="border border-border p-4 bg-purple-50 dark:bg-purple-950/30">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="text-xs font-bold text-purple-700 dark:text-purple-300">
-                                            {row.outlier1?.metric || '-'}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.outlier1 && row.outlier1.value !== null && row.outlier1.value !== undefined
-                                                ? `${row.outlier1.value.toFixed(1)}${row.outlier1.metric.includes('P/E') ? 'x' : '%'}`
-                                                : '-'}
-                                        </div>
-                                        <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">
-                                            {row.outlier1 && row.outlier1.percentile !== null ? `Pct: ${row.outlier1.percentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <OutlierCell
+                                        metric={row.outlier1?.metric}
+                                        value={row.outlier1 && row.outlier1.value !== null
+                                            ? `${row.outlier1.value.toFixed(1)}${row.outlier1.metric.includes('P/E') ? 'x' : '%'}`
+                                            : '—'}
+                                        percentile={row.outlier1?.percentile ?? null}
+                                    />
                                 </td>
-                                <td className="border border-border p-4 bg-indigo-50 dark:bg-indigo-950/30">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                                            {row.outlier2?.metric || '-'}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.outlier2 && row.outlier2.value !== null && row.outlier2.value !== undefined
-                                                ? `${row.outlier2.value.toFixed(1)}${row.outlier2.metric.includes('P/E') ? 'x' : '%'}`
-                                                : '-'}
-                                        </div>
-                                        <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                                            {row.outlier2 && row.outlier2.percentile !== null ? `Pct: ${row.outlier2.percentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <OutlierCell
+                                        metric={row.outlier2?.metric}
+                                        value={row.outlier2 && row.outlier2.value !== null
+                                            ? `${row.outlier2.value.toFixed(1)}${row.outlier2.metric.includes('P/E') ? 'x' : '%'}`
+                                            : '—'}
+                                        percentile={row.outlier2?.percentile ?? null}
+                                    />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(inflationLevel)}`}>
-                                            {inflationLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.inflation !== null ? `${row.inflation.toFixed(1)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.inflationPercentile !== null ? `Pct: ${row.inflationPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={inflationLevel} levelColor={getLevelColor(inflationLevel)}
+                                        value={row.inflation !== null ? `${row.inflation.toFixed(1)}%` : '—'}
+                                        percentile={row.inflationPercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(fedFundsLevel)}`}>
-                                            {fedFundsLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.fedFundsPercentile !== null ? `Pct: ${row.fedFundsPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={fedFundsLevel} levelColor={getLevelColor(fedFundsLevel)}
+                                        value={row.fedFunds !== null ? `${row.fedFunds.toFixed(1)}%` : '—'}
+                                        percentile={row.fedFundsPercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(bondYieldLevel)}`}>
-                                            {bondYieldLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.bondYield !== null ? `${row.bondYield.toFixed(1)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.bondYieldPercentile !== null ? `Pct: ${row.bondYieldPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={bondYieldLevel} levelColor={getLevelColor(bondYieldLevel)}
+                                        value={row.bondYield !== null ? `${row.bondYield.toFixed(1)}%` : '—'}
+                                        percentile={row.bondYieldPercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(realYieldLevel)}`}>
-                                            {realYieldLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.realYield !== null ? `${row.realYield.toFixed(1)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.realYieldPercentile !== null ? `Pct: ${row.realYieldPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={realYieldLevel} levelColor={getLevelColor(realYieldLevel)}
+                                        value={row.realYield !== null ? `${row.realYield.toFixed(1)}%` : '—'}
+                                        percentile={row.realYieldPercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(yieldCurveLevel)}`}>
-                                            {yieldCurveLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.yieldCurve !== null ? `${row.yieldCurve > 0 ? '+' : ''}${row.yieldCurve.toFixed(2)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.yieldCurvePercentile !== null ? `Pct: ${row.yieldCurvePercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={yieldCurveLevel} levelColor={getLevelColor(yieldCurveLevel)}
+                                        value={row.yieldCurve !== null
+                                            ? `${row.yieldCurve > 0 ? '+' : ''}${row.yieldCurve.toFixed(2)}%`
+                                            : '—'}
+                                        percentile={row.yieldCurvePercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(equityPE5yrLevel)}`}>
-                                            {equityPE5yrLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.equityPE5yr !== null ? `${row.equityPE5yr.toFixed(1)}x` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.equityPE5yrPercentile !== null ? `Pct: ${row.equityPE5yrPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={equityPE5yrLevel} levelColor={getLevelColor(equityPE5yrLevel)}
+                                        value={row.equityPE5yr !== null ? `${row.equityPE5yr.toFixed(1)}x` : '—'}
+                                        percentile={row.equityPE5yrPercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(earningsYieldPremium5yrLevel)}`}>
-                                            {earningsYieldPremium5yrLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.earningsYieldPremium5yr !== null ? `${row.earningsYieldPremium5yr.toFixed(2)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.earningsYieldPremium5yrPercentile !== null ? `Pct: ${row.earningsYieldPremium5yrPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={earningsYieldPremium5yrLevel} levelColor={getLevelColor(earningsYieldPremium5yrLevel)}
+                                        value={row.earningsYieldPremium5yr !== null ? `${row.earningsYieldPremium5yr.toFixed(2)}%` : '—'}
+                                        percentile={row.earningsYieldPremium5yrPercentile} />
                                 </td>
-                                <td className="border border-border p-4">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <div className={`px-3 py-1 rounded-lg font-bold text-sm ${getLevelColor(realEarningsYield5yrLevel)}`}>
-                                            {realEarningsYield5yrLevel}
-                                        </div>
-                                        <div className="text-sm font-mono">
-                                            {row.realEarningsYield5yr !== null ? `${row.realEarningsYield5yr.toFixed(2)}%` : '-'}
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {row.realEarningsYield5yrPercentile !== null ? `Pct: ${row.realEarningsYield5yrPercentile.toFixed(0)}%` : ''}
-                                        </div>
-                                    </div>
+                                <td className="table-td-center">
+                                    <MetricCell level={realEarningsYield5yrLevel} levelColor={getLevelColor(realEarningsYield5yrLevel)}
+                                        value={row.realEarningsYield5yr !== null ? `${row.realEarningsYield5yr.toFixed(2)}%` : '—'}
+                                        percentile={row.realEarningsYield5yrPercentile} />
                                 </td>
                             </tr>
                         );

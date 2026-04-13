@@ -29,12 +29,15 @@ const INDICES = [
     { series: 'GDAXI', label: 'DAX', region: 'Europe' },
 ];
 
+function subtractYears(dateStr: string, years: number): string {
+    const [y, m, d] = dateStr.split('-');
+    return `${String(Number(y) - years).padStart(4, '0')}-${m}-${d}`;
+}
+
 function calcReturn(prices: { date: string; value: number }[], yearsBack: number): number | null {
     if (prices.length === 0) return null;
     const latest = prices[prices.length - 1];
-    const targetDate = new Date(latest.date);
-    targetDate.setFullYear(targetDate.getFullYear() - yearsBack);
-    const targetStr = targetDate.toISOString().split('T')[0];
+    const targetStr = subtractYears(latest.date, yearsBack);
 
     let past: { date: string; value: number } | null = null;
     for (let i = prices.length - 1; i >= 0; i--) {
@@ -48,8 +51,8 @@ function calcReturn(prices: { date: string; value: number }[], yearsBack: number
 }
 
 async function fetchRows(assetClass: string, series: string) {
-    return prisma.$queryRaw<{ date: string; value: number }[]>`
-        SELECT date::text as date, value
+    const rows = await prisma.$queryRaw<{ date: string; value: number }[]>`
+        SELECT date::text as date, value::float8 as value
         FROM macro_time_series
         WHERE asset_class = ${assetClass}
           AND series_name = ${series}
@@ -57,6 +60,8 @@ async function fetchRows(assetClass: string, series: string) {
           AND date::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
         ORDER BY date ASC
     `;
+    // Ensure value is a plain JS number (Prisma $queryRaw can return Decimal objects)
+    return rows.map(r => ({ date: r.date, value: Number(r.value) }));
 }
 
 async function toRow(assetClass: string, { series, label, region }: { series: string; label: string; region: string }) {
@@ -73,12 +78,23 @@ async function toRow(assetClass: string, { series, label, region }: { series: st
     };
 }
 
-export async function GET() {
-    const [equities, fx, commodities] = await Promise.all([
-        Promise.all(INDICES.map(i => toRow('equities', i))),
-        Promise.all(FX.map(i => toRow('fx', i))),
-        Promise.all(COMMODITIES.map(i => toRow('commodities', i))),
-    ]);
+async function mapSequential<T, R>(items: T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+    const results: R[] = [];
+    for (const item of items) {
+        results.push(await fn(item));
+    }
+    return results;
+}
 
-    return NextResponse.json({ equities, fx, commodities });
+export async function GET() {
+    try {
+        const equities = await mapSequential(INDICES, i => toRow('equities', i));
+        const fx = await mapSequential(FX, i => toRow('fx', i));
+        const commodities = await mapSequential(COMMODITIES, i => toRow('commodities', i));
+
+        return NextResponse.json({ equities, fx, commodities });
+    } catch (err) {
+        console.error('[cockpit-returns] error:', err);
+        return NextResponse.json({ error: String(err) }, { status: 500 });
+    }
 }

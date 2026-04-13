@@ -126,10 +126,11 @@ export default function EquitiesChart({
                 }));
                 setAvailableSeries(seriesWithNames);
 
-                // Auto-select S&P 500 (US/GSPC) if available, otherwise first series
+                // Auto-select S&P 500 for equities, Gold for commodities, otherwise first series
                 if (seriesWithNames.length > 0) {
                     const sp500 = seriesWithNames.find((s: SeriesInfo) => s.series_name === 'US/GSPC');
-                    const selected = sp500 || seriesWithNames[0];
+                    const gold = seriesWithNames.find((s: SeriesInfo) => s.series_name === 'GC=F');
+                    const selected = sp500 || gold || seriesWithNames[0];
                     setSelectedSeries(selected.series_name);
                     setSelectedUnits(selected.units);
                     setSelectedCurrency(selected.currency);

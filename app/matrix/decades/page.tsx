@@ -97,6 +97,71 @@ async function getPercentileAtDate(assetClass: string, seriesName: string, targe
     }
 }
 
+async function buildRowData(decade: string, date: string): Promise<DecadeData> {
+    const [
+        cpi, tenYear, pe5yr, fedFunds,
+        realYield, yieldCurve, earningsYieldPremium5yr,
+        cpiPct, tenYearPct, pe5yrPct, fedFundsPct,
+        realYieldPct, yieldCurvePct, eyp5yrPct, rey5yrPct,
+    ] = await Promise.all([
+        // Raw values — use monthly series so dates align with derived series
+        getValueAtDate('economic', 'CPI', date),
+        getValueAtDate('bonds', 'US/TNX-Monthly', date),
+        getValueAtDate('valuations', 'PE-5yr', date),
+        getValueAtDate('economic', 'US/FEDFUNDS', date),
+        // Derived values — pull directly from pre-computed series
+        getValueAtDate('derived', 'Real-10Y', date),
+        getValueAtDate('derived', 'Yield-Curve-10Y-3M', date),
+        getValueAtDate('derived', 'Earnings-Yield-Premium-5yr', date),
+        // Percentiles
+        getPercentileAtDate('economic', 'CPI', date),
+        getPercentileAtDate('bonds', 'US/TNX-Monthly', date),
+        getPercentileAtDate('valuations', 'PE-5yr', date),
+        getPercentileAtDate('economic', 'US/FEDFUNDS', date),
+        getPercentileAtDate('derived', 'Real-10Y', date),
+        getPercentileAtDate('derived', 'Yield-Curve-10Y-3M', date),
+        getPercentileAtDate('derived', 'Earnings-Yield-Premium-5yr', date),
+        getPercentileAtDate('derived', 'Real-Earnings-Yield-5yr', date),
+    ]);
+
+    const earningsYield5yr = pe5yr !== null && pe5yr > 0 ? (100 / pe5yr) : null;
+    const realEarningsYield5yr = earningsYield5yr !== null && cpi !== null ? earningsYield5yr - cpi : null;
+
+    const outliers = calculateOutliers([
+        { metric: 'Inflation', value: cpi, percentile: cpiPct },
+        { metric: 'Fed Funds', value: fedFunds, percentile: fedFundsPct },
+        { metric: '10Y Yield', value: tenYear, percentile: tenYearPct },
+        { metric: 'Real 10Y', value: realYield, percentile: realYieldPct },
+        { metric: 'Yield Curve', value: yieldCurve, percentile: yieldCurvePct },
+        { metric: 'P/E 5yr', value: pe5yr, percentile: pe5yrPct },
+        { metric: 'EYP 5yr', value: earningsYieldPremium5yr, percentile: eyp5yrPct },
+        { metric: 'Real EY 5yr', value: realEarningsYield5yr, percentile: rey5yrPct },
+    ]);
+
+    return {
+        decade,
+        date,
+        inflation: cpi,
+        bondYield: tenYear,
+        realYield,
+        yieldCurve,
+        equityPE5yr: pe5yr,
+        earningsYieldPremium5yr,
+        realEarningsYield5yr,
+        fedFunds,
+        inflationPercentile: cpiPct,
+        bondYieldPercentile: tenYearPct,
+        realYieldPercentile: realYieldPct,
+        yieldCurvePercentile: yieldCurvePct,
+        equityPE5yrPercentile: pe5yrPct,
+        earningsYieldPremium5yrPercentile: eyp5yrPct,
+        realEarningsYield5yrPercentile: rey5yrPct,
+        fedFundsPercentile: fedFundsPct,
+        outlier1: outliers.outlier1,
+        outlier2: outliers.outlier2,
+    };
+}
+
 async function getDecadeData(): Promise<DecadeData[]> {
     const decades = [
         { decade: '1960s (mid)', date: '1964-12-31' },
@@ -112,76 +177,10 @@ async function getDecadeData(): Promise<DecadeData[]> {
         { decade: '2010s (mid)', date: '2014-12-31' },
         { decade: '2010s', date: '2019-12-31' },
         { decade: '2020s (mid)', date: '2024-12-31' },
-        { decade: 'Latest', date: 'latest' }, // Most recent data
+        { decade: 'Latest', date: 'latest' },
     ];
 
-    const data: DecadeData[] = [];
-
-    for (const { decade, date } of decades) {
-        const [cpi, tenYear, threeMonth, pe5yr, fedFunds, cpiPct, tenYearPct, threeMonthPct, pe5yrPct, fedFundsPct] = await Promise.all([
-            getValueAtDate('economic', 'CPI', date),
-            getValueAtDate('bonds', 'US/TNX', date),
-            getValueAtDate('bonds', 'US/IRX', date),
-            getValueAtDate('valuations', 'PE-5yr', date),
-            getValueAtDate('economic', 'US/FEDFUNDS', date),
-            getPercentileAtDate('economic', 'CPI', date),
-            getPercentileAtDate('bonds', 'US/TNX-Monthly', date),
-            getPercentileAtDate('bonds', 'US/IRX-Monthly', date),
-            getPercentileAtDate('valuations', 'PE-5yr', date),
-            getPercentileAtDate('economic', 'US/FEDFUNDS', date),
-        ]);
-
-        const realYield = tenYear !== null && cpi !== null ? tenYear - cpi : null;
-        const yieldCurve = tenYear !== null && threeMonth !== null ? tenYear - threeMonth : null;
-        const earningsYield5yr = pe5yr !== null && pe5yr > 0 ? (100 / pe5yr) : null;
-        const earningsYieldPremium5yr = earningsYield5yr !== null && threeMonth !== null ? earningsYield5yr - threeMonth : null;
-        const realEarningsYield5yr = earningsYield5yr !== null && cpi !== null ? earningsYield5yr - cpi : null;
-
-        // Fetch percentiles for derived metrics
-        const [realYieldPct, yieldCurvePct, eyp5yrPct, rey5yrPct] = await Promise.all([
-            getPercentileAtDate('derived', 'Real-10Y', date),
-            getPercentileAtDate('derived', 'Yield-Curve-10Y-3M', date),
-            getPercentileAtDate('derived', 'Earnings-Yield-Premium-5yr', date),
-            getPercentileAtDate('derived', 'Real-Earnings-Yield-5yr', date),
-        ]);
-
-        // Calculate outliers
-        const outliers = calculateOutliers([
-            { metric: 'Inflation', value: cpi, percentile: cpiPct },
-            { metric: 'Fed Funds', value: fedFunds, percentile: fedFundsPct },
-            { metric: '10Y Yield', value: tenYear, percentile: tenYearPct },
-            { metric: 'Real 10Y', value: realYield, percentile: realYieldPct },
-            { metric: 'Yield Curve', value: yieldCurve, percentile: yieldCurvePct },
-            { metric: 'P/E 5yr', value: pe5yr, percentile: pe5yrPct },
-            { metric: 'EYP 5yr', value: earningsYieldPremium5yr, percentile: eyp5yrPct },
-            { metric: 'Real EY 5yr', value: realEarningsYield5yr, percentile: rey5yrPct },
-        ]);
-
-        data.push({
-            decade,
-            date,
-            inflation: cpi,
-            bondYield: tenYear,
-            realYield,
-            yieldCurve,
-            equityPE5yr: pe5yr,
-            earningsYieldPremium5yr,
-            realEarningsYield5yr,
-            fedFunds,
-            inflationPercentile: cpiPct,
-            bondYieldPercentile: tenYearPct,
-            realYieldPercentile: realYieldPct,
-            yieldCurvePercentile: yieldCurvePct,
-            equityPE5yrPercentile: pe5yrPct,
-            earningsYieldPremium5yrPercentile: eyp5yrPct,
-            realEarningsYield5yrPercentile: rey5yrPct,
-            fedFundsPercentile: fedFundsPct,
-            outlier1: outliers.outlier1,
-            outlier2: outliers.outlier2,
-        });
-    }
-
-    return data;
+    return Promise.all(decades.map(({ decade, date }) => buildRowData(decade, date)));
 }
 
 async function get12YearCycleData(): Promise<DecadeData[]> {
@@ -199,76 +198,10 @@ async function get12YearCycleData(): Promise<DecadeData[]> {
         { decade: '2008-2019 (mid)', date: '2013-12-31' },
         { decade: '2008-2019', date: '2019-12-31' },
         { decade: '2020-2031 (mid)', date: '2024-12-31' },
-        { decade: 'Latest', date: 'latest' }, // Most recent data
+        { decade: 'Latest', date: 'latest' },
     ];
 
-    const data: DecadeData[] = [];
-
-    for (const { decade, date } of cycles) {
-        const [cpi, tenYear, threeMonth, pe5yr, fedFunds, cpiPct, tenYearPct, threeMonthPct, pe5yrPct, fedFundsPct] = await Promise.all([
-            getValueAtDate('economic', 'CPI', date),
-            getValueAtDate('bonds', 'US/TNX', date),
-            getValueAtDate('bonds', 'US/IRX', date),
-            getValueAtDate('valuations', 'PE-5yr', date),
-            getValueAtDate('economic', 'US/FEDFUNDS', date),
-            getPercentileAtDate('economic', 'CPI', date),
-            getPercentileAtDate('bonds', 'US/TNX-Monthly', date),
-            getPercentileAtDate('bonds', 'US/IRX-Monthly', date),
-            getPercentileAtDate('valuations', 'PE-5yr', date),
-            getPercentileAtDate('economic', 'US/FEDFUNDS', date),
-        ]);
-
-        const realYield = tenYear !== null && cpi !== null ? tenYear - cpi : null;
-        const yieldCurve = tenYear !== null && threeMonth !== null ? tenYear - threeMonth : null;
-        const earningsYield5yr = pe5yr !== null && pe5yr > 0 ? (100 / pe5yr) : null;
-        const earningsYieldPremium5yr = earningsYield5yr !== null && threeMonth !== null ? earningsYield5yr - threeMonth : null;
-        const realEarningsYield5yr = earningsYield5yr !== null && cpi !== null ? earningsYield5yr - cpi : null;
-
-        // Fetch percentiles for derived metrics
-        const [realYieldPct, yieldCurvePct, eyp5yrPct, rey5yrPct] = await Promise.all([
-            getPercentileAtDate('derived', 'Real-10Y', date),
-            getPercentileAtDate('derived', 'Yield-Curve-10Y-3M', date),
-            getPercentileAtDate('derived', 'Earnings-Yield-Premium-5yr', date),
-            getPercentileAtDate('derived', 'Real-Earnings-Yield-5yr', date),
-        ]);
-
-        // Calculate outliers
-        const outliers = calculateOutliers([
-            { metric: 'Inflation', value: cpi, percentile: cpiPct },
-            { metric: 'Fed Funds', value: fedFunds, percentile: fedFundsPct },
-            { metric: '10Y Yield', value: tenYear, percentile: tenYearPct },
-            { metric: 'Real 10Y', value: realYield, percentile: realYieldPct },
-            { metric: 'Yield Curve', value: yieldCurve, percentile: yieldCurvePct },
-            { metric: 'P/E 5yr', value: pe5yr, percentile: pe5yrPct },
-            { metric: 'EYP 5yr', value: earningsYieldPremium5yr, percentile: eyp5yrPct },
-            { metric: 'Real EY 5yr', value: realEarningsYield5yr, percentile: rey5yrPct },
-        ]);
-
-        data.push({
-            decade,
-            date,
-            inflation: cpi,
-            bondYield: tenYear,
-            realYield,
-            yieldCurve,
-            equityPE5yr: pe5yr,
-            earningsYieldPremium5yr,
-            realEarningsYield5yr,
-            fedFunds,
-            inflationPercentile: cpiPct,
-            bondYieldPercentile: tenYearPct,
-            realYieldPercentile: realYieldPct,
-            yieldCurvePercentile: yieldCurvePct,
-            equityPE5yrPercentile: pe5yrPct,
-            earningsYieldPremium5yrPercentile: eyp5yrPct,
-            realEarningsYield5yrPercentile: rey5yrPct,
-            fedFundsPercentile: fedFundsPct,
-            outlier1: outliers.outlier1,
-            outlier2: outliers.outlier2,
-        });
-    }
-
-    return data;
+    return Promise.all(cycles.map(({ decade, date }) => buildRowData(decade, date)));
 }
 
 export default async function DecadesPage() {
