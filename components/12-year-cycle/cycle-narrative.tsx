@@ -1,6 +1,6 @@
 'use client';
 
-import { getCycleNarrativeByYear } from '@/data/cycle-narratives';
+import { getCycleNarrativeByYear } from '@/lib/cycle-narratives';
 
 interface CycleNarrativeProps {
     year: number;

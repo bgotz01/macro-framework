@@ -1,6 +1,6 @@
 'use client';
 
-import { TWELVE_YEAR_CYCLES } from '@/data/twelve-year-cycles';
+import { TWELVE_YEAR_CYCLES } from '@/lib/twelve-year-cycles';
 
 export default function TwelveYearSystemTable() {
     return (

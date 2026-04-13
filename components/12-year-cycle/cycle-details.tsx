@@ -1,6 +1,6 @@
 'use client';
 
-import { getCycleByYear, CycleData } from '@/data/twelve-year-cycles';
+import { getCycleByYear, CycleData } from '@/lib/twelve-year-cycles';
 
 interface CycleDetailsProps {
     year: number;

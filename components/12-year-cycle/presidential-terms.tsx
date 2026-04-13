@@ -1,6 +1,6 @@
 'use client';
 
-import { get12YearCyclePresidents, PresidentialTerm } from '@/data/us-presidents';
+import { get12YearCyclePresidents, PresidentialTerm } from '@/lib/us-presidents';
 
 interface PresidentialTermsProps {
     cycleStartYear: number;
