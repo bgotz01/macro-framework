@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
                 take: 4,
                 select: { value: true },
             });
-            const ttm = last4.length === 4 ? last4.reduce((s: number, r) => s + (r.value ?? 0), 0) : null;
+            const ttm = last4.length === 4 ? last4.reduce((s: number, r: { value: number | null }) => s + (r.value ?? 0), 0) : null;
 
             // Fill TTM across the 3 months of the quarter
             if (ttm !== null) {
