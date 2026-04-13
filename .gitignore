@@ -46,6 +46,7 @@ data/*.db-*
 data/**/*.csv
 data/**/*.json
 dataold/
+scripts/
 
 # python virtual environment
 venv/
@@ -53,3 +54,15 @@ venv/
 __pycache__/
 .python-version
 *.backup-*
+
+# Kiro workspace settings (contains local DB credentials)
+.kiro/settings/mcp.json
+
+# Database dumps
+*.dump
+*.sql.gz
+
+# Scripts with hardcoded credentials (use env vars instead)
+scripts/push-to-neon.py
+scripts/sync-macro-framework.py
+scripts/fix-equity-series.py
