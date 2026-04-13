@@ -3,8 +3,6 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 // Load knowledge base once at module level
 let knowledgeBase: string | null = null;
 function getKnowledgeBase(): string {
@@ -26,6 +24,10 @@ Use the following knowledge base as your primary reference:
 
 export async function POST(req: NextRequest) {
     try {
+        if (!process.env.OPENAI_API_KEY) {
+            return Response.json({ error: 'Chat feature not configured' }, { status: 503 });
+        }
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         const { messages } = await req.json();
 
         if (!messages || !Array.isArray(messages)) {
