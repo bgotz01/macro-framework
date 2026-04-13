@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
             `
         );
 
-        const mapped = rows.map(r => ({
+        const mapped = rows.map((r: { date: string; rey: number | null; eyp: number | null; real10y: number | null; real3m: number | null; realM2: number | null }) => ({
             date: r.date,
             rey: r.rey,
             eyp: r.eyp,

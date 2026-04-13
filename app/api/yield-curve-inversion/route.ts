@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
     try {
         const currentRow = currentDate === 'latest'
             ? await prisma.$queryRaw<any[]>`
-                SELECT date, value FROM percentile_analysis
+                SELECT date, value FROM macro_time_series
                 WHERE series_name = 'Yield-Curve-10Y-3M'
                 ORDER BY date DESC LIMIT 1
               `.then(r => r[0])
             : await prisma.$queryRaw<any[]>`
-                SELECT date, value FROM percentile_analysis
+                SELECT date, value FROM macro_time_series
                 WHERE series_name = 'Yield-Curve-10Y-3M' AND date = ${currentDate} LIMIT 1
               `.then(r => r[0]);
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         }
 
         const lastInversionRow = await prisma.$queryRaw<any[]>`
-            SELECT date, value FROM percentile_analysis
+            SELECT date, value FROM macro_time_series
             WHERE series_name = 'Yield-Curve-10Y-3M'
               AND date <= ${currentRow.date}
               AND value < 0
