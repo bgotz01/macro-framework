@@ -1,5 +1,4 @@
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 import { DecadeData } from '@/types/matrix';
 import { DecadeTable } from '@/components/matrix/decade-table';
 import { CycleTable } from '@/components/matrix/cycle-table';
@@ -52,46 +51,22 @@ function calculateOutliers(metrics: Array<{ metric: string; value: number | null
 
 async function getValueAtDate(assetClass: string, seriesName: string, targetDate: string): Promise<number | null> {
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true });
-
-        let query: string;
-        let params: any[];
-
         if (targetDate === 'latest') {
-            // Get the most recent value
-            query = `
-                SELECT value, date
-                FROM time_series
-                WHERE asset_class = ? 
-                  AND series_name = ? 
-                  AND column_name = 'Value'
-                ORDER BY date DESC
-                LIMIT 1
+            const rows = await prisma.$queryRaw<{ value: number }[]>`
+                SELECT value FROM macro_time_series
+                WHERE asset_class = ${assetClass} AND series_name = ${seriesName} AND column_name = 'Value'
+                ORDER BY date DESC LIMIT 1
             `;
-            params = [assetClass, seriesName];
+            return rows[0]?.value ?? null;
         } else {
-            // Convert target date to timestamp
-            const targetTimestamp = new Date(targetDate).getTime();
-
-            // Find the closest date within 45 days (for monthly data)
-            query = `
-                SELECT value, date
-                FROM time_series
-                WHERE asset_class = ? 
-                  AND series_name = ? 
-                  AND column_name = 'Value'
-                  AND ABS(date - ?) <= 45 * 24 * 60 * 60 * 1000
-                ORDER BY ABS(date - ?)
-                LIMIT 1
+            const rows = await prisma.$queryRaw<{ value: number }[]>`
+                SELECT value FROM macro_time_series
+                WHERE asset_class = ${assetClass} AND series_name = ${seriesName} AND column_name = 'Value'
+                  AND date <= ${targetDate}
+                ORDER BY date DESC LIMIT 1
             `;
-            params = [assetClass, seriesName, targetTimestamp, targetTimestamp];
+            return rows[0]?.value ?? null;
         }
-
-        const result = db.prepare(query).get(...params) as { value: number } | undefined;
-        db.close();
-
-        return result ? result.value : null;
     } catch (error) {
         console.error(`Error fetching ${assetClass}/${seriesName} at ${targetDate}:`, error);
         return null;
@@ -100,44 +75,22 @@ async function getValueAtDate(assetClass: string, seriesName: string, targetDate
 
 async function getPercentileAtDate(assetClass: string, seriesName: string, targetDate: string): Promise<number | null> {
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true });
-
-        let query: string;
-        let params: any[];
-
         if (targetDate === 'latest') {
-            // Get the most recent percentile
-            query = `
-                SELECT percentile_rank, date
-                FROM percentile_analysis
-                WHERE asset_class = ? 
-                  AND series_name = ?
-                ORDER BY date DESC
-                LIMIT 1
+            const rows = await prisma.$queryRaw<{ percentile_rank: number }[]>`
+                SELECT percentile_rank FROM macro_percentile_analysis
+                WHERE asset_class = ${assetClass} AND series_name = ${seriesName}
+                ORDER BY date DESC LIMIT 1
             `;
-            params = [assetClass, seriesName];
+            return rows[0]?.percentile_rank ?? null;
         } else {
-            // Convert target date to timestamp
-            const targetTimestamp = new Date(targetDate).getTime();
-
-            // Find the closest date within 45 days (for monthly data)
-            query = `
-                SELECT percentile_rank, date
-                FROM percentile_analysis
-                WHERE asset_class = ? 
-                  AND series_name = ? 
-                  AND ABS(date - ?) <= 45 * 24 * 60 * 60 * 1000
-                ORDER BY ABS(date - ?)
-                LIMIT 1
+            const rows = await prisma.$queryRaw<{ percentile_rank: number }[]>`
+                SELECT percentile_rank FROM macro_percentile_analysis
+                WHERE asset_class = ${assetClass} AND series_name = ${seriesName}
+                  AND date <= ${targetDate}
+                ORDER BY date DESC LIMIT 1
             `;
-            params = [assetClass, seriesName, targetTimestamp, targetTimestamp];
+            return rows[0]?.percentile_rank ?? null;
         }
-
-        const result = db.prepare(query).get(...params) as { percentile_rank: number } | undefined;
-        db.close();
-
-        return result ? result.percentile_rank : null;
     } catch (error) {
         console.error(`Error fetching percentile for ${assetClass}/${seriesName} at ${targetDate}:`, error);
         return null;

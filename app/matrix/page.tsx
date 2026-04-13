@@ -2,6 +2,7 @@ import RegimeMatrix from '../../components/regime-matrix';
 import CompactRegimeMatrix from '../../components/compact-regime-matrix';
 import MatrixSlider from '../../components/matrix-slider';
 import { DataServiceNew } from '@/lib/data-service-new';
+import { prisma } from '@/lib/prisma';
 
 // Configurable absolute levels for each matrix
 const LEVELS = {
@@ -71,28 +72,14 @@ async function getLatestValue(assetClass: string, seriesName: string): Promise<{
 
 async function getLatestMA12(assetClass: string, seriesName: string): Promise<{ value: number | null; date: string | null }> {
     try {
-        const Database = (await import('better-sqlite3')).default;
-        const path = await import('path');
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true });
-
-        // Try MA12 first (monthly data), then MA252 (daily data)
-        const query = `
-            SELECT value, date, column_name
-            FROM time_series
-            WHERE asset_class = ? AND series_name = ? AND (column_name = 'Value_MA12' OR column_name = 'Value_MA252')
-            ORDER BY date DESC
-            LIMIT 1
+        const rows = await prisma.$queryRaw<{ value: number; date: string }[]>`
+            SELECT value, date::text as date
+            FROM macro_time_series
+            WHERE asset_class = ${assetClass} AND series_name = ${seriesName}
+              AND column_name IN ('Value_MA12', 'Value_MA252')
+            ORDER BY date DESC LIMIT 1
         `;
-
-        const result = db.prepare(query).get(assetClass, seriesName) as { value: number; date: number; column_name: string } | undefined;
-        db.close();
-
-        if (result) {
-            const dateStr = new Date(result.date).toISOString().split('T')[0];
-            return { value: result.value, date: dateStr };
-        }
-        return { value: null, date: null };
+        return rows[0] ? { value: rows[0].value, date: rows[0].date } : { value: null, date: null };
     } catch (error) {
         console.error(`Error fetching MA for ${assetClass}/${seriesName}:`, error);
         return { value: null, date: null };

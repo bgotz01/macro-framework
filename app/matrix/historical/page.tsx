@@ -1,8 +1,7 @@
 import CompactRegimeMatrix from '@/components/compact-regime-matrix';
 import CompactMatrixPercentile from '@/components/compact-matrix-percentile';
 import { DataServiceNew } from '@/lib/data-service-new';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 
 async function getLatestValue(assetClass: string, seriesName: string): Promise<{ value: number | null; date: string | null }> {
     try {
@@ -26,23 +25,14 @@ async function getLatestValue(assetClass: string, seriesName: string): Promise<{
 
 async function getLatestPercentile(assetClass: string, seriesName: string): Promise<{ value: number | null; percentile: number | null; date: string | null }> {
     try {
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true, timeout: 10000 });
-
-        const query = `
-            SELECT value, percentile_rank, date
-            FROM percentile_analysis
-            WHERE asset_class = ? AND series_name = ?
-            ORDER BY date DESC
-            LIMIT 1
+        const rows = await prisma.$queryRaw<{ value: number; percentile_rank: number; date: string }[]>`
+            SELECT value, percentile_rank, date::text as date
+            FROM macro_percentile_analysis
+            WHERE asset_class = ${assetClass} AND series_name = ${seriesName}
+            ORDER BY date DESC LIMIT 1
         `;
-
-        const result = db.prepare(query).get(assetClass, seriesName) as { value: number; percentile_rank: number; date: string } | undefined;
-        db.close();
-
-        if (result) {
-            return { value: result.value, percentile: result.percentile_rank, date: result.date };
-        }
+        const result = rows[0];
+        if (result) return { value: result.value, percentile: result.percentile_rank, date: result.date };
         return { value: null, percentile: null, date: null };
     } catch (error) {
         console.error(`Error fetching percentile for ${assetClass}/${seriesName}:`, error);

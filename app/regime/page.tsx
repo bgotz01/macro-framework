@@ -1,13 +1,9 @@
 import RealMatrixWrapper from '@/components/regime/real-matrix-wrapper';
 import PercentileChart from '@/components/charts/percentile-chart';
-import Database from 'better-sqlite3';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 import { Suspense } from 'react';
 
 async function getLatestPercentiles() {
-    const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-    const db = new Database(dbPath, { readonly: true, timeout: 10000 });
-
     const series = [
         { asset_class: 'economic', series_name: 'CPI', key: 'cpi' },
         { asset_class: 'economic', series_name: 'US/FEDFUNDS', key: 'fedFunds' },
@@ -26,35 +22,21 @@ async function getLatestPercentiles() {
     let latestDate: string | null = null;
 
     for (const s of series) {
-        const query = `
-            SELECT asset_class, series_name, date, value, percentile_rank, yoy_percentile_change
-            FROM percentile_analysis
-            WHERE asset_class = ? AND series_name = ?
-            ORDER BY date DESC
-            LIMIT 1
+        const rows = await prisma.$queryRaw<{ value: number; percentile_rank: number; yoy_percentile_change: number; date: string }[]>`
+            SELECT value, percentile_rank, yoy_percentile_change, date::text as date
+            FROM macro_percentile_analysis
+            WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
+            ORDER BY date DESC LIMIT 1
         `;
-
-        const row = db.prepare(query).get(s.asset_class, s.series_name) as any;
-
+        const row = rows[0];
         if (row) {
-            const rowDate = new Date(row.date).toISOString().split('T')[0];
-            result[s.key] = {
-                percentile: row.percentile_rank,
-                value: row.value,
-                yoy: row.yoy_percentile_change,
-                date: rowDate
-            };
-
-            // Track the earliest of the latest dates (the date where ALL metrics have data)
-            if (!latestDate || rowDate < latestDate) {
-                latestDate = rowDate;
-            }
+            result[s.key] = { percentile: row.percentile_rank, value: row.value, yoy: row.yoy_percentile_change, date: row.date };
+            if (!latestDate || row.date < latestDate) latestDate = row.date;
         } else {
             result[s.key] = { percentile: null, value: null, yoy: null, date: null };
         }
     }
 
-    db.close();
     return { data: result, latestDate };
 }
 
