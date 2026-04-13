@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import Database from 'better-sqlite3';
+import { getStockdataPool } from '@/lib/stockdata-db';
 import path from 'path';
 import fs from 'fs';
 
 export async function GET(request: NextRequest) {
     try {
-        // Check if required tables exist — return empty if not (e.g. macro-framework DB)
+        // Check if required tables exist in the primary DB — return empty if not
         const tableCheck = await prisma.$queryRaw<{ exists: boolean }[]>`
             SELECT EXISTS (
                 SELECT 1 FROM information_schema.tables
                 WHERE table_schema = 'public' AND table_name = 'sp500_constituents'
             ) as exists
         `;
-        if (!tableCheck[0]?.exists) {
+
+        const stockdataPool = getStockdataPool();
+
+        // If neither the primary DB has the table nor stockdata is connected, return empty
+        if (!tableCheck[0]?.exists && !stockdataPool) {
             return NextResponse.json({
                 stocks: [],
                 pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
@@ -44,68 +48,66 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        // Get S&P 500 constituents from SQLite
-        const dbPath = path.join(process.cwd(), 'data', 'macro-data.db');
-        const db = new Database(dbPath, { readonly: true });
+        // Get S&P 500 constituents from Postgres (stockdata DB)
+        // Falls back to empty if stockdata is not connected
+        if (!stockdataPool) {
+            return NextResponse.json({
+                stocks: [],
+                pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+                filters: { sectors: [], sectorSubIndustryMap: {} },
+                stats: null,
+            });
+        }
 
-        let query = `
-            SELECT symbol, security, gics_sector, gics_sub_industry
-            FROM sp500_constituents
-            WHERE 1=1
-        `;
-
-        const params: any[] = [];
+        const constituentParams: (string | number)[] = [];
+        let constituentWhere = 'WHERE 1=1';
 
         if (search) {
-            query += ` AND (symbol LIKE ? OR security LIKE ?)`;
-            params.push(`%${search}%`, `%${search}%`);
+            constituentParams.push(`%${search}%`, `%${search}%`);
+            constituentWhere += ` AND (symbol ILIKE $${constituentParams.length - 1} OR security ILIKE $${constituentParams.length})`;
         }
 
         if (sector) {
-            query += ` AND gics_sector = ?`;
-            params.push(sector);
+            constituentParams.push(sector);
+            constituentWhere += ` AND gics_sector = $${constituentParams.length}`;
         }
 
         if (subIndustry) {
-            query += ` AND gics_sub_industry = ?`;
-            params.push(subIndustry);
+            constituentParams.push(subIndustry);
+            constituentWhere += ` AND gics_sub_industry = $${constituentParams.length}`;
         }
 
-        query += ` ORDER BY security`;
+        const [constituentResult, filterResult] = await Promise.all([
+            stockdataPool.query(
+                `SELECT symbol, security, gics_sector, gics_sub_industry
+                 FROM sp500_constituents ${constituentWhere} ORDER BY security`,
+                constituentParams
+            ),
+            stockdataPool.query(
+                `SELECT DISTINCT gics_sector, gics_sub_industry
+                 FROM sp500_constituents ORDER BY gics_sector, gics_sub_industry`
+            ),
+        ]);
 
-        const allConstituents = db.prepare(query).all(...params) as Array<{
+        const allConstituents = constituentResult.rows as Array<{
             symbol: string;
             security: string;
             gics_sector: string;
             gics_sub_industry: string;
         }>;
 
-        // Get unique sectors and sub-industries for filters
-        const allData = db.prepare(`
-            SELECT DISTINCT gics_sector, gics_sub_industry
-            FROM sp500_constituents
-            ORDER BY gics_sector, gics_sub_industry
-        `).all() as Array<{ gics_sector: string; gics_sub_industry: string }>;
+        const allData = filterResult.rows as Array<{ gics_sector: string; gics_sub_industry: string }>;
 
         const sectors = [...new Set(allData.map(d => d.gics_sector))].sort();
 
-        // Create a map of sector to sub-industries
         const sectorSubIndustryMap: Record<string, string[]> = {};
         allData.forEach(d => {
-            if (!sectorSubIndustryMap[d.gics_sector]) {
-                sectorSubIndustryMap[d.gics_sector] = [];
-            }
+            if (!sectorSubIndustryMap[d.gics_sector]) sectorSubIndustryMap[d.gics_sector] = [];
             if (!sectorSubIndustryMap[d.gics_sector].includes(d.gics_sub_industry)) {
                 sectorSubIndustryMap[d.gics_sector].push(d.gics_sub_industry);
             }
         });
-
-        // Sort sub-industries within each sector
-        Object.keys(sectorSubIndustryMap).forEach(sector => {
-            sectorSubIndustryMap[sector].sort();
-        });
-
-        db.close();
+        Object.keys(sectorSubIndustryMap).forEach(s => sectorSubIndustryMap[s].sort());
 
         // Get ALL price data from PostgreSQL (not paginated yet)
         // IMPORTANT: Price returns use historical_prices (split-adjusted prices).

@@ -48,9 +48,11 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
             .finally(() => setLoading(false));
     }, []);
 
+    const MIN_DATE = '1950-01-01';
+
     const getFilteredData = () => {
         if (data.length === 0) return [];
-        if (datePreset === 'all') return data;
+        if (datePreset === 'all') return data.filter(d => d.date! >= MIN_DATE);
 
         let startDate: string | null = null;
         let endDate: string | null = null;
@@ -64,8 +66,9 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
             if (preset?.start) { startDate = preset.start; endDate = preset.end; }
         }
 
+        const effectiveStart = startDate && startDate > MIN_DATE ? startDate : MIN_DATE;
         let filtered = data;
-        if (startDate) filtered = filtered.filter(d => d.date! >= startDate!);
+        filtered = filtered.filter(d => d.date! >= effectiveStart);
         if (endDate) filtered = filtered.filter(d => d.date! <= endDate!);
         return filtered;
     };
