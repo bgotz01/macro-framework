@@ -42,7 +42,7 @@ export async function GET() {
             GROUP BY commodity
         `;
 
-        const avgMap = Object.fromEntries(avgs.map(a => [a.commodity, {
+        const avgMap = Object.fromEntries(avgs.map((a: any) => [a.commodity, {
             avgMMoneyPct: parseFloat(a.avgMMoneyPct),
             avgOtherPct: parseFloat(a.avgOtherPct),
             avgNonComPct: parseFloat(a.avgNonComPct),
