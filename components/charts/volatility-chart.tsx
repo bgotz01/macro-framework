@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface SeriesOption {
     series_name: string;
@@ -70,6 +71,16 @@ export default function VolatilityChart({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [percentileData, setPercentileData] = useState<Array<{ date: string; percentile_rank: number }>>([]);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     // Derive the asset class from the selected series
     const assetClass = allSeries.bonds.some(s => s.series_name === selectedSeries) ? 'bonds' : 'equities';
@@ -305,18 +316,18 @@ export default function VolatilityChart({
             }
 
             return (
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={pData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={pData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: "#9ca3af", fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => new Date(value).getFullYear().toString()}
                         />
-                        <YAxis
+                        <YAxis width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: "#9ca3af", fontSize: getResponsiveFontSize() }}
                             domain={[0, 100]}
                             tickFormatter={(value) => `${value}`}
                         />
@@ -330,7 +341,7 @@ export default function VolatilityChart({
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => [`${Number(value).toFixed(1)}th percentile`, '']}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ fontSize: getResponsiveFontSize(), color: "#9ca3af" }} />
                         <ReferenceLine y={25} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
                         <ReferenceLine y={50} stroke="#6b7280" strokeDasharray="3 3" strokeOpacity={0.5} />
                         <ReferenceLine y={75} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.5} />
@@ -386,21 +397,21 @@ export default function VolatilityChart({
                             </p>
                         </div>
                     )}
-                    <ResponsiveContainer width="100%" height={height}>
-                        <LineChart data={spreadData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <ResponsiveContainer width="100%" height={responsiveHeight}>
+                        <LineChart data={spreadData} margin={getResponsiveMargin()}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                             <XAxis
                                 dataKey="date"
                                 stroke="#9ca3af"
-                                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                tick={{ fill: "#9ca3af", fontSize: getResponsiveFontSize() }}
                                 tickFormatter={(value) => {
                                     const date = new Date(value);
                                     return date.getFullYear().toString();
                                 }}
                             />
-                            <YAxis
+                            <YAxis width={getResponsiveYAxisWidth()}
                                 stroke="#9ca3af"
-                                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                                tick={{ fill: "#9ca3af", fontSize: getResponsiveFontSize() }}
                                 domain={['auto', 'auto']}
                                 tickFormatter={(value) => assetClass === 'bonds' ? `${value.toFixed(2)}pp` : `${value.toFixed(1)}%`}
                             />
@@ -414,7 +425,7 @@ export default function VolatilityChart({
                                 labelStyle={{ color: '#9ca3af' }}
                                 formatter={(value: any) => [`${Number(value).toFixed(2)}${assetClass === 'bonds' ? 'pp' : 'pp'}`, '']}
                             />
-                            <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                            <Legend wrapperStyle={{ fontSize: getResponsiveFontSize(), color: "#9ca3af" }} />
                             <ReferenceLine y={0} stroke="#6b7280" strokeDasharray="3 3" />
                             <Line
                                 type="monotone"
@@ -452,21 +463,21 @@ export default function VolatilityChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={displayData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={displayData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: "#9ca3af", fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
                             }}
                         />
-                        <YAxis
+                        <YAxis width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: "#9ca3af", fontSize: getResponsiveFontSize() }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => assetClass === 'bonds' ? `${value.toFixed(2)}pp` : `${value.toFixed(0)}%`}
                         />
@@ -480,7 +491,7 @@ export default function VolatilityChart({
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => [`${Number(value).toFixed(2)}${assetClass === 'bonds' ? 'pp' : '%'}`, '']}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ fontSize: getResponsiveFontSize(), color: "#9ca3af" }} />
 
                         {selectedPeriod === '63' && (
                             <Line

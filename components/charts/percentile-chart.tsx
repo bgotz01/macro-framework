@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useTheme } from '../theme-provider';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 import SeriesDataTable from './series-data-table';
 
 // Tooltip component for metric explanations
@@ -109,6 +110,16 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
     const [loading, setLoading] = useState(true);
     const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('value');
     const [selectedSeries, setSelectedSeries] = useState<string[]>(initialSeries || ['realyield']);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
     const [isSeriesSelectionOpen, setIsSeriesSelectionOpen] = useState(true);
     const [datePreset, setDatePreset] = useState<string>('all');
     const [customStartDate, setCustomStartDate] = useState<string>('');
@@ -317,12 +328,12 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
     };
 
     return (
-        <div className="p-6 rounded-xl border bg-card">
+        <div className="p-4 sm:p-6 rounded-xl border bg-card">
             <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-2xl font-bold">Actual vs Percentile Chart</h2>
+                <div className="flex items-center justify-between mb-3 gap-2">
+                    <h2 className="text-lg sm:text-2xl font-bold">Actual vs Percentile Chart</h2>
                     {filteredData.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs sm:text-sm text-muted-foreground shrink-0">
                             Latest: {(() => {
                                 const dateStr = filteredData[filteredData.length - 1].date;
                                 const [year, month, day] = dateStr.split('-');
@@ -350,7 +361,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                     </select>
                 </div>
 
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
                     {metric === 'percentile'
                         ? 'Shows where values rank compared to all historical data up to that point'
                         : metric === 'value'
@@ -359,16 +370,16 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                 </p>
 
                 {/* Date Range Filter */}
-                <div className="mb-4 space-y-3">
+                <div className="mb-4 space-y-2 sm:space-y-3">
                     <label className="block text-sm font-medium">
                         Date Range
                     </label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex overflow-x-auto gap-2 pb-1 -mx-1 px-1 sm:flex-wrap sm:overflow-visible">
                         {DATE_PRESETS.map(preset => (
                             <button
                                 key={preset.value}
                                 onClick={() => setDatePreset(preset.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
+                                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${datePreset === preset.value
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -379,7 +390,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                     </div>
 
                     {datePreset === 'custom' && (
-                        <div className="flex gap-3 mt-3">
+                        <div className="flex flex-col sm:flex-row gap-3 mt-3">
                             <div className="flex-1">
                                 <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
                                 <input
@@ -443,16 +454,16 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                     )}
 
                     {isSeriesSelectionOpen && (
-                        <div className="grid grid-cols-4 gap-6 animate-in slide-in-from-top-2 duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 animate-in slide-in-from-top-2 duration-200">
                             {['Inflation & Policy', 'Bond Yields', 'Equity Valuation', 'Equity Spreads'].map(category => {
                                 const categorySeries = AVAILABLE_SERIES.filter(s => s.category === category);
                                 if (categorySeries.length === 0) return null;
                                 return (
                                     <div key={category} className="space-y-2">
-                                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pb-1">
+                                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pb-1 border-b border-border">
                                             {category}
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             {categorySeries.map(series => {
                                                 const tooltip = METRIC_TOOLTIPS[series.value];
 
@@ -473,20 +484,20 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                                                 const checkbox = (
                                                     <label
                                                         key={series.value}
-                                                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-sm"
+                                                        className="flex items-center justify-between gap-2 px-2.5 sm:px-3 py-2 rounded-lg border cursor-pointer hover:border-primary transition-colors bg-background text-xs sm:text-sm"
                                                     >
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 min-w-0">
                                                             <input
                                                                 type="checkbox"
                                                                 checked={selectedSeries.includes(series.value)}
                                                                 onChange={() => handleSeriesToggle(series.value)}
-                                                                className="cursor-pointer"
+                                                                className="cursor-pointer flex-shrink-0"
                                                             />
-                                                            <span className={`font-medium ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
+                                                            <span className={`font-medium truncate ${tooltip ? 'border-b border-dotted border-current' : ''}`}>
                                                                 {series.label}
                                                             </span>
                                                         </div>
-                                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                                        <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
                                                             {latestDate}
                                                         </span>
                                                     </label>
@@ -511,37 +522,31 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
                 </div>
             </div>
 
-            <div className="pt-6">
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <div className="pt-4 sm:pt-6">
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={filteredData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
                         <XAxis
                             dataKey="date"
                             stroke={textColor}
                             ticks={yearlyTicks}
-                            tick={{ fontSize: 12 }}
+                            tick={{ fontSize: 10 }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
                             }}
                         />
 
-                        <YAxis
+                        <YAxis width={getResponsiveYAxisWidth()}
                             stroke={textColor}
-                            tick={{ fontSize: 12 }}
-                            label={{
-                                value: metric === 'percentile' ? 'Percentile Rank' : metric === 'value' ? 'Value (%)' : 'YoY Change (pts)',
-                                angle: -90,
-                                position: 'insideLeft',
-                                style: { fill: textColor }
-                            }}
+                            tick={{ fontSize: getResponsiveFontSize() }}
                             domain={metric === 'percentile' ? [0, 100] : ['auto', 'auto']}
                         />
 
                         <Tooltip content={<CustomTooltip />} />
 
-                        <Legend />
+                        <Legend wrapperStyle={{ fontSize: '11px' }} />
 
                         {/* Percentile reference lines */}
                         {metric === 'percentile' && (
@@ -586,8 +591,8 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
 
                 {/* Display selected metrics and their tooltips */}
                 <div className="mt-4 space-y-2">
-                    <div className="text-sm font-medium text-foreground">
-                        Selected Metrics: {selectedSeries.map(seriesValue => {
+                    <div className="text-xs sm:text-sm font-medium text-foreground">
+                        Selected: {selectedSeries.map(seriesValue => {
                             const series = AVAILABLE_SERIES.find(s => s.value === seriesValue);
                             return series?.label;
                         }).join(', ')}

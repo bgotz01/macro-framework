@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { DataService, ChartData, DataPoint } from '@/lib/data-service';
 import { format, parseISO, isValid, subYears } from 'date-fns';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 export type TimePeriod = '2yr' | '5yr' | '10yr' | '20yr' | 'all';
 export type ChartType = 'line' | 'bar' | 'area';
@@ -56,6 +57,16 @@ export default function Chart({
 }: ChartProps) {
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [height]);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -260,12 +271,12 @@ export default function Chart({
                     </div>
                 </div>
             )}
-            <ResponsiveContainer width="100%" height={height}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
                 {chartType === 'line' && (
                     <LineChart {...commonProps}>
                         {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />}
                         <XAxis {...xAxisProps} />
-                        <YAxis {...yAxisProps} />
+                        <YAxis width={getResponsiveYAxisWidth()} {...yAxisProps} />
                         <Tooltip content={<CustomTooltip />} />
                         {showLegend && <Legend />}
                         {yKeys.map((key, index) => (
@@ -285,7 +296,7 @@ export default function Chart({
                     <BarChart {...commonProps}>
                         {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />}
                         <XAxis {...xAxisProps} />
-                        <YAxis {...yAxisProps} />
+                        <YAxis width={getResponsiveYAxisWidth()} {...yAxisProps} />
                         <Tooltip content={<CustomTooltip />} />
                         {showLegend && <Legend />}
                         {yKeys.map((key, index) => (
@@ -302,7 +313,7 @@ export default function Chart({
                     <AreaChart {...commonProps}>
                         {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />}
                         <XAxis {...xAxisProps} />
-                        <YAxis {...yAxisProps} />
+                        <YAxis width={getResponsiveYAxisWidth()} {...yAxisProps} />
                         <Tooltip content={<CustomTooltip />} />
                         {showLegend && <Legend />}
                         {yKeys.map((key, index) => (

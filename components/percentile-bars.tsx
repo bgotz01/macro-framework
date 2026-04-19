@@ -163,7 +163,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
             {/* Percentile Bars */}
             <div className={`transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Percentile Rankings - {displayYear}</h2>
+                    <h2 className="text-base sm:text-xl font-bold">Percentile Rankings — {displayYear}</h2>
                     {loading && (
                         <span className="text-xs text-muted-foreground">Loading...</span>
                     )}
@@ -181,8 +181,8 @@ export default function PercentileBars({ initialData, availableYears, initialYea
 
                                     if (!metricData) {
                                         return (
-                                            <div key={metric.key} className="flex items-center gap-3">
-                                                <div className="w-32 flex-shrink-0">
+                                            <div key={metric.key} className="flex items-center gap-2 sm:gap-3">
+                                                <div className="w-20 sm:w-32 flex-shrink-0">
                                                     <div className="font-medium text-xs">{metric.shortLabel}</div>
                                                 </div>
                                                 <div className="flex-1 text-muted-foreground text-xs">
@@ -197,21 +197,21 @@ export default function PercentileBars({ initialData, availableYears, initialYea
                                     const textColor = getPercentileTextColor(percentile, metric.key);
 
                                     return (
-                                        <div key={metric.key} className="flex items-center gap-3">
-                                            <div className="w-32 flex-shrink-0">
-                                                <div className="font-medium text-xs">{metric.shortLabel}</div>
+                                        <div key={metric.key} className="flex items-center gap-2 sm:gap-3">
+                                            <div className="w-20 sm:w-32 flex-shrink-0">
+                                                <div className="font-medium text-xs truncate">{metric.shortLabel}</div>
                                                 <div className="text-xs text-muted-foreground font-mono">
                                                     {metric.format(metricData.value)}
                                                 </div>
                                             </div>
-                                            <div className="flex-1 flex items-center gap-2">
-                                                <div className="flex-1 h-6 bg-muted rounded overflow-hidden relative">
+                                            <div className="flex-1 flex items-center gap-1.5 sm:gap-2">
+                                                <div className="flex-1 h-5 sm:h-6 bg-muted rounded overflow-hidden relative">
                                                     <div
                                                         className={`h-full ${barColor} transition-all duration-500 ease-out`}
                                                         style={{ width: `${percentile}%` }}
                                                     />
                                                 </div>
-                                                <div className="w-16 text-right">
+                                                <div className="w-12 sm:w-16 text-right flex-shrink-0">
                                                     <span className={`text-xs font-semibold ${textColor}`}>
                                                         {percentile.toFixed(1)}%
                                                     </span>
@@ -227,7 +227,7 @@ export default function PercentileBars({ initialData, availableYears, initialYea
 
                 {/* Legend */}
                 <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center justify-center gap-4 text-xs flex-wrap">
+                    <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs flex-wrap">
                         <div className="flex items-center gap-1.5">
                             <div className="w-3 h-3 bg-green-500 rounded"></div>
                             <span>Low (0-25th)</span>

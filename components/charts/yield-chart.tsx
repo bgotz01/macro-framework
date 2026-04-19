@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea, ReferenceLine } from 'recharts';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface YieldChartProps {
     height?: number;
@@ -47,6 +48,16 @@ export default function YieldChart({
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     // Spread calculation state
     const [calculationMode, setCalculationMode] = useState<'single' | 'spread'>('single');
@@ -312,13 +323,13 @@ export default function YieldChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={chartData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
@@ -326,8 +337,9 @@ export default function YieldChart({
                             ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
+                            width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => `${value.toFixed(1)}%`}
                         />
@@ -336,12 +348,13 @@ export default function YieldChart({
                                 backgroundColor: '#1f2937',
                                 border: '1px solid #374151',
                                 borderRadius: '8px',
-                                color: '#f9fafb'
+                                color: '#f9fafb',
+                                fontSize: getResponsiveFontSize()
                             }}
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => `${Number(value).toFixed(2)}%`}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ color: '#9ca3af', fontSize: getResponsiveFontSize() }} />
 
                         {/* Zero reference line */}
                         <ReferenceLine

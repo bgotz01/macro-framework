@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface FXChartProps {
     height?: number;
@@ -48,6 +49,16 @@ export default function FXChart({
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     // Ratio calculation state
     const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
@@ -271,13 +282,13 @@ export default function FXChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={chartData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
@@ -285,8 +296,9 @@ export default function FXChart({
                             ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
+                            width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => value.toFixed(2)}
                         />
@@ -295,12 +307,13 @@ export default function FXChart({
                                 backgroundColor: '#1f2937',
                                 border: '1px solid #374151',
                                 borderRadius: '8px',
-                                color: '#f9fafb'
+                                color: '#f9fafb',
+                                fontSize: getResponsiveFontSize()
                             }}
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ color: '#9ca3af', fontSize: getResponsiveFontSize() }} />
                         <Line
                             type="monotone"
                             dataKey="Value"

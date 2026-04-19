@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 import HistoricalDataTable from './historical-data-table';
 
 interface ChartDataPoint {
@@ -65,12 +66,24 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
     const [error, setError] = useState<string | null>(null);
     const [show200MA, setShow200MA] = useState(false);
     const [show50MA, setShow50MA] = useState(false);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
 
     // Ratio mode
     const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
     const [series1, setSeries1] = useState<string>('');
     const [series2, setSeries2] = useState<string>('');
     const [ratioData, setRatioData] = useState<ChartDataPoint[]>([]);
+
+    // Responsive height
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     // Load available series
     useEffect(() => {
@@ -180,24 +193,28 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
     const displayName2 = availableSeries.find(s => s.series_name === series2)?.display_name ?? series2;
     const selectedDisplayName = availableSeries.find(s => s.series_name === selectedSeries)?.display_name ?? selectedSeries;
 
+    const responsiveMargin = getResponsiveMargin();
+    const responsiveFontSize = getResponsiveFontSize();
+    const responsiveYAxisWidth = getResponsiveYAxisWidth();
+
     return (
-        <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
+        <div className={`p-2 sm:p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {latestDate && (
-                <div className="mb-4 text-xs text-muted-foreground text-right">
+                <div className="mb-3 sm:mb-4 text-[10px] sm:text-xs text-muted-foreground text-right">
                     Latest data: {(() => { const [y, m, d] = latestDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
                 </div>
             )}
 
-            <div className="mb-6 space-y-4">
+            <div className="mb-3 sm:mb-6 space-y-3 sm:space-y-4">
                 {/* Mode */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <label className="text-sm font-medium text-card-foreground">Chart Mode:</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-muted/50">
+                    <label className="text-xs sm:text-sm font-medium text-card-foreground">Chart Mode:</label>
                     <div className="flex gap-2">
                         {(['single', 'ratio'] as const).map(mode => (
                             <button
                                 key={mode}
                                 onClick={() => setCalculationMode(mode)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${calculationMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
                                 {mode === 'single' ? 'Single Series' : 'Ratio (S1 / S2)'}
                             </button>
@@ -208,14 +225,14 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
                 {/* Series selectors */}
                 {calculationMode === 'single' ? (
                     <div>
-                        <label className="block text-sm font-medium text-card-foreground mb-2">Series</label>
+                        <label className="block text-xs sm:text-sm font-medium text-card-foreground mb-2">Series</label>
                         <select
                             value={selectedSeries}
                             onChange={e => {
                                 setSelectedSeries(e.target.value);
                                 setSelectedUnits(availableSeries.find(s => s.series_name === e.target.value)?.units);
                             }}
-                            className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-3 sm:px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-xs sm:text-sm"
                         >
                             {COMMODITY_GROUPS.map(group => (
                                 <optgroup key={group.label} label={group.label}>
@@ -231,25 +248,25 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
                     <div className="space-y-3">
                         {/* Quick presets */}
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-muted-foreground">Quick:</span>
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">Quick:</span>
                             {RATIO_PRESETS.map(p => (
                                 <button
                                     key={p.label}
                                     onClick={() => { setSeries1(p.s1); setSeries2(p.s2); }}
-                                    className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${series1 === p.s1 && series2 === p.s2 ? 'bg-primary text-primary-foreground border-transparent' : 'border-border text-muted-foreground hover:bg-muted/70'}`}
+                                    className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs rounded-md border transition-colors ${series1 === p.s1 && series2 === p.s2 ? 'bg-primary text-primary-foreground border-transparent' : 'border-border text-muted-foreground hover:bg-muted/70'}`}
                                 >
                                     {p.label}
                                 </button>
                             ))}
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                             {([{ label: 'Series 1', val: series1, set: setSeries1 }, { label: 'Series 2', val: series2, set: setSeries2 }] as const).map(({ label, val, set }) => (
                                 <div key={label}>
-                                    <label className="block text-sm font-medium text-card-foreground mb-2">{label}</label>
+                                    <label className="block text-xs sm:text-sm font-medium text-card-foreground mb-2">{label}</label>
                                     <select
                                         value={val}
                                         onChange={e => set(e.target.value)}
-                                        className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+                                        className="w-full px-3 sm:px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-xs sm:text-sm"
                                     >
                                         {COMMODITY_GROUPS.map(group => (
                                             <optgroup key={group.label} label={group.label}>
@@ -268,11 +285,11 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
 
                 {/* MA toggles */}
                 {calculationMode === 'single' && (
-                    <div className="flex items-center gap-6 p-3 rounded-lg bg-muted/50">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 p-2 sm:p-3 rounded-lg bg-muted/50">
                         {[{ label: '200-Day MA', state: show200MA, set: setShow200MA }, { label: '50-Day MA', state: show50MA, set: setShow50MA }].map(({ label, state, set }) => (
                             <label key={label} className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" checked={state} onChange={e => set(e.target.checked)} className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary" />
-                                <span className="text-sm font-medium text-card-foreground">{label}</span>
+                                <span className="text-xs sm:text-sm font-medium text-card-foreground">{label}</span>
                             </label>
                         ))}
                     </div>
@@ -280,24 +297,24 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
 
                 {/* Date range */}
                 <div className="space-y-3">
-                    <label className="block text-sm font-medium text-card-foreground">Date Range</label>
-                    <div className="flex flex-wrap gap-2">
+                    <label className="block text-xs sm:text-sm font-medium text-card-foreground">Date Range</label>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                         {DATE_PRESETS.map(preset => (
                             <button
                                 key={preset.value}
                                 onClick={() => setDatePreset(preset.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${datePreset === preset.value ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
                                 {preset.label}
                             </button>
                         ))}
                     </div>
                     {datePreset === 'custom' && (
-                        <div className="flex gap-3 mt-3">
+                        <div className="flex flex-col sm:flex-row gap-3 mt-3">
                             {[{ label: 'Start Date', val: customStartDate, set: setCustomStartDate }, { label: 'End Date', val: customEndDate, set: setCustomEndDate }].map(({ label, val, set }) => (
                                 <div key={label} className="flex-1">
-                                    <label className="block text-xs text-muted-foreground mb-1">{label}</label>
-                                    <input type="date" value={val} onChange={e => set(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    <label className="block text-[10px] sm:text-xs text-muted-foreground mb-1">{label}</label>
+                                    <input type="date" value={val} onChange={e => set(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
                                 </div>
                             ))}
                         </div>
@@ -307,25 +324,25 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
 
             {/* Chart */}
             {loading ? (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
                 </div>
             ) : error ? (
-                <div className="flex items-center justify-center" style={{ height }}>
-                    <p className="text-red-500 text-sm">{error}</p>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
+                    <p className="text-red-500 text-xs sm:text-sm">{error}</p>
                 </div>
             ) : (
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={chartData} margin={responsiveMargin}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-                        <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} tickFormatter={v => new Date(v).getFullYear().toString()} ticks={generateYearlyTicks(chartData)} />
-                        <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: 12 }} domain={['auto', 'auto']} tickFormatter={v => v.toLocaleString('en-US', { maximumFractionDigits: 0 })} />
+                        <XAxis dataKey="date" stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: responsiveFontSize }} tickFormatter={v => new Date(v).getFullYear().toString()} ticks={generateYearlyTicks(chartData)} />
+                        <YAxis width={responsiveYAxisWidth} stroke="#9ca3af" tick={{ fill: '#9ca3af', fontSize: responsiveFontSize }} domain={['auto', 'auto']} tickFormatter={v => v.toLocaleString('en-US', { maximumFractionDigits: 0 })} />
                         <Tooltip
-                            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', color: '#f9fafb' }}
+                            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', color: '#f9fafb', fontSize: responsiveFontSize }}
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ color: '#9ca3af', fontSize: responsiveFontSize }} />
                         <Line type="monotone" dataKey="Value" stroke={CHART_COLORS[0]} strokeWidth={2} dot={false}
                             name={calculationMode === 'ratio' ? `${displayName1} / ${displayName2}` : selectedDisplayName}
                         />
@@ -337,43 +354,43 @@ export default function CommoditiesChart({ height = 500, className = '' }: Commo
 
             {/* Latest data */}
             {!loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
-                <div className="mt-6 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-card-foreground mb-3">Latest Data</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="mt-4 sm:mt-6 p-3 sm:p-4 rounded-lg bg-muted/50">
+                    <h4 className="text-xs sm:text-sm font-semibold text-card-foreground mb-3">Latest Data</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         {calculationMode === 'single' ? (
                             <>
                                 <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Value</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">Current Value</div>
+                                    <div className="text-lg sm:text-2xl font-bold text-card-foreground">
                                         {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">As of</div>
+                                    <div className="text-sm sm:text-lg font-semibold text-card-foreground">
                                         {(() => { const [y, m, d] = data[data.length - 1].date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Series</div>
-                                    <div className="text-sm font-medium text-card-foreground">{selectedDisplayName}</div>
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">Series</div>
+                                    <div className="text-xs sm:text-sm font-medium text-card-foreground">{selectedDisplayName}</div>
                                 </div>
                             </>
                         ) : (
                             <>
                                 <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
-                                    <div className="text-2xl font-bold text-card-foreground">{ratioData[ratioData.length - 1].Value.toFixed(4)}</div>
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">Current Ratio</div>
+                                    <div className="text-lg sm:text-2xl font-bold text-card-foreground">{ratioData[ratioData.length - 1].Value.toFixed(4)}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">As of</div>
+                                    <div className="text-sm sm:text-lg font-semibold text-card-foreground">
                                         {(() => { const [y, m, d] = ratioData[ratioData.length - 1].date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Calculation</div>
-                                    <div className="text-sm font-medium text-card-foreground">{displayName1} / {displayName2}</div>
+                                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-1">Calculation</div>
+                                    <div className="text-xs sm:text-sm font-medium text-card-foreground">{displayName1} / {displayName2}</div>
                                 </div>
                             </>
                         )}

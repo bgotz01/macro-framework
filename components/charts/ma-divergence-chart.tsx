@@ -6,6 +6,7 @@ import {
     Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { useTheme } from '../theme-provider';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface DataPoint {
     date: string;
@@ -48,7 +49,18 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
     const [index, setIndex] = useState<IndexKey>('sp500');
     const [show50_200, setShow50_200] = useState(true);
     const [show200_500, setShow200_500] = useState(true);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
     const { theme } = useTheme();
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     useEffect(() => {
         setLoading(true);
@@ -129,26 +141,43 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
         );
     };
 
+    const responsiveMargin = getResponsiveMargin();
+    const responsiveFontSize = getResponsiveFontSize();
+    const responsiveYAxisWidth = getResponsiveYAxisWidth();
+
     if (loading) {
-        return <div className="p-6 rounded-xl border bg-card text-center text-muted-foreground">Loading...</div>;
+        return <div className="p-2 sm:p-6 rounded-xl border bg-card text-center text-muted-foreground">Loading...</div>;
     }
 
     return (
-        <div className="p-6 rounded-xl border bg-card">
+        <div className="p-2 sm:p-6 rounded-xl border bg-card">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h3 className="text-lg font-semibold">MA Divergence</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">50/200MA and 200/500MA spread</p>
+            <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-start justify-between">
+                    <div>
+                        <h3 className="text-base sm:text-lg font-semibold">MA Divergence</h3>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">50/200MA and 200/500MA spread</p>
+                    </div>
+                    {latest && (
+                        <div className="text-right text-[10px] sm:text-xs space-y-0.5">
+                            <p style={{ color: COLOR_50_200 }}>
+                                50/200: <span className="font-bold text-xs sm:text-sm">{latest.div_50_200 > 0 ? '+' : ''}{latest.div_50_200.toFixed(2)}%</span>
+                            </p>
+                            <p style={{ color: COLOR_200_500 }}>
+                                200/500: <span className="font-bold text-xs sm:text-sm">{latest.div_200_500 > 0 ? '+' : ''}{latest.div_200_500.toFixed(2)}%</span>
+                            </p>
+                        </div>
+                    )}
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <div className="flex rounded-lg border border-border overflow-hidden text-xs sm:text-sm font-medium">
                         {(['sp500', 'ndx'] as const).map(idx => (
                             <button
                                 type="button"
                                 key={idx}
                                 onClick={() => setIndex(idx)}
-                                className={`px-3 py-1.5 transition-colors ${index === idx
+                                className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 transition-colors ${index === idx
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-background text-muted-foreground hover:bg-muted'
                                     }`}
@@ -157,13 +186,13 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                             </button>
                         ))}
                     </div>
-                    <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+                    <div className="flex rounded-lg border border-border overflow-hidden text-xs sm:text-sm font-medium">
                         {(['divergence', 'price'] as const).map(mode => (
                             <button
                                 type="button"
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
-                                className={`px-3 py-1.5 transition-colors capitalize ${viewMode === mode
+                                className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 transition-colors capitalize ${viewMode === mode
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-background text-muted-foreground hover:bg-muted'
                                     }`}
@@ -172,23 +201,13 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                             </button>
                         ))}
                     </div>
-                    {latest && (
-                        <div className="text-right text-xs space-y-0.5">
-                            <p style={{ color: COLOR_50_200 }}>
-                                50/200: <span className="font-bold text-sm">{latest.div_50_200 > 0 ? '+' : ''}{latest.div_50_200.toFixed(2)}%</span>
-                            </p>
-                            <p style={{ color: COLOR_200_500 }}>
-                                200/500: <span className="font-bold text-sm">{latest.div_200_500 > 0 ? '+' : ''}{latest.div_200_500.toFixed(2)}%</span>
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
 
             {/* Show Lines */}
             {viewMode === 'divergence' && (
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Show Lines:</span>
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">Show Lines:</span>
                     {[
                         { label: '50/200', active: show50_200, toggle: () => setShow50_200(s => !s), color: COLOR_50_200 },
                         { label: '200/500', active: show200_500, toggle: () => setShow200_500(s => !s), color: COLOR_200_500 },
@@ -197,7 +216,7 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                             type="button"
                             key={label}
                             onClick={toggle}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                            className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
                             style={{ backgroundColor: active ? color : 'transparent' }}
                         >
                             {label}
@@ -207,13 +226,13 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
             )}
 
             {/* Date presets */}
-            <div className="flex flex-wrap gap-2 mb-5">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-5">
                 {DATE_PRESETS.map(p => (
                     <button
                         type="button"
                         key={p.value}
                         onClick={() => setDatePreset(p.value)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${datePreset === p.value
+                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${datePreset === p.value
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
@@ -223,30 +242,31 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                 ))}
             </div>
 
-            <ResponsiveContainer width="100%" height={height}>
-                <ComposedChart data={filtered} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
+                <ComposedChart data={filtered} margin={responsiveMargin}>
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                     <XAxis
                         dataKey="date"
                         stroke={textColor}
                         ticks={yearlyTicks}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: responsiveFontSize }}
                         tickFormatter={v => new Date(v).getFullYear().toString()}
                     />
                     <YAxis
+                        width={responsiveYAxisWidth}
                         stroke={textColor}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: responsiveFontSize }}
                         domain={['auto', 'auto']}
                         tickFormatter={v => viewMode === 'divergence' ? `${v}%` : v.toLocaleString()}
                         label={{
                             value: viewMode === 'divergence' ? 'Divergence (%)' : 'Price',
                             angle: -90,
                             position: 'insideLeft',
-                            style: { fill: textColor },
+                            style: { fill: textColor, fontSize: responsiveFontSize },
                         }}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: responsiveFontSize }} />
 
                     {viewMode === 'divergence' && (
                         <ReferenceLine y={0} stroke={gridColor} strokeWidth={1.5} />
@@ -283,12 +303,12 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                 </ComposedChart>
             </ResponsiveContainer>
 
-            <div className="mt-3 text-xs text-muted-foreground space-y-1 border-t border-border pt-3">
+            <div className="mt-3 text-[10px] sm:text-xs text-muted-foreground space-y-1 border-t border-border pt-3">
                 <p>
                     <span className="font-medium text-foreground">50/200 Divergence</span> = (50MA − 200MA) / 200MA × 100 &nbsp;·&nbsp;
                     <span className="font-medium text-foreground">200/500 Divergence</span> = (200MA − 500MA) / 500MA × 100
                 </p>
-                <p>Positive values mean the faster MA is above the slower MA (bullish alignment). Negative values indicate bearish crossover.</p>
+                <p className="hidden sm:block">Positive values mean the faster MA is above the slower MA (bullish alignment). Negative values indicate bearish crossover.</p>
             </div>
         </div>
     );

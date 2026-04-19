@@ -39,38 +39,55 @@ const PIPELINE_STEPS = [
 
 export default function DataPipeline() {
     return (
-        <div className="p-8 rounded-2xl border border-border/50 bg-card">
+        <div className="p-6 sm:p-8 rounded-2xl border border-border/50 bg-card">
             <div className="mb-6">
                 <h3 className="text-lg font-semibold text-card-foreground mb-1">Data Pipeline</h3>
                 <p className="text-sm text-muted-foreground">How raw data becomes regime signals</p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch gap-0">
+            {/* Mobile: vertical list */}
+            <div className="flex flex-col sm:hidden">
                 {PIPELINE_STEPS.map((step, i) => (
-                    <div key={i} className="flex sm:flex-col items-center flex-1">
-                        {/* Node */}
-                        <div className="flex sm:flex-col items-center w-full">
-                            <div className={`w-2.5 h-2.5 rounded-full ${step.color} shrink-0`} />
-                            {/* Connector */}
+                    <div key={i} className="flex items-start gap-3">
+                        {/* Left: dot + vertical line */}
+                        <div className="flex flex-col items-center shrink-0 pt-0.5">
+                            <div className={`w-2.5 h-2.5 rounded-full ${step.color}`} />
                             {i < PIPELINE_STEPS.length - 1 && (
-                                <div className="sm:hidden h-px w-full bg-border mx-1" />
+                                <div className="w-px flex-1 bg-border my-1" style={{ minHeight: '2rem' }} />
                             )}
                         </div>
-
-                        {/* Content */}
-                        <div className="flex-1 sm:mt-3 ml-3 sm:ml-0 sm:text-center">
+                        {/* Right: content */}
+                        <div className="pb-4">
                             <div className="text-xs font-semibold text-card-foreground">{step.label}</div>
                             <div className={`text-xs font-medium mt-0.5 ${step.color.replace('bg-', 'text-')}`}>{step.detail}</div>
-                            <div className="text-xs text-muted-foreground mt-1 leading-snug hidden sm:block">{step.description}</div>
+                            <div className="text-xs text-muted-foreground mt-1 leading-snug">{step.description}</div>
                         </div>
+                    </div>
+                ))}
+            </div>
 
-                        {/* Horizontal connector for desktop */}
-                        {i < PIPELINE_STEPS.length - 1 && (
-                            <div className="hidden sm:flex items-center self-start mt-1.5 w-full">
-                                <div className="flex-1 h-px bg-border" />
-                                <div className="text-muted-foreground/40 text-xs mx-1">→</div>
+            {/* Desktop: horizontal */}
+            <div className="hidden sm:flex items-start gap-0">
+                {PIPELINE_STEPS.map((step, i) => (
+                    <div key={i} className="flex items-start flex-1 min-w-0">
+                        <div className="flex flex-col items-center flex-1 min-w-0">
+                            {/* Top row: dot + connector */}
+                            <div className="flex items-center w-full">
+                                <div className={`w-2.5 h-2.5 rounded-full ${step.color} shrink-0`} />
+                                {i < PIPELINE_STEPS.length - 1 && (
+                                    <>
+                                        <div className="flex-1 h-px bg-border" />
+                                        <div className="text-muted-foreground/40 text-xs mx-1">→</div>
+                                    </>
+                                )}
                             </div>
-                        )}
+                            {/* Content below dot */}
+                            <div className="mt-3 pr-2 w-full">
+                                <div className="text-xs font-semibold text-card-foreground">{step.label}</div>
+                                <div className={`text-xs font-medium mt-0.5 ${step.color.replace('bg-', 'text-')}`}>{step.detail}</div>
+                                <div className="text-xs text-muted-foreground mt-1 leading-snug">{step.description}</div>
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>

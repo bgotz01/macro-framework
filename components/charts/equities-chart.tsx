@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 import HistoricalDataTable from './historical-data-table';
 
 export type EquityAssetClass = 'equities' | 'commodities' | 'crypto' | 'volatility';
@@ -98,6 +99,18 @@ export default function EquitiesChart({
     const [convertToUSD, setConvertToUSD] = useState(false);
     const [show200MA, setShow200MA] = useState(false);
     const [show50MA, setShow50MA] = useState(false);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    // Responsive height
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     // Ratio calculation state
     const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
@@ -421,7 +434,7 @@ export default function EquitiesChart({
     const renderContent = () => {
         if (loading) {
             return (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             );
@@ -429,7 +442,7 @@ export default function EquitiesChart({
 
         if (error) {
             return (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <div className="text-center">
                         <p className="text-red-500 font-medium mb-2">Error loading data</p>
                         <p className="text-sm text-muted-foreground">{error}</p>
@@ -442,7 +455,7 @@ export default function EquitiesChart({
 
         if (sourceData.length === 0) {
             return (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <p className="text-muted-foreground">No data available</p>
                 </div>
             );
@@ -460,13 +473,13 @@ export default function EquitiesChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={show200MA || show50MA ? ma200Data : chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={show200MA || show50MA ? ma200Data : chartData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
@@ -474,8 +487,9 @@ export default function EquitiesChart({
                             ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
+                            width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => {
                                 return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -486,12 +500,13 @@ export default function EquitiesChart({
                                 backgroundColor: '#1f2937',
                                 border: '1px solid #374151',
                                 borderRadius: '8px',
-                                color: '#f9fafb'
+                                color: '#f9fafb',
+                                fontSize: getResponsiveFontSize()
                             }}
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ color: '#9ca3af', fontSize: getResponsiveFontSize() }} />
                         <Line
                             type="monotone"
                             dataKey="Value"
@@ -536,9 +551,9 @@ export default function EquitiesChart({
     const latestDate = data.length > 0 ? data[data.length - 1].date : null;
 
     return (
-        <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
+        <div className={`p-2 sm:p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {latestDate && (
-                <div className="mb-4 text-xs text-muted-foreground text-right">
+                <div className="mb-3 sm:mb-4 text-[10px] sm:text-xs text-muted-foreground text-right">
                     Latest data: {(() => { const [y, m, d] = latestDate.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); })()}
                 </div>
             )}

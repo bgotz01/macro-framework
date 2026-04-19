@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
 import { useTheme } from '../theme-provider';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 import HistoricalDataTable from './historical-data-table';
 
 interface DivergenceChartProps {
@@ -113,6 +114,16 @@ export default function DivergenceChart({
     const [customStartDate, setCustomStartDate] = useState<string>('');
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [height]);
     const [error, setError] = useState<string | null>(null);
     const [showTable, setShowTable] = useState(false);
     const [index, setIndex] = useState<'sp500' | 'ndx'>('sp500');
@@ -235,8 +246,8 @@ export default function DivergenceChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={chartData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} opacity={0.3} />
                         <XAxis
                             dataKey="date"
@@ -248,7 +259,7 @@ export default function DivergenceChart({
                             }}
                             ticks={generateYearlyTicks(chartData)}
                         />
-                        <YAxis
+                        <YAxis width={getResponsiveYAxisWidth()}
                             stroke={textColor}
                             tick={{ fill: textColor, fontSize: 12 }}
                             domain={viewMode === 'percentile' ? [0, 100] : ['auto', 'auto']}
@@ -290,7 +301,7 @@ export default function DivergenceChart({
                                 return formatTooltipValue(Number(value), undefined);
                             }}
                         />
-                        <Legend wrapperStyle={{ color: textColor }} />
+                        <Legend wrapperStyle={{ fontSize: getResponsiveFontSize(), color: textColor }} />
                         {(viewMode === 'divergence' || viewMode === 'slope' || viewMode === 'days') && (
                             <ReferenceLine y={0} stroke={textColor} strokeDasharray="3 3" opacity={0.5} />
                         )}

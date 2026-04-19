@@ -303,25 +303,6 @@ export default function CustomRegimeParameters() {
                 )}
             </div>
 
-            {/* Date Picker */}
-            <div className="flex items-center justify-center gap-3 mb-4">
-                <label className="text-xs font-medium text-muted-foreground">Jump to date:</label>
-                <input
-                    type="date"
-                    min={`${startYear}-01-01`}
-                    max={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => {
-                        if (e.target.value) {
-                            const selectedDate = new Date(e.target.value);
-                            const y = selectedDate.getFullYear();
-                            const m = selectedDate.getMonth();
-                            setSliderValue(Math.min((y - startYear) * 12 + m, totalMonths));
-                        }
-                    }}
-                    className="px-3 py-1.5 rounded-md bg-muted text-card-foreground border border-border text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-            </div>
-
             {/* Active Regime State — above timeline */}
             {regimeMetadata && (
                 <div className="mb-6">

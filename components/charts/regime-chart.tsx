@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useTheme } from '../theme-provider';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface RegimeChartProps {
     height?: number;
@@ -38,7 +39,18 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
     const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('value');
     const [selected, setSelected] = useState<string[]>(['rey5yr']);
     const [datePreset, setDatePreset] = useState<string>('all');
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
     const { theme } = useTheme();
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     useEffect(() => {
         fetch('/api/percentile-history')
@@ -134,13 +146,17 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
         );
     };
 
+    const responsiveMargin = getResponsiveMargin();
+    const responsiveFontSize = getResponsiveFontSize();
+    const responsiveYAxisWidth = getResponsiveYAxisWidth();
+
     return (
-        <div className="p-6 rounded-xl border bg-card">
-            <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Regime Parameters</h2>
+        <div className="p-2 sm:p-6 rounded-xl border bg-card">
+            <div className="mb-3 sm:mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold">Regime Parameters</h2>
                     {filtered.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-xs sm:text-sm text-muted-foreground">
                             Latest: {(() => {
                                 const [y, m, d] = String(filtered[filtered.length - 1].date).split('-').map(Number);
                                 return new Date(y, m - 1, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -149,12 +165,12 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 mb-4">
-                    <label className="text-sm font-medium">View:</label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                    <label className="text-xs sm:text-sm font-medium">View:</label>
                     <select
                         value={metric}
                         onChange={e => setMetric(e.target.value as any)}
-                        className="px-3 py-1.5 rounded-lg border bg-background text-foreground text-sm cursor-pointer hover:border-primary transition-colors"
+                        className="w-full sm:w-auto px-3 py-1.5 rounded-lg border bg-background text-foreground text-xs sm:text-sm cursor-pointer hover:border-primary transition-colors"
                     >
                         <option value="percentile">Percentile Rank</option>
                         <option value="value">Actual Value</option>
@@ -163,12 +179,12 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
                 </div>
 
                 {/* Date presets */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4">
                     {DATE_PRESETS.map(p => (
                         <button
                             key={p.value}
                             onClick={() => setDatePreset(p.value)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${datePreset === p.value
+                            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${datePreset === p.value
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                 }`}
@@ -179,12 +195,12 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
                 </div>
 
                 {/* Series toggles */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {SERIES.map(s => (
                         <button
                             key={s.value}
                             onClick={() => toggle(s.value)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${selected.includes(s.value)
+                            className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium border transition-all ${selected.includes(s.value)
                                 ? 'border-current opacity-100'
                                 : 'border-border opacity-40'
                                 }`}
@@ -196,24 +212,25 @@ export default function RegimeChart({ height = 450 }: RegimeChartProps) {
                 </div>
             </div>
 
-            <ResponsiveContainer width="100%" height={height}>
-                <LineChart data={filtered} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
+                <LineChart data={filtered} margin={responsiveMargin}>
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                     <XAxis
                         dataKey="date"
                         stroke={textColor}
                         ticks={yearlyTicks}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: responsiveFontSize }}
                         tickFormatter={v => { const [y] = String(v).split('-'); return y; }}
                     />
                     <YAxis
+                        width={responsiveYAxisWidth}
                         stroke={textColor}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: responsiveFontSize }}
                         domain={metric === 'percentile' ? [0, 100] : ['auto', 'auto']}
                         tickFormatter={v => metric === 'percentile' ? `${v}%` : `${v}`}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: responsiveFontSize }} />
 
                     {metric === 'percentile' && (
                         <>

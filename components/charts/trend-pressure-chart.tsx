@@ -6,6 +6,7 @@ import {
     Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { useTheme } from '../theme-provider';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface DataPoint {
     date: string;
@@ -145,6 +146,16 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
     const [loading, setLoading] = useState(true);
     const [fetching, setFetching] = useState(false);
     const [datePreset, setDatePreset] = useState<string>('10y');
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
     const [customStart, setCustomStart] = useState<string>('');
     const [customEnd, setCustomEnd] = useState<string>('');
     const [appliedStart, setAppliedStart] = useState<string>('');
@@ -521,19 +532,19 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
             )}
             {datePreset !== 'custom' && <div className="mb-5" />}
 
-            <ResponsiveContainer width="100%" height={height}>
-                <ComposedChart data={filtered} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
+                <ComposedChart data={filtered} margin={getResponsiveMargin()}>
                     <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                     <XAxis
                         dataKey="date"
                         stroke={textColor}
                         ticks={yearlyTicks}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: getResponsiveFontSize() }}
                         tickFormatter={v => new Date(v).getFullYear().toString()}
                     />
-                    <YAxis
+                    <YAxis width={getResponsiveYAxisWidth()}
                         stroke={textColor}
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: getResponsiveFontSize() }}
                         domain={viewMode === 'percentile' ? [0, 100] : ['auto', 'auto']}
                         label={{
                             value: viewMode === 'percentile' ? 'Percentile' : 'Value',
@@ -543,7 +554,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                         }}
                     />
                     {viewMode === 'value' && showScore && (
-                        <YAxis
+                        <YAxis width={getResponsiveYAxisWidth()}
                             yAxisId="score"
                             orientation="right"
                             stroke={SCORE_COLOR}

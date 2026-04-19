@@ -493,3 +493,28 @@ html {
     @apply px-4 py-3 border-t border-border align-middle text-center;
   }
 }
+
+/* ─── Mobile Chart Optimizations ──────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Reduce chart container padding on mobile */
+  .recharts-wrapper {
+    font-size: 10px;
+  }
+
+  /* Make chart legends more compact */
+  .recharts-legend-wrapper {
+    font-size: 10px !important;
+  }
+
+  /* Optimize tooltip for mobile */
+  .recharts-tooltip-wrapper {
+    font-size: 11px;
+  }
+
+  /* Better touch targets for chart controls */
+  button,
+  select {
+    min-height: 36px;
+  }
+}

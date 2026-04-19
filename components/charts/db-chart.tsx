@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { formatTooltipValue, formatValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto' | 'valuations';
 
@@ -63,6 +64,17 @@ export default function DBChart({
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    // Responsive height
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [height]);
 
     // Spread/Ratio calculation state
     const [calculationMode, setCalculationMode] = useState<'none' | 'spread' | 'ratio'>('none');
@@ -372,7 +384,7 @@ export default function DBChart({
     const renderContent = () => {
         if (loading) {
             return (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             );
@@ -380,7 +392,7 @@ export default function DBChart({
 
         if (error) {
             return (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <div className="text-center">
                         <p className="text-red-500 font-medium mb-2">Error loading data</p>
                         <p className="text-sm text-muted-foreground">{error}</p>
@@ -391,7 +403,7 @@ export default function DBChart({
 
         if (data.length === 0 && spreadData.length === 0) {
             return (
-                <div className="flex items-center justify-center" style={{ height }}>
+                <div className="flex items-center justify-center" style={{ height: responsiveHeight }}>
                     <p className="text-muted-foreground">No data available</p>
                 </div>
             );
@@ -412,13 +424,13 @@ export default function DBChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={chartData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => {
                                 const date = new Date(value);
                                 return date.getFullYear().toString();
@@ -426,8 +438,9 @@ export default function DBChart({
                             ticks={generateYearlyTicks(chartData)}
                         />
                         <YAxis
+                            width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
-                            tick={{ fill: '#9ca3af', fontSize: 12 }}
+                            tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => {
                                 // For Y-axis, use compact formatting
@@ -449,13 +462,14 @@ export default function DBChart({
                                 backgroundColor: '#1f2937',
                                 border: '1px solid #374151',
                                 borderRadius: '8px',
-                                color: '#f9fafb'
+                                color: '#f9fafb',
+                                fontSize: getResponsiveFontSize()
                             }}
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
                         <Legend
-                            wrapperStyle={{ color: '#9ca3af' }}
+                            wrapperStyle={{ color: '#9ca3af', fontSize: getResponsiveFontSize() }}
                         />
                         <Line
                             type="monotone"
@@ -475,9 +489,9 @@ export default function DBChart({
     };
 
     return (
-        <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
+        <div className={`p-2 sm:p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Controls */}
-            <div className="mb-6 space-y-4">
+            <div className="mb-3 sm:mb-6 space-y-3 sm:space-y-4">
                 {/* Calculation Mode Selector */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <label className="text-sm font-medium text-card-foreground">

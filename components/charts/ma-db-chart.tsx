@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto';
 
@@ -60,6 +61,16 @@ export default function MADBChart({
     const [customStartDate, setCustomStartDate] = useState<string>('');
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [height]);
     const [error, setError] = useState<string | null>(null);
 
     // Load available series when asset class changes
@@ -218,8 +229,8 @@ export default function MADBChart({
                         </p>
                     </div>
                 )}
-                <ResponsiveContainer width="100%" height={height}>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <LineChart data={chartData} margin={getResponsiveMargin()}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                         <XAxis
                             dataKey="date"
@@ -231,7 +242,7 @@ export default function MADBChart({
                             }}
                             ticks={generateYearlyTicks(chartData)}
                         />
-                        <YAxis
+                        <YAxis width={getResponsiveYAxisWidth()}
                             stroke="#9ca3af"
                             tick={{ fill: '#9ca3af', fontSize: 12 }}
                             domain={['auto', 'auto']}
@@ -260,7 +271,7 @@ export default function MADBChart({
                             labelStyle={{ color: '#9ca3af' }}
                             formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
                         />
-                        <Legend wrapperStyle={{ color: '#9ca3af' }} />
+                        <Legend wrapperStyle={{ fontSize: getResponsiveFontSize(), color: "#9ca3af" }} />
                         <Line
                             type="monotone"
                             dataKey="Value"

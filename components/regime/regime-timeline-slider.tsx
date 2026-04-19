@@ -1,5 +1,7 @@
 'use client';
 
+import { useRef } from 'react';
+
 interface TimelineSliderProps {
     sliderValue: number;
     totalMonths: number;
@@ -17,6 +19,17 @@ export default function TimelineSlider({
     displayDate,
     onSliderChange
 }: TimelineSliderProps) {
+    const dateInputRef = useRef<HTMLInputElement>(null);
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value) {
+            const selectedDate = new Date(e.target.value);
+            const y = selectedDate.getFullYear();
+            const m = selectedDate.getMonth();
+            onSliderChange(Math.min((y - startYear) * 12 + m, totalMonths));
+        }
+    };
+
     return (
         <div className="p-4 rounded-lg border border-border/50 bg-card shadow-lg mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -29,7 +42,21 @@ export default function TimelineSlider({
                     >
                         −
                     </button>
-                    <div className="text-sm font-semibold text-primary min-w-[100px] text-center">{displayDate}</div>
+                    <button
+                        onClick={() => dateInputRef.current?.showPicker()}
+                        className="text-sm font-semibold text-primary min-w-[100px] text-center hover:underline cursor-pointer px-2 py-1 rounded hover:bg-primary/10 transition-colors"
+                        title="Click to select date"
+                    >
+                        {displayDate}
+                    </button>
+                    <input
+                        ref={dateInputRef}
+                        type="date"
+                        min={`${startYear}-01-01`}
+                        max={new Date().toISOString().split('T')[0]}
+                        onChange={handleDateChange}
+                        className="sr-only"
+                    />
                     <button
                         onClick={() => onSliderChange(Math.min(totalMonths, sliderValue + 1))}
                         className="px-2 py-1 rounded bg-muted hover:bg-muted/80 transition-colors text-sm font-bold"

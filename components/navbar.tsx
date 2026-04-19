@@ -1,17 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { ThemeToggle } from './theme-toggle';
 
-export default function Navbar() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface NavbarProps {
+    onMenuClick?: () => void;
+}
+
+export default function Navbar({ onMenuClick }: NavbarProps) {
     const navItems = [
         { href: '/cockpit', label: 'Cockpit' },
         { href: '/chart', label: 'Charts' },
-
         { href: '/regime-active', label: 'Regime' },
-
     ];
 
     return (
@@ -53,13 +53,13 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    {/* Mobile menu button and theme toggle */}
+                    {/* Mobile: theme toggle + menu button */}
                     <div className="md:hidden flex items-center space-x-2">
                         <ThemeToggle />
                         <button
                             className="p-3 rounded-xl hover:bg-muted/80 transition-colors duration-200 group"
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            aria-label="Toggle menu"
+                            onClick={onMenuClick}
+                            aria-label="Open menu"
                         >
                             <svg
                                 className="h-6 w-6 text-muted-foreground group-hover:text-foreground transition-colors duration-200"
@@ -67,43 +67,16 @@ export default function Navbar() {
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
-                                {isMenuOpen ? (
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M6 18L18 6M6 6l12 12"
-                                    />
-                                ) : (
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M4 6h16M4 12h16M4 18h16"
-                                    />
-                                )}
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M4 6h16M4 12h16M4 18h16"
+                                />
                             </svg>
                         </button>
                     </div>
                 </div>
-
-                {/* Mobile Navigation */}
-                {isMenuOpen && (
-                    <div className="md:hidden py-6 border-t border-border/40 animate-fade-in">
-                        <div className="flex flex-col space-y-2">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className="px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200 font-medium"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
         </nav>
     );
