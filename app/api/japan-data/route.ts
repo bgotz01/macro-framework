@@ -4,7 +4,7 @@ import { join } from 'path';
 
 export async function GET() {
     try {
-        const filePath = join(process.cwd(), 'public', 'data', 'case-study', 'gold-reserves.csv');
+        const filePath = join(process.cwd(), 'public', 'data', 'japan', 'japan-1980s.csv');
         const csvContent = readFileSync(filePath, 'utf8');
 
         return new NextResponse(csvContent, {
@@ -15,9 +15,9 @@ export async function GET() {
             },
         });
     } catch (error) {
-        console.error('Error reading gold reserves CSV:', error);
+        console.error('Error reading Japan CSV:', error);
         return NextResponse.json(
-            { error: 'Failed to load gold reserves data', details: error instanceof Error ? error.message : 'Unknown error' },
+            { error: 'Failed to load Japan data', details: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 }
         );
     }

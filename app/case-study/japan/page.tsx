@@ -91,7 +91,7 @@ export default function JapanComparisonPage() {
     const [activeTab, setActiveTab] = useState<'annual' | 'rolling'>('annual');
 
     useEffect(() => {
-        fetch('/data/japan/japan-1980s.csv')
+        fetch('/api/japan-data')
             .then((res) => res.text())
             .then((text) => {
                 const lines = text.split('\n');
