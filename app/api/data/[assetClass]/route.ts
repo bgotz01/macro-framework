@@ -5,10 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ assetClass: string }> }
+    { params }: { params: { assetClass: string } | Promise<{ assetClass: string }> }
 ) {
     try {
-        const { assetClass } = await params;
+        const resolvedParams = await Promise.resolve(params);
+        const { assetClass } = resolvedParams;
         const { searchParams } = new URL(request.url);
         const series = searchParams.get('series');
 
