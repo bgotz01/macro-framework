@@ -17,6 +17,7 @@ import {
     ReferenceLine,
 } from 'recharts';
 import { format, parseISO, isValid } from 'date-fns';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface DataPoint {
     [key: string]: any;
@@ -74,6 +75,18 @@ export default function ChartFixed({
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+            setResponsiveMargin(getResponsiveMargin());
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [height]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -81,9 +94,20 @@ export default function ChartFixed({
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`/data/${filePath}`);
+                // Determine the fetch URL based on file path
+                let fetchUrl: string;
+                if (filePath.startsWith('events/')) {
+                    // Use API endpoint for events files
+                    const filename = filePath.replace('events/', '');
+                    fetchUrl = `/api/data/events/${filename}`;
+                } else {
+                    // Use static file serving for other files
+                    fetchUrl = `/data/${filePath}`;
+                }
+
+                const response = await fetch(fetchUrl);
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch ${filePath}: ${response.statusText}`);
+                    throw new Error(`Failed to fetch ${fetchUrl}: ${response.statusText}`);
                 }
 
                 const csvText = await response.text();
@@ -249,7 +273,7 @@ export default function ChartFixed({
 
     const commonProps = {
         data: chartData.data,
-        margin: { top: 5, right: 30, left: 20, bottom: 5 },
+        margin: responsiveMargin,
     };
 
     const xAxisProps = {
@@ -272,7 +296,7 @@ export default function ChartFixed({
                 )}
             </div>
 
-            <ResponsiveContainer width="100%" height={height}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
                 {chartType === 'line' && (
                     <LineChart {...commonProps}>
                         {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />}

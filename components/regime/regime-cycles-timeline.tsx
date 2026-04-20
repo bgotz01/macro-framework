@@ -128,36 +128,38 @@ export default function RegimeCyclesTimeline() {
     return (
         <div className="space-y-0">
             {/* Tabs */}
-            <div className="flex gap-1 rounded-t-2xl border border-b-0 border-border/70 bg-card/80 px-3 pt-3 backdrop-blur-sm">
-                {cyclesData.map((cycle) => {
-                    const isActive = activeTab === cycle.cycleNumber;
-                    return (
-                        <button
-                            key={cycle.cycleNumber}
-                            onClick={() => setActiveTab(cycle.cycleNumber)}
-                            className={`relative flex flex-col items-start gap-0.5 rounded-t-xl border-b-2 px-4 py-3 text-left transition-all ${isActive
-                                ? `${cycle.tabColor} bg-background/60`
-                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                                }`}
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold ${isActive ? 'border-current bg-current/10' : 'border-border bg-muted/30'
-                                    }`}>
-                                    {cycle.cycleNumber}
-                                </span>
-                                <span className="text-sm font-semibold leading-tight">{cycle.title}</span>
-                                {cycle.isCurrent && (
-                                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-                                        Current
+            <div className="overflow-x-auto rounded-t-2xl border border-b-0 border-border/70 bg-card/80 px-3 pt-3 backdrop-blur-sm">
+                <div className="flex gap-1 min-w-max">
+                    {cyclesData.map((cycle) => {
+                        const isActive = activeTab === cycle.cycleNumber;
+                        return (
+                            <button
+                                key={cycle.cycleNumber}
+                                onClick={() => setActiveTab(cycle.cycleNumber)}
+                                className={`relative flex flex-col items-start gap-0.5 rounded-t-xl border-b-2 px-4 py-3 text-left transition-all whitespace-nowrap ${isActive
+                                    ? `${cycle.tabColor} bg-background/60`
+                                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px] font-bold ${isActive ? 'border-current bg-current/10' : 'border-border bg-muted/30'
+                                        }`}>
+                                        {cycle.cycleNumber}
                                     </span>
-                                )}
-                            </div>
-                            <span className="pl-7 text-[11px] font-medium uppercase tracking-[0.12em] opacity-70">
-                                {cycle.period}
-                            </span>
-                        </button>
-                    );
-                })}
+                                    <span className="text-sm font-semibold leading-tight">{cycle.title}</span>
+                                    {cycle.isCurrent && (
+                                        <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                                            Current
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="pl-7 text-[11px] font-medium uppercase tracking-[0.12em] opacity-70">
+                                    {cycle.period}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Expanded content */}

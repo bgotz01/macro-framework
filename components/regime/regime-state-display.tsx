@@ -56,76 +56,6 @@ function MomBadge({ pf }: { pf: { label: string; delta: number } }) {
     );
 }
 
-function FlagsModal({ signals, momMoves, onClose }: {
-    signals: Signal[];
-    momMoves: Array<{ label: string; delta: number }>;
-    onClose: () => void;
-}) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/50" />
-            <div
-                className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <h3 className="text-base font-semibold">Active Flags</h3>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div className="p-5 space-y-6">
-                    {signals.length > 0 && (
-                        <div>
-                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Signals</div>
-                            <div className="space-y-2">
-                                {signals.map((flag, i) => (
-                                    <div key={i} className={`flex gap-3 p-3 rounded-lg border ${flag.type === 'warning' ? 'bg-yellow-500/5 border-yellow-500/30' : 'bg-red-500/5 border-red-500/30'
-                                        }`}>
-                                        <span className={`mt-0.5 flex-shrink-0 inline-block px-2 py-0.5 rounded text-[10px] font-bold h-fit ${flag.type === 'warning'
-                                            ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500'
-                                            : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500'
-                                            }`}>{flag.short}</span>
-                                        <p className="text-sm text-muted-foreground leading-relaxed">{flag.message}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {momMoves.length > 0 && (
-                        <div>
-                            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Month-over-Month Percentile Moves</div>
-                            <div className="space-y-2">
-                                {momMoves.map((pf, i) => {
-                                    const sign = pf.delta > 0 ? '+' : '';
-                                    const isUp = pf.delta > 0;
-                                    return (
-                                        <div key={i} className={`flex gap-3 p-3 rounded-lg border ${isUp ? 'bg-yellow-500/5 border-yellow-500/30' : 'bg-red-500/5 border-red-500/30'
-                                            }`}>
-                                            <span className={`mt-0.5 flex-shrink-0 inline-block px-2 py-0.5 rounded text-[10px] font-bold h-fit ${isUp
-                                                ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500'
-                                                : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500'
-                                                }`}>{pf.label} {sign}{pf.delta.toFixed(0)}</span>
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                                <span className="font-medium text-foreground">{pf.label}</span> percentile shifted{' '}
-                                                <span className={`font-semibold ${isUp ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                    {sign}{pf.delta.toFixed(1)} points
-                                                </span>{' '}
-                                                this month — a significant move that may signal a shift in macro conditions.
-                                            </p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 interface RegimeStateDisplayProps {
     regime: RegimeFamily;
@@ -226,10 +156,31 @@ export default function RegimeStateDisplay({
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="w-full p-6 hover:bg-muted/10 transition-colors rounded-xl"
                     >
-                        <div className="relative text-center">
-                            {/* Two-column flags — always visible, badges appear when triggered */}
+                        <div className="relative">
+                            {/* Small title at the very top */}
+                            <div className="text-center mb-3">
+                                <h2
+                                    className="text-xs font-light tracking-widest text-muted-foreground uppercase"
+                                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.2em' }}
+                                >
+                                    ACTIVE REGIME
+                                </h2>
+                            </div>
+
+                            {/* Mobile: Single horizontal row of all badges */}
+                            <div className="block sm:hidden mb-4">
+                                <div className="flex justify-center gap-1 flex-wrap">
+                                    {signals.map((flag, i) => <FlagBadge key={`signal-${i}`} flag={flag} />)}
+                                    {percentileFlags.map((pf, i) => <MomBadge key={`mom-${i}`} pf={pf} />)}
+                                    {signals.length === 0 && percentileFlags.length === 0 && (
+                                        <span className="text-[9px] text-muted-foreground/40 italic">no active flags</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Desktop: Absolute positioning */}
                             <div
-                                className="absolute top-0 right-0 flex gap-3 items-start"
+                                className="hidden sm:flex absolute top-8 right-0 gap-3 items-start"
                                 onClick={e => e.stopPropagation()}
                             >
                                 <div className="flex flex-col gap-1 items-end">
@@ -248,30 +199,26 @@ export default function RegimeStateDisplay({
                                 </div>
                             </div>
 
-                            <h2
-                                className="text-3xl font-light tracking-wider mb-2"
-                                style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}
-                            >
-                                ACTIVE REGIME
-                            </h2>
-                            <div className="text-3xl font-bold mb-2" style={{ color: metadata.color }}>
-                                {regime}
-                            </div>
-                            <p className="text-sm text-muted-foreground italic mb-1">
-                                {metadata.description}
-                            </p>
-                            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-3">
-                                <span>Entry: {new Date(entryDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                                <span>•</span>
-                                <span>{daysInRegime} months in regime</span>
-                            </div>
-                            <div className="flex justify-center mt-3">
-                                <svg
-                                    className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
+                            <div className="text-center">
+                                <div className="text-4xl font-bold mb-2" style={{ color: metadata.color }}>
+                                    {regime}
+                                </div>
+                                <p className="text-sm text-muted-foreground italic mb-1">
+                                    {metadata.description}
+                                </p>
+                                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground mt-3">
+                                    <span>Entry: {new Date(entryDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                                    <span>•</span>
+                                    <span>{daysInRegime} months in regime</span>
+                                </div>
+                                <div className="flex justify-center mt-3">
+                                    <svg
+                                        className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
                     </button>
@@ -346,8 +293,8 @@ export default function RegimeStateDisplay({
                             <CapitalAllocation regime={regime} />
                         </div>
                     )}
-                </div>
-            </div>
+                </div >
+            </div >
         </>
     );
 }

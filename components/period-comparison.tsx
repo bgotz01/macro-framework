@@ -345,13 +345,13 @@ export default function PeriodComparison() {
     }
 
     return (
-        <div className="p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
+        <div className="p-4 sm:p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
             <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-2xl font-bold">Historical Period Lookup</h2>
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                    <h2 className="text-xl sm:text-2xl font-bold">Historical Period Lookup</h2>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <label htmlFor="yoy-weight" className="text-xs font-medium text-muted-foreground">
+                            <label htmlFor="yoy-weight" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                                 YoY Weight:
                             </label>
                             <input
@@ -361,13 +361,13 @@ export default function PeriodComparison() {
                                 max="20"
                                 value={yoyWeight}
                                 onChange={(e) => setYoyWeight(Number(e.target.value))}
-                                className="w-24 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                                className="w-20 sm:w-24 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                             />
                             <span className="text-xs font-medium w-8">{yoyWeight}%</span>
                         </div>
                         <button
                             onClick={() => setShowPercentiles(!showPercentiles)}
-                            className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium transition-colors"
+                            className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium transition-colors whitespace-nowrap"
                         >
                             {showPercentiles ? 'Show Values' : 'Show Percentiles'}
                         </button>
@@ -380,7 +380,7 @@ export default function PeriodComparison() {
 
                 {/* Metric Selection */}
                 <div className="p-3 rounded-lg bg-muted/30">
-                    <div className="flex flex-wrap gap-2 mb-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-2">
                         {Object.entries(metricCategories).map(([categoryKey, category]) => (
                             category.metrics.map((key) => (
                                 <label
@@ -393,7 +393,7 @@ export default function PeriodComparison() {
                                         onChange={() => toggleMetric(key)}
                                         className="cursor-pointer"
                                     />
-                                    <span>{metricLabels[key]}</span>
+                                    <span className="truncate">{metricLabels[key]}</span>
                                 </label>
                             ))
                         ))}
@@ -406,7 +406,7 @@ export default function PeriodComparison() {
 
             {/* Date Selection */}
             <div className="mb-6">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex flex-wrap items-center gap-3 mb-3">
                     <button
                         onClick={() => adjustMonth(-1)}
                         disabled={!selectedYear || !selectedMonth || loading}
@@ -418,7 +418,7 @@ export default function PeriodComparison() {
                     <select
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="px-3 py-2 rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                        className="px-3 py-2 rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm min-w-0 flex-1 sm:flex-none"
                     >
                         <option value="">Month</option>
                         <option value="1">January</option>
@@ -437,7 +437,7 @@ export default function PeriodComparison() {
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(e.target.value)}
-                        className="px-3 py-2 rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                        className="px-3 py-2 rounded-lg bg-background text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm min-w-0 flex-1 sm:flex-none"
                     >
                         <option value="">Year</option>
                         {Array.from({ length: 2026 - 1960 + 1 }, (_, i) => 2026 - i).map(year => (
@@ -455,7 +455,7 @@ export default function PeriodComparison() {
                     <button
                         onClick={fetchPeriodData}
                         disabled={!selectedYear || !selectedMonth || loading}
-                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium whitespace-nowrap"
                     >
                         {loading ? 'Loading...' : 'View Period'}
                     </button>

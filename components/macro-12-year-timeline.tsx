@@ -10,47 +10,95 @@ export default function Macro12YearTimeline() {
     ];
 
     return (
-        <div className="w-full overflow-x-auto py-8">
-            <div className="min-w-max px-4">
-                <div className="relative flex items-center justify-between gap-8">
-                    {/* Timeline line */}
-                    <div className="absolute top-6 left-0 right-0 h-0.5 bg-gradient-to-r from-muted via-primary/50 to-primary" />
+        <>
+            {/* Desktop/Tablet Horizontal Timeline */}
+            <div className="hidden sm:block w-full overflow-x-auto py-8">
+                <div className="min-w-max px-4">
+                    <div className="relative flex items-center justify-between gap-8">
+                        {/* Timeline line */}
+                        <div className="absolute top-6 left-0 right-0 h-0.5 bg-gradient-to-r from-muted via-primary/50 to-primary" />
 
-                    {events.map((event) => (
-                        <div key={event.year} className="relative flex flex-col items-center min-w-[140px]">
-                            {/* Dot */}
-                            <div className={`w-3 h-3 rounded-full border-2 border-background shadow-lg z-10 mb-4 ${event.current
+                        {events.map((event) => (
+                            <div key={event.year} className="relative flex flex-col items-center min-w-[140px]">
+                                {/* Dot */}
+                                <div className={`w-3 h-3 rounded-full border-2 border-background shadow-lg z-10 mb-4 ${event.current
                                     ? 'bg-primary ring-2 ring-primary/30'
                                     : event.highlight
                                         ? 'bg-primary'
                                         : 'bg-muted-foreground'
-                                }`} />
+                                    }`} />
 
-                            {/* Year */}
-                            <div className={`text-lg font-bold mb-1 ${event.current
+                                {/* Year */}
+                                <div className={`text-lg font-bold mb-1 ${event.current
                                     ? 'text-primary'
                                     : event.highlight
                                         ? 'text-primary'
                                         : 'text-muted-foreground'
-                                }`}>
-                                {event.year}
-                                {event.current && <span className="text-xs ml-1">•</span>}
-                            </div>
+                                    }`}>
+                                    {event.year}
+                                    {event.current && <span className="text-xs ml-1">•</span>}
+                                </div>
 
-                            {/* Title */}
-                            <div className={`text-sm font-semibold text-center mb-0.5 ${event.highlight ? 'text-foreground' : 'text-muted-foreground'
-                                }`}>
-                                {event.title}
-                            </div>
+                                {/* Title */}
+                                <div className={`text-sm font-semibold text-center mb-0.5 ${event.highlight ? 'text-foreground' : 'text-muted-foreground'
+                                    }`}>
+                                    {event.title}
+                                </div>
 
-                            {/* Subtitle */}
-                            <div className="text-xs text-muted-foreground text-center">
-                                {event.subtitle}
+                                {/* Subtitle */}
+                                <div className="text-xs text-muted-foreground text-center">
+                                    {event.subtitle}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Vertical Timeline */}
+            <div className="block sm:hidden py-4">
+                <div className="relative px-4">
+                    {/* Vertical timeline line */}
+                    <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-muted via-primary/50 to-primary" />
+
+                    {events.map((event, index) => (
+                        <div key={event.year} className="relative flex items-start mb-8 last:mb-0">
+                            {/* Dot */}
+                            <div className={`w-3 h-3 rounded-full border-2 border-background shadow-lg z-10 mr-4 mt-1 flex-shrink-0 ${event.current
+                                ? 'bg-primary ring-2 ring-primary/30'
+                                : event.highlight
+                                    ? 'bg-primary'
+                                    : 'bg-muted-foreground'
+                                }`} />
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                                {/* Year */}
+                                <div className={`text-lg font-bold mb-1 ${event.current
+                                    ? 'text-primary'
+                                    : event.highlight
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground'
+                                    }`}>
+                                    {event.year}
+                                    {event.current && <span className="text-xs ml-1">•</span>}
+                                </div>
+
+                                {/* Title */}
+                                <div className={`text-sm font-semibold mb-1 ${event.highlight ? 'text-foreground' : 'text-muted-foreground'
+                                    }`}>
+                                    {event.title}
+                                </div>
+
+                                {/* Subtitle */}
+                                <div className="text-xs text-muted-foreground">
+                                    {event.subtitle}
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
-        </div>
+        </>
     );
 }

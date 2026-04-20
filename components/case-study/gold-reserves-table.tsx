@@ -13,19 +13,37 @@ interface GoldReserveRow {
 }
 
 function parseGoldCsv(text: string): GoldReserveRow[] {
-    const lines = text.trim().split('\n');
-    return lines.slice(1).filter(Boolean).map((line) => {
-        const cols = line.match(/(".*?"|[^,]+)/g) ?? [];
-        const clean = (s?: string) => s?.replace(/^"|"$/g, '').trim() ?? '';
-        return {
-            year: parseInt(clean(cols[0])),
-            troyOunces: clean(cols[1]),
-            metricTons: clean(cols[2]),
-            goldPrice: clean(cols[3]),
-            nominalValue: clean(cols[4]),
-            realValue: clean(cols[5]),
-        };
-    });
+    try {
+        const lines = text.trim().split('\n');
+        if (lines.length < 2) {
+            console.error('CSV file appears to be empty or malformed');
+            return [];
+        }
+
+        const dataLines = lines.slice(1).filter(Boolean);
+        console.log(`Parsing ${dataLines.length} data rows from CSV`);
+
+        return dataLines.map((line, index) => {
+            // Split by comma but handle quoted values
+            const cols = line.split(',').map(col => col.trim().replace(/^"|"$/g, ''));
+
+            if (cols.length < 6) {
+                console.warn(`Row ${index + 1} has insufficient columns:`, cols);
+            }
+
+            return {
+                year: parseInt(cols[0]) || 0,
+                troyOunces: cols[1] || '',
+                metricTons: cols[2] || '',
+                goldPrice: cols[3] || '',
+                nominalValue: cols[4] || '',
+                realValue: cols[5] || '',
+            };
+        });
+    } catch (error) {
+        console.error('Error parsing CSV:', error);
+        return [];
+    }
 }
 
 function valueColor(val: string | number): string {
@@ -46,17 +64,46 @@ const columns: Column<GoldReserveRow>[] = [
 export default function GoldReservesTable() {
     const [data, setData] = useState<GoldReserveRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/data/case-study/gold-reserves.csv')
-            .then((res) => res.text())
-            .then((text) => setData(parseGoldCsv(text)))
-            .catch((err) => console.error('Failed to load gold reserves:', err))
+        fetch('/api/gold-reserves')
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.text();
+            })
+            .then((text) => {
+                console.log('CSV data loaded, length:', text.length);
+                const parsedData = parseGoldCsv(text);
+                console.log('Parsed data rows:', parsedData.length);
+                setData(parsedData);
+                setError(null);
+            })
+            .catch((err) => {
+                console.error('Failed to load gold reserves:', err);
+                setError(err.message);
+                setData([]); // Set empty array on error
+            })
             .finally(() => setLoading(false));
     }, []);
 
     if (loading) {
         return <p className="text-center text-muted-foreground py-8">Loading gold reserves data…</p>;
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-red-500 mb-2">Failed to load gold reserves data</p>
+                <p className="text-sm text-muted-foreground">{error}</p>
+            </div>
+        );
+    }
+
+    if (data.length === 0) {
+        return <p className="text-center text-muted-foreground py-8">No gold reserves data available</p>;
     }
 
     return (

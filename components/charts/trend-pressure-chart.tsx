@@ -82,15 +82,15 @@ function AdvancedControls({ METRICS, scoreMetrics, toggleScore, visibleMA20s, to
             <button
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-3 sm:py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors min-h-[44px] sm:min-h-0"
             >
                 <span className="uppercase tracking-wide">Advanced: In Score &amp; 20D MA</span>
                 <span className="text-base leading-none">{open ? '▲' : '▼'}</span>
             </button>
             {open && (
-                <div className="px-3 py-2 space-y-2 border-t border-border">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">In Score:</span>
+                <div className="px-3 py-3 sm:py-2 space-y-3 sm:space-y-2 border-t border-border">
+                    <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:w-20 sm:shrink-0">In Score:</span>
                         <div className="flex items-center gap-2 flex-wrap">
                             {METRICS.map(m => {
                                 const active = scoreMetrics.has(m.percentileKey as string);
@@ -99,7 +99,7 @@ function AdvancedControls({ METRICS, scoreMetrics, toggleScore, visibleMA20s, to
                                         type="button"
                                         key={m.label}
                                         onClick={() => toggleScore(m.percentileKey as string)}
-                                        className={`px-3 py-1 rounded-full text-xs font-medium border-2 transition-all ${active ? 'text-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}
+                                        className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border-2 transition-all min-h-[36px] sm:min-h-0 ${active ? 'text-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}
                                         style={{ borderColor: active ? SCORE_COLOR : undefined, backgroundColor: 'transparent' }}
                                     >
                                         {m.label}
@@ -108,13 +108,13 @@ function AdvancedControls({ METRICS, scoreMetrics, toggleScore, visibleMA20s, to
                             })}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">20D MA:</span>
+                    <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:w-20 sm:shrink-0">20D MA:</span>
                         <div className="flex items-center gap-2 flex-wrap">
                             <button
                                 type="button"
                                 onClick={() => setShowScoreMA20(s => !s)}
-                                className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScoreMA20 ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScoreMA20 ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
                                 style={{ backgroundColor: showScoreMA20 ? '#fcd34d' : 'transparent' }}
                             >
                                 Score
@@ -126,7 +126,7 @@ function AdvancedControls({ METRICS, scoreMetrics, toggleScore, visibleMA20s, to
                                         type="button"
                                         key={`${m.label}-ma20`}
                                         onClick={() => toggleMA20(m.ma20Key as string)}
-                                        className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                        className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
                                         style={{ backgroundColor: active ? m.ma20Color : 'transparent' }}
                                     >
                                         {m.label}
@@ -357,33 +357,37 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
     return (
         <div className="p-6 rounded-xl border bg-card">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <h3 className="text-lg font-semibold">Trend Pressure Score</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            Average of selected {ma === 'blend' ? '200MA+500MA blended' : `${ma}MA`} percentiles
-                        </p>
-                    </div>
-                    {latest && (
+            <div className="mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-4">
                         <div>
-                            <div className="text-2xl font-bold" style={{ color: SCORE_COLOR }}>
-                                {latest.trend_pressure_score?.toFixed(1)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                Score %ile · {(() => { const [y, m, d] = latest.date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
-                            </div>
+                            <h3 className="text-lg font-semibold">Trend Pressure Score</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Average of selected {ma === 'blend' ? '200MA+500MA blended' : `${ma}MA`} percentiles
+                            </p>
                         </div>
-                    )}
+                        {latest && (
+                            <div>
+                                <div className="text-2xl font-bold" style={{ color: SCORE_COLOR }}>
+                                    {latest.trend_pressure_score?.toFixed(1)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                    Score %ile · {(() => { const [y, m, d] = latest.date.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
+
+                {/* Controls - Stack on mobile */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
                         {(['percentile', 'value'] as const).map(mode => (
                             <button
                                 type="button"
                                 key={mode}
                                 onClick={() => setViewMode(mode)}
-                                className={`px-3 py-1.5 transition-colors capitalize ${viewMode === mode
+                                className={`px-3 py-2 sm:py-1.5 transition-colors capitalize min-h-[36px] sm:min-h-0 ${viewMode === mode
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-background text-muted-foreground hover:bg-muted'
                                     }`}
@@ -398,7 +402,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                                 type="button"
                                 key={period}
                                 onClick={() => setMa(period)}
-                                className={`w-14 py-1.5 transition-colors text-center ${ma === period
+                                className={`w-16 sm:w-14 py-2 sm:py-1.5 transition-colors text-center min-h-[36px] sm:min-h-0 ${ma === period
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-background text-muted-foreground hover:bg-muted'
                                     }`}
@@ -413,7 +417,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                                 type="button"
                                 key={idx}
                                 onClick={() => setIndex(idx)}
-                                className={`px-3 py-1.5 transition-colors ${index === idx
+                                className={`px-3 py-2 sm:py-1.5 transition-colors min-h-[36px] sm:min-h-0 ${index === idx
                                     ? 'bg-primary text-primary-foreground'
                                     : 'bg-background text-muted-foreground hover:bg-muted'
                                     }`}
@@ -431,14 +435,16 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
             )}
 
             {/* Show Lines row */}
-            <div className="flex items-center gap-2 mb-4">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Show Lines:</span>
-                <div className="flex items-center gap-2 flex-1 flex-wrap">
+            <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Show Lines:</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                     {viewMode === 'percentile' && (
                         <button
                             type="button"
                             onClick={() => setShowScore(s => !s)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                            className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
                             style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
                         >
                             Score
@@ -448,7 +454,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                         <button
                             type="button"
                             onClick={() => setShowScore(s => !s)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                            className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
                             style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
                             title="Percentile score shown on right axis"
                         >
@@ -462,7 +468,7 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                                 type="button"
                                 key={m.label}
                                 onClick={() => toggleVisible(m.percentileKey as string)}
-                                className={`px-3 py-1 rounded-full text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
                                 style={{ backgroundColor: active ? m.color : 'transparent' }}
                             >
                                 {m.label}
@@ -487,13 +493,13 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
             )}
 
             {/* Date presets */}
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-3">
                 {DATE_PRESETS.map(p => (
                     <button
                         type="button"
                         key={p.value}
                         onClick={() => setDatePreset(p.value)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${datePreset === p.value
+                        className={`px-3 py-2 sm:py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px] sm:min-h-0 ${datePreset === p.value
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
@@ -505,26 +511,30 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
 
             {/* Custom date range inputs */}
             {datePreset === 'custom' && (
-                <div className="flex items-center gap-3 mb-5">
-                    <label className="text-xs text-muted-foreground font-medium">From</label>
-                    <input
-                        type="date"
-                        value={customStart}
-                        onChange={e => setCustomStart(e.target.value)}
-                        className="px-2 py-1 rounded-md border border-border bg-background text-sm text-foreground"
-                    />
-                    <label className="text-xs text-muted-foreground font-medium">To</label>
-                    <input
-                        type="date"
-                        value={customEnd}
-                        onChange={e => setCustomEnd(e.target.value)}
-                        className="px-2 py-1 rounded-md border border-border bg-background text-sm text-foreground"
-                    />
+                <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3 mb-5">
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground font-medium w-12">From</label>
+                        <input
+                            type="date"
+                            value={customStart}
+                            onChange={e => setCustomStart(e.target.value)}
+                            className="flex-1 sm:flex-none px-2 py-2 sm:py-1 rounded-md border border-border bg-background text-sm text-foreground min-h-[36px] sm:min-h-0"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground font-medium w-12">To</label>
+                        <input
+                            type="date"
+                            value={customEnd}
+                            onChange={e => setCustomEnd(e.target.value)}
+                            className="flex-1 sm:flex-none px-2 py-2 sm:py-1 rounded-md border border-border bg-background text-sm text-foreground min-h-[36px] sm:min-h-0"
+                        />
+                    </div>
                     <button
                         type="button"
                         disabled={!customStart || !customEnd}
                         onClick={() => { setAppliedStart(customStart); setAppliedEnd(customEnd); }}
-                        className="px-3 py-1 rounded-md text-sm font-medium bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                        className="w-full sm:w-auto px-3 py-2 sm:py-1 rounded-md text-sm font-medium bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity min-h-[36px] sm:min-h-0"
                     >
                         Apply
                     </button>

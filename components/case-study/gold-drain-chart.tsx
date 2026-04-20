@@ -1,6 +1,8 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, ReferenceLine } from 'recharts';
+import { useState, useEffect } from 'react';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 const data = [
     { year: 1960, tons: 17800 },
@@ -18,14 +20,26 @@ const data = [
 ];
 
 export default function GoldDrainChart() {
+    const [responsiveHeight, setResponsiveHeight] = useState(360);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(360));
+            setResponsiveMargin(getResponsiveMargin());
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
     return (
         <div className="bg-card border border-border/50 p-6 rounded-2xl shadow-sm">
             <h3 className="text-lg font-bold mb-1">U.S. Gold Reserves Decline</h3>
             <p className="text-sm text-muted-foreground mb-4">
                 Metric tons held by the U.S. Treasury, 1960–1971
             </p>
-            <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
+                <BarChart data={data} margin={responsiveMargin}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                     <XAxis dataKey="year" tick={{ fontSize: 12 }} />
                     <YAxis

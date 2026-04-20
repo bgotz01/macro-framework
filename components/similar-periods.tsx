@@ -391,8 +391,8 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
 
     if (loading) {
         return (
-            <div className="p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
-                <h2 className="text-2xl font-bold mb-4">Similar Historical Periods</h2>
+            <div className="p-4 sm:p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4">Similar Historical Periods</h2>
                 <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
@@ -402,21 +402,21 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
 
     if (error) {
         return (
-            <div className="p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
-                <h2 className="text-2xl font-bold mb-4">Similar Historical Periods</h2>
+            <div className="p-4 sm:p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4">Similar Historical Periods</h2>
                 <div className="text-red-500 text-center py-4">{error}</div>
             </div>
         );
     }
 
     return (
-        <div className="p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
+        <div className="p-4 sm:p-6 rounded-2xl border border-border/50 bg-card shadow-lg">
             <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-2xl font-bold">Similar Historical Periods</h2>
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                    <h2 className="text-xl sm:text-2xl font-bold">Similar Historical Periods</h2>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <label htmlFor="yoy-weight" className="text-xs font-medium text-muted-foreground">
+                            <label htmlFor="yoy-weight" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                                 YoY Weight:
                             </label>
                             <input
@@ -426,13 +426,13 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                                 max="20"
                                 value={yoyWeight}
                                 onChange={(e) => setYoyWeight(Number(e.target.value))}
-                                className="w-24 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+                                className="w-20 sm:w-24 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                             />
                             <span className="text-xs font-medium w-8">{yoyWeight}%</span>
                         </div>
                         <button
                             onClick={() => setShowPercentiles(!showPercentiles)}
-                            className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium transition-colors"
+                            className="px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-medium transition-colors whitespace-nowrap"
                         >
                             {showPercentiles ? 'Show Values' : 'Show Percentiles'}
                         </button>
@@ -445,7 +445,7 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
 
                 {/* Metric Selection */}
                 <div className="p-3 rounded-lg bg-muted/30">
-                    <div className="flex flex-wrap gap-2 mb-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-2">
                         {Object.entries(metricCategories).map(([categoryKey, category]) => (
                             category.metrics.map((key) => (
                                 <label
@@ -458,7 +458,7 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                                         onChange={() => toggleMetric(key)}
                                         className="cursor-pointer"
                                     />
-                                    <span>{metricLabels[key]}</span>
+                                    <span className="truncate">{metricLabels[key]}</span>
                                 </label>
                             ))
                         ))}
@@ -506,8 +506,8 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
             {/* Current Period Display */}
             {targetPeriod && targetValues && targetYoy && (
                 <div className="mb-6 p-4 rounded-lg bg-primary/10 border-2 border-primary">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                             <span className="text-lg font-semibold text-primary">
                                 Current Period
                             </span>
@@ -517,7 +517,7 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-8 gap-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
                         <div className={!selectedMetrics.has('cpi') ? 'opacity-40' : ''}>
                             <div className="text-muted-foreground">
                                 CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excl)</span>}
@@ -620,8 +620,8 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                         key={period.date}
                         className="p-4 rounded-lg bg-muted/50 border border-border hover:bg-muted transition-colors"
                     >
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                                 <span className="text-lg font-semibold text-foreground">
                                     #{index + 1}
                                 </span>
@@ -637,7 +637,7 @@ export default function SimilarPeriods({ targetDate }: SimilarPeriodsProps) {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-8 gap-2 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 text-xs">
                             <div className={!selectedMetrics.has('cpi') ? 'opacity-40' : ''}>
                                 <div className="text-muted-foreground">
                                     CPI {!selectedMetrics.has('cpi') && <span className="text-[10px]">(excl)</span>}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import HistoricalDataTable from './charts/historical-data-table';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface CyclicalReturnsProps {
     assetClass: string;
@@ -39,6 +40,18 @@ export default function CyclicalReturns({
     const [selectedPeriod, setSelectedPeriod] = useState<'2Y' | '5Y' | '10Y'>('10Y');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+            setResponsiveMargin(getResponsiveMargin());
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [height]);
 
     // Load pre-calculated returns from database - only for the visible date range
     useEffect(() => {
@@ -141,8 +154,8 @@ export default function CyclicalReturns({
         }
 
         return (
-            <ResponsiveContainer width="100%" height={height}>
-                <LineChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
+                <LineChart data={filteredData} margin={responsiveMargin}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
                     <XAxis
                         dataKey="date"

@@ -111,10 +111,12 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
     const [metric, setMetric] = useState<'percentile' | 'value' | 'yoy'>('value');
     const [selectedSeries, setSelectedSeries] = useState<string[]>(initialSeries || ['realyield']);
     const [responsiveHeight, setResponsiveHeight] = useState(height);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
 
     useEffect(() => {
         const handleResize = () => {
             setResponsiveHeight(getResponsiveHeight(height));
+            setResponsiveMargin(getResponsiveMargin());
         };
         handleResize();
         window.addEventListener('resize', handleResize);
@@ -524,7 +526,7 @@ export default function PercentileChart({ height = 500, initialSeries }: Percent
 
             <div className="pt-4 sm:pt-6">
                 <ResponsiveContainer width="100%" height={responsiveHeight}>
-                    <LineChart data={filteredData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <LineChart data={filteredData} margin={responsiveMargin}>
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
 
                         <XAxis

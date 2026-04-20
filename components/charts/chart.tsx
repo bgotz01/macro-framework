@@ -58,10 +58,12 @@ export default function Chart({
     const [chartData, setChartData] = useState<ChartData | null>(null);
     const [loading, setLoading] = useState(true);
     const [responsiveHeight, setResponsiveHeight] = useState(height);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
 
     useEffect(() => {
         const handleResize = () => {
             setResponsiveHeight(getResponsiveHeight(height));
+            setResponsiveMargin(getResponsiveMargin());
         };
         handleResize();
         window.addEventListener("resize", handleResize);
@@ -243,7 +245,7 @@ export default function Chart({
 
     const commonProps = {
         data: filteredData,
-        margin: { top: 5, right: 30, left: 20, bottom: 5 },
+        margin: responsiveMargin,
     };
 
     const xAxisProps = {

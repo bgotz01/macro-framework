@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { DataService, ChartData } from '@/lib/data-service';
 import { format, parseISO, isValid } from 'date-fns';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 interface DataSource {
     filePath: string;
@@ -49,6 +50,18 @@ export default function ChartMultiple({
     const [combinedData, setCombinedData] = useState<ChartData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [responsiveHeight, setResponsiveHeight] = useState(height);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(height));
+            setResponsiveMargin(getResponsiveMargin());
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [height]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -201,10 +214,10 @@ export default function ChartMultiple({
                 )}
             </div>
 
-            <ResponsiveContainer width="100%" height={height}>
+            <ResponsiveContainer width="100%" height={responsiveHeight}>
                 <LineChart
                     data={combinedData.data}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={responsiveMargin}
                 >
                     {showGrid && <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />}
                     <XAxis

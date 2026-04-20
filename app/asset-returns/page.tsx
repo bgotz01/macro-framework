@@ -14,10 +14,10 @@ interface IndexReturn {
 }
 
 function ReturnCell({ value }: { value: number | null }) {
-    if (value === null) return <td className="px-4 py-3 text-center text-muted-foreground text-sm">—</td>;
+    if (value === null) return <td className="px-2 sm:px-4 py-3 text-center text-muted-foreground text-xs sm:text-sm">—</td>;
     const color = value >= 0 ? 'text-emerald-500' : 'text-red-500';
     return (
-        <td className={`px-4 py-3 text-center font-mono text-sm font-medium ${color}`}>
+        <td className={`px-2 sm:px-4 py-3 text-center font-mono text-xs sm:text-sm font-medium ${color}`}>
             {value >= 0 ? '+' : ''}{value.toFixed(1)}%
         </td>
     );
@@ -35,33 +35,35 @@ function ReturnsTable({ rows, regions, formatLatest }: {
                 if (group.length === 0) return null;
                 return (
                     <div key={region} className="rounded-xl border border-border overflow-hidden">
-                        <div className="px-4 py-2 bg-muted/40 border-b border-border">
+                        <div className="px-3 sm:px-4 py-2 bg-muted/40 border-b border-border">
                             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{region}</span>
                         </div>
-                        <table className="w-full">
-                            <thead>
-                                <tr className="border-b border-border text-xs text-muted-foreground">
-                                    <th className="px-4 py-2 text-left font-medium">Pair</th>
-                                    <th className="px-4 py-2 text-center font-medium">Latest</th>
-                                    <th className="px-4 py-2 text-center font-medium">1 Year</th>
-                                    <th className="px-4 py-2 text-center font-medium">5 Year</th>
-                                    <th className="px-4 py-2 text-center font-medium">10 Year</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border">
-                                {group.map(row => (
-                                    <tr key={row.series} className="hover:bg-muted/20 transition-colors">
-                                        <td className="px-4 py-3 text-sm font-medium">{row.label}</td>
-                                        <td className="px-4 py-3 text-center font-mono text-sm text-muted-foreground">
-                                            {row.latest !== null ? formatLatest(row.latest) : '—'}
-                                        </td>
-                                        <ReturnCell value={row.r1y} />
-                                        <ReturnCell value={row.r5y} />
-                                        <ReturnCell value={row.r10y} />
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[600px]">
+                                <thead>
+                                    <tr className="border-b border-border text-xs text-muted-foreground">
+                                        <th className="px-2 sm:px-4 py-2 text-left font-medium min-w-[120px]">Pair</th>
+                                        <th className="px-2 sm:px-4 py-2 text-center font-medium min-w-[80px]">Latest</th>
+                                        <th className="px-2 sm:px-4 py-2 text-center font-medium min-w-[80px]">1Y</th>
+                                        <th className="px-2 sm:px-4 py-2 text-center font-medium min-w-[80px]">5Y</th>
+                                        <th className="px-2 sm:px-4 py-2 text-center font-medium min-w-[80px]">10Y</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {group.map(row => (
+                                        <tr key={row.series} className="hover:bg-muted/20 transition-colors">
+                                            <td className="px-2 sm:px-4 py-3 text-sm font-medium">{row.label}</td>
+                                            <td className="px-2 sm:px-4 py-3 text-center font-mono text-xs sm:text-sm text-muted-foreground">
+                                                {row.latest !== null ? formatLatest(row.latest) : '—'}
+                                            </td>
+                                            <ReturnCell value={row.r1y} />
+                                            <ReturnCell value={row.r5y} />
+                                            <ReturnCell value={row.r10y} />
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 );
             })}
@@ -88,10 +90,10 @@ export default function CockpitReturnsPage() {
     const latestDate = equities.find(d => d.latestDate)?.latestDate;
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-8">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold tracking-tight">Asset Returns</h1>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Asset Returns</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     1yr, 5yr, 10yr price returns for major global assets
                     {latestDate && <span className="ml-2 opacity-60">as of {latestDate}</span>}
                 </p>
@@ -104,7 +106,7 @@ export default function CockpitReturnsPage() {
             ) : (
                 <div className="space-y-10">
                     <section>
-                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Equity Indexes</h2>
+                        <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Equity Indexes</h2>
                         <ReturnsTable
                             rows={equities}
                             regions={EQUITY_REGIONS}
@@ -112,7 +114,7 @@ export default function CockpitReturnsPage() {
                         />
                     </section>
                     <section>
-                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Commodities</h2>
+                        <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Commodities</h2>
                         <ReturnsTable
                             rows={commodities}
                             regions={['Metals', 'Energy']}
@@ -120,7 +122,7 @@ export default function CockpitReturnsPage() {
                         />
                     </section>
                     <section>
-                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">FX Pairs</h2>
+                        <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">FX Pairs</h2>
                         <ReturnsTable
                             rows={fx}
                             regions={FX_REGIONS}

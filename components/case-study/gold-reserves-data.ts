@@ -1,0 +1,27 @@
+// Embedded gold reserves data as fallback
+export const goldReservesData = [
+    { year: 1933, troyOunces: "195.1", metricTons: "6,070", goldPrice: "$20.67", nominalValue: "$4.0 billion", realValue: "$94.8 billion" },
+    { year: 1935, troyOunces: "289", metricTons: "8,998", goldPrice: "$35", nominalValue: "$10.1 billion", realValue: "$225.6 billion" },
+    { year: 1940, troyOunces: "628.4", metricTons: "19,546", goldPrice: "$35", nominalValue: "$22.0 billion", realValue: "$479.5 billion" },
+    { year: 1941, troyOunces: "649.6", metricTons: "20,206", goldPrice: "$35", nominalValue: "$22.7 billion", realValue: "$475.2 billion" },
+    { year: 1945, troyOunces: "643.5", metricTons: "20,016", goldPrice: "$35", nominalValue: "$22.5 billion", realValue: "$382.9 billion" },
+    { year: 1950, troyOunces: "633.2", metricTons: "19,696", goldPrice: "$35", nominalValue: "$22.2 billion", realValue: "$292.5 billion" },
+    { year: 1955, troyOunces: "634.8", metricTons: "19,745", goldPrice: "$35", nominalValue: "$22.2 billion", realValue: "$279.9 billion" },
+    { year: 1960, troyOunces: "508.9", metricTons: "15,822", goldPrice: "$35", nominalValue: "$17.8 billion", realValue: "$203.1 billion" },
+    { year: 1965, troyOunces: "395.2", metricTons: "12,293", goldPrice: "$35", nominalValue: "$13.8 billion", realValue: "$146.6 billion" },
+    { year: 1970, troyOunces: "316.3", metricTons: "9,838", goldPrice: "$36", nominalValue: "$11.4 billion", realValue: "$96.8 billion" },
+    { year: 1975, troyOunces: "274.7", metricTons: "8,544", goldPrice: "$161", nominalValue: "$44.2 billion", realValue: "$243.2 billion" },
+    { year: 1980, troyOunces: "264.3", metricTons: "8,221", goldPrice: "$615", nominalValue: "$162.5 billion", realValue: "$568.9 billion" },
+    { year: 1985, troyOunces: "262.6", metricTons: "8,168", goldPrice: "$318", nominalValue: "$83.5 billion", realValue: "$242.2 billion" },
+    { year: 1990, troyOunces: "261.9", metricTons: "8,146", goldPrice: "$384", nominalValue: "$100.6 billion", realValue: "$231.3 billion" },
+    { year: 1995, troyOunces: "261.7", metricTons: "8,140", goldPrice: "$384", nominalValue: "$100.5 billion", realValue: "$201.0 billion" },
+    { year: 2000, troyOunces: "261.6", metricTons: "8,138", goldPrice: "$279", nominalValue: "$73.0 billion", realValue: "$124.1 billion" },
+    { year: 2005, troyOunces: "261.5", metricTons: "8,134", goldPrice: "$445", nominalValue: "$116.4 billion", realValue: "$174.6 billion" },
+    { year: 2010, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$1,225", nominalValue: "$320.3 billion", realValue: "$416.4 billion" },
+    { year: 2015, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$1,160", nominalValue: "$303.3 billion", realValue: "$364.0 billion" },
+    { year: 2020, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$1,770", nominalValue: "$462.9 billion", realValue: "$509.1 billion" },
+    { year: 2023, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$2,062", nominalValue: "$539.2 billion", realValue: "$539.2 billion" },
+    { year: 2024, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$2,640", nominalValue: "$690.4 billion", realValue: "$690.4 billion" },
+    { year: 2025, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$3,110", nominalValue: "$813.3 billion", realValue: "$813.3 billion" },
+    { year: 2026, troyOunces: "261.5", metricTons: "8,133", goldPrice: "$5,100", nominalValue: "$1.33 trillion", realValue: "$1.33 trillion" }
+];

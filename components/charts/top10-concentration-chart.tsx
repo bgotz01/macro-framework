@@ -3,6 +3,8 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine, LabelList } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from '../theme-provider';
+import { useState, useEffect } from 'react';
+import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
 
 const data = [
     { year: 1880, concentration: 27 },
@@ -26,6 +28,18 @@ const data = [
 export function Top10ConcentrationChart() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+    const [responsiveHeight, setResponsiveHeight] = useState(400);
+    const [responsiveMargin, setResponsiveMargin] = useState(getResponsiveMargin());
+
+    useEffect(() => {
+        const handleResize = () => {
+            setResponsiveHeight(getResponsiveHeight(400));
+            setResponsiveMargin(getResponsiveMargin());
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     return (
         <Card>
@@ -36,8 +50,8 @@ export function Top10ConcentrationChart() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <ResponsiveContainer width="100%" height={responsiveHeight}>
+                    <BarChart data={data} margin={responsiveMargin}>
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#e5e7eb'} opacity={0.3} />
                         <XAxis
                             dataKey="year"
