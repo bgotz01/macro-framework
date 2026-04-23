@@ -75,7 +75,7 @@ export const REGIME_TRIGGERS = {
         entryDescription: `Entry: ${cond('Real M2', 'gte', T.liquidityShock.entryRealM2)}`,
         exitDescription: `Exit: ${cond('Real M2', 'lte', T.liquidityShock.exitRealM2)}`,
     },
-    'Normal': {
+    'None': {
         entry: () => false,
         exit: () => false,
         reason: () => 'Balanced conditions - no extreme triggers',
@@ -127,7 +127,7 @@ export type RegimeFamily =
     | 'Crisis'
     | 'Bond Stress'
     | 'Liquidity Shock'
-    | 'Normal';
+    | 'None';
 
 export interface RegimeState {
     regime: RegimeFamily;
@@ -199,7 +199,7 @@ export const REGIME_METADATA: Record<RegimeFamily, { description: string; guidan
         guidance: 'Massive liquidity injection - speculative assets thrive',
         color: '#a855f7' // purple
     },
-    'Normal': {
+    'None': {
         description: 'Balanced conditions - no extreme triggers active',
         guidance: 'Standard market environment - maintain diversified positioning',
         color: '#6b7280' // gray
@@ -248,7 +248,7 @@ function checkRegimeTrigger(
  * 1. Check if current regime should exit
  * 2. Check new regime triggers in precedence order (defined in regimePrecedence array)
  * 3. If no trigger and no exit, maintain current regime
- * 4. Default to Normal if no regime active
+ * 4. Default to None if no regime active
  */
 export function determineNextRegime(
     currentState: RegimeState | null,
@@ -284,7 +284,7 @@ export function determineNextRegime(
     }
 
     // If no higher priority regime triggered and we have a current state, check if it should persist
-    if (currentState && currentState.regime !== 'Normal') {
+    if (currentState && currentState.regime !== 'None') {
         const exitCheck = checkRegimeTrigger(currentState.regime, conditions, currentState.regime);
 
         // If no exit trigger, maintain current regime
@@ -293,8 +293,8 @@ export function determineNextRegime(
         }
     }
 
-    // Default to Normal if no trigger fires and no current regime
-    return createRegimeState('Normal', currentDate, 'Balanced conditions - no extreme triggers');
+    // Default to None if no trigger fires and no current regime
+    return createRegimeState('None', currentDate, 'Balanced conditions - no extreme triggers');
 }
 
 /**

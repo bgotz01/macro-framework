@@ -12,6 +12,8 @@ interface PeriodDetail {
     startDate: string; endDate: string; months: number; isCurrent: boolean;
     duringReturn: number | null; forward1Y: number | null; forward3Y: number | null; forward5Y: number | null;
     entryPrice: number | null; exitPrice: number | null;
+    annualizedDuringReturn: number | null;
+    monthlyReturn: number | null;
 }
 
 interface RegimeReturnStats {
@@ -21,6 +23,8 @@ interface RegimeReturnStats {
     minDuringReturn: number | null; maxDuringReturn: number | null;
     avg1Y: number | null; avg3Y: number | null; avg5Y: number | null;
     median1Y: number | null; median3Y: number | null; median5Y: number | null;
+    avgAnnualizedDuringReturn: number | null; medianAnnualizedDuringReturn: number | null;
+    avgMonthlyReturn: number | null; medianMonthlyReturn: number | null;
     periods: PeriodDetail[];
 }
 
@@ -34,6 +38,15 @@ function median(arr: number[]): number | null {
 function avg(arr: number[]): number | null {
     if (arr.length === 0) return null;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+// Calculate annualized return from total return and duration in months
+// Formula: ((1 + totalReturn/100) ^ (12/months) - 1) * 100
+function annualizeReturn(totalReturnPercent: number, months: number): number {
+    if (months <= 0) return 0;
+    const totalReturnDecimal = totalReturnPercent / 100;
+    const annualizedDecimal = Math.pow(1 + totalReturnDecimal, 12 / months) - 1;
+    return annualizedDecimal * 100;
 }
 
 function findClosestPrice(
@@ -126,6 +139,12 @@ export async function GET(request: Request) {
             const entryPrice = findClosestPrice(prices, period.startDate, 'before')?.price ?? null;
             const exitPrice = findClosestPrice(prices, period.endDate, 'before')?.price ?? null;
             const duringReturn = entryPrice && exitPrice ? round(((exitPrice - entryPrice) / entryPrice) * 100) : null;
+            const annualizedDuringReturn = duringReturn !== null && period.months > 0
+                ? round(annualizeReturn(duringReturn, period.months))
+                : null;
+            const monthlyReturn = duringReturn !== null && period.months > 0
+                ? round(duringReturn / period.months)
+                : null;
 
             const detail: PeriodDetail = {
                 startDate: period.startDate,
@@ -138,6 +157,8 @@ export async function GET(request: Request) {
                 forward5Y: r(entryPrice, findForwardPrice(prices, period.startDate, 5)),
                 entryPrice: round(entryPrice),
                 exitPrice: round(exitPrice),
+                annualizedDuringReturn,
+                monthlyReturn,
             };
 
             if (!regimeStats.has(period.regime)) {
@@ -147,6 +168,8 @@ export async function GET(request: Request) {
                     avgDuringReturn: null, medianDuringReturn: null, minDuringReturn: null, maxDuringReturn: null,
                     avg1Y: null, avg3Y: null, avg5Y: null,
                     median1Y: null, median3Y: null, median5Y: null,
+                    avgAnnualizedDuringReturn: null, medianAnnualizedDuringReturn: null,
+                    avgMonthlyReturn: null, medianMonthlyReturn: null,
                     periods: [],
                 });
             }
@@ -169,6 +192,23 @@ export async function GET(request: Request) {
             stats.medianDuringReturn = round(median(duringReturns));
             stats.minDuringReturn = duringReturns.length ? round(Math.min(...duringReturns)) : null;
             stats.maxDuringReturn = duringReturns.length ? round(Math.max(...duringReturns)) : null;
+
+            // Calculate annualized returns correctly: annualize the average/median return using average/median duration
+            stats.avgAnnualizedDuringReturn = stats.avgDuringReturn !== null && stats.avgDurationMonths > 0
+                ? round(annualizeReturn(stats.avgDuringReturn, stats.avgDurationMonths))
+                : null;
+            stats.medianAnnualizedDuringReturn = stats.medianDuringReturn !== null && stats.medianDurationMonths > 0
+                ? round(annualizeReturn(stats.medianDuringReturn, stats.medianDurationMonths))
+                : null;
+
+            // Calculate average monthly return: simple average of total return / months
+            stats.avgMonthlyReturn = stats.avgDuringReturn !== null && stats.avgDurationMonths > 0
+                ? round(stats.avgDuringReturn / stats.avgDurationMonths)
+                : null;
+            stats.medianMonthlyReturn = stats.medianDuringReturn !== null && stats.medianDurationMonths > 0
+                ? round(stats.medianDuringReturn / stats.medianDurationMonths)
+                : null;
+
             stats.avg1Y = round(avg(fwd1Ys));
             stats.avg3Y = round(avg(fwd3Ys));
             stats.avg5Y = round(avg(fwd5Ys));

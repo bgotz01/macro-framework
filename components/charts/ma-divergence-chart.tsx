@@ -41,6 +41,71 @@ const COLOR_200_500 = '#06b6d4'; // cyan
 type ViewMode = 'divergence' | 'price';
 type IndexKey = 'sp500' | 'ndx';
 
+function DatePresetSelector({ datePreset, setDatePreset, DATE_PRESETS }: {
+    datePreset: string;
+    setDatePreset: (preset: string) => void;
+    DATE_PRESETS: readonly { label: string; value: string; start?: string; end?: string; }[];
+}) {
+    const [open, setOpen] = useState(false);
+
+    const selectedPreset = DATE_PRESETS.find(p => p.value === datePreset);
+
+    return (
+        <div className="mb-4">
+            {/* Mobile: Expandable selector */}
+            <div className="sm:hidden border border-border rounded-lg overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors min-h-[44px]"
+                >
+                    <span>Date Range: {selectedPreset?.label}</span>
+                    <span className="text-base leading-none">{open ? '▲' : '▼'}</span>
+                </button>
+                {open && (
+                    <div className="border-t border-border bg-muted/20">
+                        <div className="grid grid-cols-2 gap-2 p-3">
+                            {DATE_PRESETS.map(p => (
+                                <button
+                                    type="button"
+                                    key={p.value}
+                                    onClick={() => {
+                                        setDatePreset(p.value);
+                                        setOpen(false);
+                                    }}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[36px] ${datePreset === p.value
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-background text-muted-foreground hover:bg-muted'
+                                        }`}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop: Inline buttons */}
+            <div className="hidden sm:flex sm:flex-wrap gap-2">
+                {DATE_PRESETS.map(p => (
+                    <button
+                        type="button"
+                        key={p.value}
+                        onClick={() => setDatePreset(p.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${datePreset === p.value
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                    >
+                        {p.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function MaDivergenceChart({ height = 450 }: { height?: number }) {
     const [raw, setRaw] = useState<DataPoint[]>([]);
     const [loading, setLoading] = useState(true);
@@ -170,36 +235,45 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                     )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <div className="flex rounded-lg border border-border overflow-hidden text-xs sm:text-sm font-medium">
-                        {(['sp500', 'ndx'] as const).map(idx => (
-                            <button
-                                type="button"
-                                key={idx}
-                                onClick={() => setIndex(idx)}
-                                className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 transition-colors ${index === idx
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {idx === 'sp500' ? 'S&P 500' : 'NDX 100'}
-                            </button>
-                        ))}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+                    {/* Index */}
+                    <div className="space-y-1">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:hidden">Index</span>
+                        <div className="flex rounded-lg border border-border overflow-hidden text-xs sm:text-sm font-medium">
+                            {(['sp500', 'ndx'] as const).map(idx => (
+                                <button
+                                    type="button"
+                                    key={idx}
+                                    onClick={() => setIndex(idx)}
+                                    className={`flex-1 py-2 sm:px-3 sm:py-1.5 transition-colors min-h-[36px] sm:min-h-0 ${index === idx
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-background text-muted-foreground hover:bg-muted'
+                                        }`}
+                                >
+                                    {idx === 'sp500' ? 'S&P' : 'NDX'}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex rounded-lg border border-border overflow-hidden text-xs sm:text-sm font-medium">
-                        {(['divergence', 'price'] as const).map(mode => (
-                            <button
-                                type="button"
-                                key={mode}
-                                onClick={() => setViewMode(mode)}
-                                className={`flex-1 sm:flex-none px-2 sm:px-3 py-1.5 transition-colors capitalize ${viewMode === mode
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {mode === 'divergence' ? 'Divergence' : 'MA Levels'}
-                            </button>
-                        ))}
+
+                    {/* View Mode */}
+                    <div className="space-y-1">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:hidden">View</span>
+                        <div className="flex rounded-lg border border-border overflow-hidden text-xs sm:text-sm font-medium">
+                            {(['divergence', 'price'] as const).map(mode => (
+                                <button
+                                    type="button"
+                                    key={mode}
+                                    onClick={() => setViewMode(mode)}
+                                    className={`flex-1 py-2 sm:px-3 sm:py-1.5 transition-colors min-h-[36px] sm:min-h-0 ${viewMode === mode
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-background text-muted-foreground hover:bg-muted'
+                                        }`}
+                                >
+                                    {mode === 'divergence' ? 'Div' : 'MA'}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -209,15 +283,17 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                     <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">Show Lines:</span>
                     {[
-                        { label: '50/200', active: show50_200, toggle: () => setShow50_200(s => !s), color: COLOR_50_200 },
-                        { label: '200/500', active: show200_500, toggle: () => setShow200_500(s => !s), color: COLOR_200_500 },
-                    ].map(({ label, active, toggle, color }) => (
+                        { label: '50/200', active: show50_200, toggle: () => setShow50_200(s => !s) },
+                        { label: '200/500', active: show200_500, toggle: () => setShow200_500(s => !s) },
+                    ].map(({ label, active, toggle }) => (
                         <button
                             type="button"
                             key={label}
                             onClick={toggle}
-                            className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium border border-border transition-all ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                            style={{ backgroundColor: active ? color : 'transparent' }}
+                            className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium border border-border transition-all min-h-[28px] sm:min-h-0 ${active
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-transparent text-muted-foreground hover:bg-muted'
+                                }`}
                         >
                             {label}
                         </button>
@@ -225,22 +301,12 @@ export default function MaDivergenceChart({ height = 450 }: { height?: number })
                 </div>
             )}
 
-            {/* Date presets */}
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-5">
-                {DATE_PRESETS.map(p => (
-                    <button
-                        type="button"
-                        key={p.value}
-                        onClick={() => setDatePreset(p.value)}
-                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${datePreset === p.value
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
-                    >
-                        {p.label}
-                    </button>
-                ))}
-            </div>
+            {/* Date presets - Expandable on mobile */}
+            <DatePresetSelector
+                datePreset={datePreset}
+                setDatePreset={setDatePreset}
+                DATE_PRESETS={DATE_PRESETS}
+            />
 
             <ResponsiveContainer width="100%" height={responsiveHeight}>
                 <ComposedChart data={filtered} margin={responsiveMargin}>

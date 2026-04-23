@@ -13,15 +13,20 @@ interface RegimePeriod {
     months: number;
 }
 
-export default function RegimeHistoryTable() {
+interface RegimeHistoryTableProps {
+    onRegimeSelect?: (dateRange: { start: string; end: string } | null) => void;
+}
+
+export default function RegimeHistoryTable({ onRegimeSelect }: RegimeHistoryTableProps) {
     const [periods, setPeriods] = useState<RegimePeriod[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedRegime, setSelectedRegime] = useState<string>('all');
     const [sortKey, setSortKey] = useState<SortKey>('startDate');
     const [sortDir, setSortDir] = useState<SortDir>('desc');
-    const itemsPerPage = 20;
+    const [selectedPeriodIndex, setSelectedPeriodIndex] = useState<number | null>(null);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         async function loadRegimePeriods() {
@@ -50,6 +55,21 @@ export default function RegimeHistoryTable() {
             'normal': 'border-l-gray-500',
         };
         return colors[regime.toLowerCase()] ?? 'border-l-gray-400';
+    };
+
+    const handleRowClick = (period: RegimePeriod, index: number) => {
+        if (selectedPeriodIndex === index) {
+            // Deselect if clicking the same row
+            setSelectedPeriodIndex(null);
+            onRegimeSelect?.(null);
+        } else {
+            setSelectedPeriodIndex(index);
+            // Convert "Current" to today's date for the chart
+            const endDate = period.endDate === 'Current'
+                ? new Date().toISOString().split('T')[0]
+                : period.endDate;
+            onRegimeSelect?.({ start: period.startDate, end: endDate });
+        }
     };
 
     if (loading) {
@@ -199,33 +219,39 @@ export default function RegimeHistoryTable() {
                                 </tr>
                             </thead>
                             <tbody className="bg-background divide-y divide-border/30">
-                                {displayedPeriods.map((period, index) => (
-                                    <tr
-                                        key={index}
-                                        className={`hover:bg-muted/20 transition-colors border-l-4 ${getRegimeColor(period.regime)}`}
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                                            {period.regime}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                            {new Date(period.startDate).toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short'
-                                            })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                                            {period.endDate === 'Current'
-                                                ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">Current</span>
-                                                : new Date(period.endDate).toLocaleDateString('en-US', {
+                                {displayedPeriods.map((period, index) => {
+                                    const globalIndex = startIndex + index;
+                                    const isSelected = selectedPeriodIndex === globalIndex;
+                                    return (
+                                        <tr
+                                            key={index}
+                                            onClick={() => handleRowClick(period, globalIndex)}
+                                            className={`hover:bg-muted/20 transition-colors border-l-4 cursor-pointer ${getRegimeColor(period.regime)} ${isSelected ? 'bg-primary/10 ring-2 ring-primary/50' : ''
+                                                }`}
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
+                                                {period.regime}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                                {new Date(period.startDate).toLocaleDateString('en-US', {
                                                     year: 'numeric',
                                                     month: 'short'
                                                 })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground text-right font-mono">
-                                            {period.months}
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                                                {period.endDate === 'Current'
+                                                    ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">Current</span>
+                                                    : new Date(period.endDate).toLocaleDateString('en-US', {
+                                                        year: 'numeric',
+                                                        month: 'short'
+                                                    })}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground text-right font-mono">
+                                                {period.months}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

@@ -141,6 +141,71 @@ function AdvancedControls({ METRICS, scoreMetrics, toggleScore, visibleMA20s, to
     );
 }
 
+function DatePresetSelector({ datePreset, setDatePreset, DATE_PRESETS }: {
+    datePreset: string;
+    setDatePreset: (preset: string) => void;
+    DATE_PRESETS: readonly { label: string; value: string; start?: string; end?: string; }[];
+}) {
+    const [open, setOpen] = useState(false);
+
+    const selectedPreset = DATE_PRESETS.find(p => p.value === datePreset);
+
+    return (
+        <div className="mb-4">
+            {/* Mobile: Expandable selector */}
+            <div className="sm:hidden border border-border rounded-lg overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors min-h-[44px]"
+                >
+                    <span>Date Range: {selectedPreset?.label}</span>
+                    <span className="text-base leading-none">{open ? '▲' : '▼'}</span>
+                </button>
+                {open && (
+                    <div className="border-t border-border bg-muted/20">
+                        <div className="grid grid-cols-2 gap-2 p-3">
+                            {DATE_PRESETS.map(p => (
+                                <button
+                                    type="button"
+                                    key={p.value}
+                                    onClick={() => {
+                                        setDatePreset(p.value);
+                                        setOpen(false);
+                                    }}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[36px] ${datePreset === p.value
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-background text-muted-foreground hover:bg-muted'
+                                        }`}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop: Inline buttons */}
+            <div className="hidden sm:flex sm:flex-wrap gap-2">
+                {DATE_PRESETS.map(p => (
+                    <button
+                        type="button"
+                        key={p.value}
+                        onClick={() => setDatePreset(p.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${datePreset === p.value
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                    >
+                        {p.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 export default function TrendPressureChart({ height = 450 }: TrendPressureChartProps) {
     const [raw, setRaw] = useState<DataPoint[]>([]);
     const [loading, setLoading] = useState(true);
@@ -379,52 +444,68 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                     </div>
                 </div>
 
-                {/* Controls - Stack on mobile */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
-                        {(['percentile', 'value'] as const).map(mode => (
-                            <button
-                                type="button"
-                                key={mode}
-                                onClick={() => setViewMode(mode)}
-                                className={`px-3 py-2 sm:py-1.5 transition-colors capitalize min-h-[36px] sm:min-h-0 ${viewMode === mode
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {mode === 'percentile' ? 'Percentile' : 'Actual'}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
-                        {(['200', '500', 'blend'] as const).map(period => (
-                            <button
-                                type="button"
-                                key={period}
-                                onClick={() => setMa(period)}
-                                className={`w-16 sm:w-14 py-2 sm:py-1.5 transition-colors text-center min-h-[36px] sm:min-h-0 ${ma === period
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {period === 'blend' ? 'Blend' : `${period}MA`}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
-                        {(['sp500', 'ndx'] as const).map(idx => (
-                            <button
-                                type="button"
-                                key={idx}
-                                onClick={() => setIndex(idx)}
-                                className={`px-3 py-2 sm:py-1.5 transition-colors min-h-[36px] sm:min-h-0 ${index === idx
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-background text-muted-foreground hover:bg-muted'
-                                    }`}
-                            >
-                                {idx === 'sp500' ? 'S&P 500' : 'NDX 100'}
-                            </button>
-                        ))}
+                {/* Controls - Compact single row layout */}
+                <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3">
+                        {/* View Mode */}
+                        <div className="space-y-1">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:hidden">View</span>
+                            <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+                                {(['percentile', 'value'] as const).map(mode => (
+                                    <button
+                                        type="button"
+                                        key={mode}
+                                        onClick={() => setViewMode(mode)}
+                                        className={`flex-1 py-2 sm:px-3 sm:py-1.5 transition-colors text-xs sm:text-sm min-h-[36px] sm:min-h-0 ${viewMode === mode
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:bg-muted'
+                                            }`}
+                                    >
+                                        {mode === 'percentile' ? '%ile' : 'Val'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* MA Period */}
+                        <div className="space-y-1">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:hidden">MA</span>
+                            <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+                                {(['200', '500', 'blend'] as const).map(period => (
+                                    <button
+                                        type="button"
+                                        key={period}
+                                        onClick={() => setMa(period)}
+                                        className={`flex-1 py-2 sm:w-14 sm:py-1.5 transition-colors text-center text-xs sm:text-sm min-h-[36px] sm:min-h-0 ${ma === period
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:bg-muted'
+                                            }`}
+                                    >
+                                        {period === 'blend' ? 'Mix' : period}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Index */}
+                        <div className="space-y-1">
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block sm:hidden">Index</span>
+                            <div className="flex rounded-lg border border-border overflow-hidden text-sm font-medium">
+                                {(['sp500', 'ndx'] as const).map(idx => (
+                                    <button
+                                        type="button"
+                                        key={idx}
+                                        onClick={() => setIndex(idx)}
+                                        className={`flex-1 py-2 sm:px-3 sm:py-1.5 transition-colors text-xs sm:text-sm min-h-[36px] sm:min-h-0 ${index === idx
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:bg-muted'
+                                            }`}
+                                    >
+                                        {idx === 'sp500' ? 'S&P' : 'NDX'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -434,47 +515,47 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                 <div className="text-xs text-muted-foreground opacity-60 mb-2 -mt-1">updating…</div>
             )}
 
-            {/* Show Lines row */}
-            <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide w-20 shrink-0">Show Lines:</span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                    {viewMode === 'percentile' && (
-                        <button
-                            type="button"
-                            onClick={() => setShowScore(s => !s)}
-                            className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                            style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
-                        >
-                            Score
-                        </button>
-                    )}
-                    {viewMode === 'value' && (
-                        <button
-                            type="button"
-                            onClick={() => setShowScore(s => !s)}
-                            className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                            style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
-                            title="Percentile score shown on right axis"
-                        >
-                            Score %ile →
-                        </button>
-                    )}
-                    {METRICS.map(m => {
-                        const active = visibleMetrics.has(m.percentileKey as string);
-                        return (
+            {/* Show Lines row - Better mobile layout */}
+            <div className="mb-4 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide sm:w-20 sm:shrink-0">Show Lines:</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {viewMode === 'percentile' && (
                             <button
                                 type="button"
-                                key={m.label}
-                                onClick={() => toggleVisible(m.percentileKey as string)}
-                                className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
-                                style={{ backgroundColor: active ? m.color : 'transparent' }}
+                                onClick={() => setShowScore(s => !s)}
+                                className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
                             >
-                                {m.label}
+                                Score
                             </button>
-                        );
-                    })}
+                        )}
+                        {viewMode === 'value' && (
+                            <button
+                                type="button"
+                                onClick={() => setShowScore(s => !s)}
+                                className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${showScore ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                style={{ backgroundColor: showScore ? SCORE_COLOR : 'transparent' }}
+                                title="Percentile score shown on right axis"
+                            >
+                                Score %ile →
+                            </button>
+                        )}
+                        {METRICS.map(m => {
+                            const active = visibleMetrics.has(m.percentileKey as string);
+                            return (
+                                <button
+                                    type="button"
+                                    key={m.label}
+                                    onClick={() => toggleVisible(m.percentileKey as string)}
+                                    className={`px-3 py-2 sm:py-1 rounded-full text-xs font-medium border border-border transition-all min-h-[36px] sm:min-h-0 ${active ? 'text-background' : 'bg-transparent text-muted-foreground'}`}
+                                    style={{ backgroundColor: active ? m.color : 'transparent' }}
+                                >
+                                    {m.label}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
@@ -492,22 +573,12 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
                 />
             )}
 
-            {/* Date presets */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-3">
-                {DATE_PRESETS.map(p => (
-                    <button
-                        type="button"
-                        key={p.value}
-                        onClick={() => setDatePreset(p.value)}
-                        className={`px-3 py-2 sm:py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px] sm:min-h-0 ${datePreset === p.value
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
-                    >
-                        {p.label}
-                    </button>
-                ))}
-            </div>
+            {/* Date presets - Expandable on mobile */}
+            <DatePresetSelector
+                datePreset={datePreset}
+                setDatePreset={setDatePreset}
+                DATE_PRESETS={DATE_PRESETS}
+            />
 
             {/* Custom date range inputs */}
             {datePreset === 'custom' && (
@@ -655,6 +726,9 @@ export default function TrendPressureChart({ height = 450 }: TrendPressureChartP
             <div className="mt-3 text-xs text-muted-foreground space-y-1 border-t border-border pt-3">
                 <p>
                     <span className="font-medium text-foreground">Score</span> = simple average of the {Array.from(scoreMetrics).map(k => METRICS.find(m => m.percentileKey === k)?.label).filter(Boolean).join(', ')} percentiles (0–100). Always percentile-based regardless of view mode.{viewMode === 'value' && ' Plotted on the right axis.'}
+                </p>
+                <p>
+                    <span className="font-medium text-foreground">%ile vs Val toggle:</span> Controls how individual metrics are displayed. <span className="font-medium text-foreground">%ile</span> shows all metrics as percentile rankings (0-100 scale). <span className="font-medium text-foreground">Val</span> shows actual values in their natural units (%, days, etc.). The Score is always percentile-based in both modes.
                 </p>
                 <p>
                     <span className="font-medium text-foreground">Divergence</span> = % gap between price and its {ma}MA &nbsp;·&nbsp;

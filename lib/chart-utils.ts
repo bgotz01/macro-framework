@@ -49,18 +49,23 @@ export function generateYearlyTicks(chartData: Array<{ date: string | number }>)
             }
         }
 
-        // Always include the last year if not already included
+        // Only include the last year if it aligns with the interval
+        // This prevents inconsistent spacing at the end of the chart
         const lastYearStart = `${endYear}-01`;
-        const lastDataPoint = chartData.find(d => {
-            const dateStr = typeof d.date === 'string' ? d.date : new Date(d.date).toISOString();
-            return dateStr.startsWith(lastYearStart);
-        });
+        const shouldIncludeLastYear = (endYear - startYear) % interval === 0;
 
-        if (lastDataPoint && !ticks.some(t => t.startsWith(`${endYear}-`))) {
-            const dateStr = typeof lastDataPoint.date === 'string'
-                ? lastDataPoint.date
-                : new Date(lastDataPoint.date).toISOString().split('T')[0];
-            ticks.push(dateStr);
+        if (shouldIncludeLastYear) {
+            const lastDataPoint = chartData.find(d => {
+                const dateStr = typeof d.date === 'string' ? d.date : new Date(d.date).toISOString();
+                return dateStr.startsWith(lastYearStart);
+            });
+
+            if (lastDataPoint && !ticks.some(t => t.startsWith(`${endYear}-`))) {
+                const dateStr = typeof lastDataPoint.date === 'string'
+                    ? lastDataPoint.date
+                    : new Date(lastDataPoint.date).toISOString().split('T')[0];
+                ticks.push(dateStr);
+            }
         }
 
         // If we didn't find enough ticks, fall back to evenly spaced ticks

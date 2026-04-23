@@ -61,7 +61,8 @@ function Metric({ label, value, unit = '%', percentile, invert = false, date = n
 }) {
     const fmtDate = (d: string) => {
         const [y, m] = d.split('-');
-        return `${new Date(+y, +m - 1).toLocaleString('default', { month: 'short' })} ${y}`;
+        // Use a fixed time to avoid timezone shifts
+        return `${new Date(`${y}-${m}-15T12:00:00`).toLocaleString('default', { month: 'short' })} ${y}`;
     };
     return (
         <div className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
@@ -86,7 +87,8 @@ function SignalRow({ signal: s }: { signal: CockpitData['signals']['all'][0] }) 
     const fmtDate = (d: string | null) => {
         if (!d) return null;
         const [y, m] = d.split('-');
-        return `${new Date(+y, +m - 1).toLocaleString('default', { month: 'short' })} ${y}`;
+        // Use a fixed time to avoid timezone shifts
+        return `${new Date(`${y}-${m}-15T12:00:00`).toLocaleString('default', { month: 'short' })} ${y}`;
     };
     return (
         <div
@@ -154,7 +156,7 @@ function LiveSnapshot() {
         fetch('/api/cockpit-live')
             .then(r => r.json())
             .then((d: LiveData) => {
-                const cpi = d.cpi.value?.toFixed(1) ?? '';
+                const cpi = d.cpi.value?.toFixed(2) ?? '';
                 const m2 = d.m2yoy.value?.toFixed(2) ?? '';
                 setLive(d);
                 setCpiOverride(cpi);
@@ -196,8 +198,10 @@ function LiveSnapshot() {
 
     const fmtDate = (d: string | null) => {
         if (!d) return '—';
-        const [y, m, day] = d.split('-').map(Number);
-        return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        // Parse date string directly to avoid timezone issues
+        const [y, m, day] = d.split('-');
+        const date = new Date(`${y}-${m}-${day}T12:00:00`);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
     const row = (label: string, value: number | null, date: string | null, unit = '%', decimals = 2, color?: string) => (
@@ -232,7 +236,7 @@ function LiveSnapshot() {
                 <span className="text-[10px] text-muted-foreground font-mono">{fmtDate(date)}</span>
             </div>
             <input
-                type="number" step="0.1" value={value}
+                type="number" step="0.01" value={value}
                 onChange={e => onChange(e.target.value)}
                 className="w-16 text-xs font-mono text-right bg-muted rounded px-1.5 py-0.5 border border-border focus:outline-none focus:ring-1 focus:ring-primary"
             />
@@ -359,7 +363,10 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
                     COCKPIT
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                    {sp500Date ? (() => { const [y, m, d] = sp500Date.split('-').map(Number); return `Data as of ${new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`; })() : ''}
+                    {sp500Date ? (() => {
+                        const [y, m, d] = sp500Date.split('-');
+                        return `Data as of ${new Date(`${y}-${m}-${d}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                    })() : ''}
                     {sp500 ? ` • S&P 500: ${sp500.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : ''}
                 </p>
             </div>

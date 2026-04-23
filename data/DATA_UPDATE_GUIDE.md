@@ -4,21 +4,34 @@ Complete guide for updating all financial data in the macro framework applicatio
 
 ## Overview
 
-This application tracks multiple asset classes with data sourced from Yahoo Finance and FRED. Data is stored in CSV files and imported into a SQLite database for efficient querying.
+This application tracks multiple asset classes with data sourced from Yahoo Finance and FRED. Data is stored in CSV files and can be imported into multiple databases:
+- **SQLite** (`data/macro-data.db`) - Legacy local database
+- **Postgres (macro-framework)** - Primary production database (smaller, optimized for macro data)
+- **Postgres (stockdata)** - Large database with comprehensive stock data
+
+The application has migrated from SQLite to Postgres, but supports importing to all three databases simultaneously for backwards compatibility and data redundancy.
 
 ## Quick Start - Update All Data (Incremental Only)
 
-
 ```bash
-#update all consecutively:
+# Update all consecutively:
 bash scripts/update-all.sh
-
 
 # 1. Update all data from Yahoo Finance (recommended)
 python scripts/batch_update_all.py
 
-# 2. Import new data into database
-npx tsx scripts/import-data-incremental.ts
+# 2. Import new data into ALL databases (SQLite + both Postgres DBs)
+npx tsx scripts/import-data-multi-db.ts --all
+
+# OR import to specific databases:
+# Import to macro-framework only (default)
+npx tsx scripts/import-data-multi-db.ts --macro-framework
+
+# Import to macro-framework and stockdata
+npx tsx scripts/import-data-multi-db.ts --macro-framework --stockdata
+
+# Import to all three databases
+npx tsx scripts/import-data-multi-db.ts --all
 
 # 3. Calculate cyclical returns (for returns chart - 2Y, 5Y, 10Y returns)
 npx tsx scripts/add-cyclical-returns.ts
@@ -32,16 +45,14 @@ npx tsx scripts/calculate-percentiles.ts
 # 6. Economic data
 npx tsx scripts/import-new-economic-data.ts
 
-
-# 6. Divergence
+# 7. Divergence
 npx tsx scripts/calculate-sp500-moving-averages.ts
 npx tsx scripts/calculate-sp500-ma-divergence.ts
 npx tsx scripts/calculate-sp500-ma-slope.ts
 npx tsx scripts/calculate-sp500-ma-stats.ts
 npx tsx scripts/calculate-ma-percentiles.ts
 
-
-DERIVED
+# DERIVED
 # 1. Push Earnings-Yield-5yr into percentile_analysis (it's in time_series but not percentile_analysis for Feb)
 npx tsx scripts/add-earnings-yield-5yr.ts
 
@@ -49,8 +60,6 @@ npx tsx scripts/add-earnings-yield-5yr.ts
 npx tsx scripts/create-derived-percentiles.ts
 
 npx tsx scripts/build-regime-timeline.ts
-
-
 ```
 
 
@@ -160,16 +169,54 @@ Updates: Individual stocks (MAG7, etc.)
 
 ## Data Import Process
 
-After updating CSV files, import into database:
+After updating CSV files, import into database(s):
 
-### Incremental Import (Recommended)
+### Multi-Database Import (Recommended)
+
+Import to all three databases simultaneously:
+
 ```bash
-npx tsx scripts/import-data-incremental.ts
+# Import to all databases (SQLite + macro-framework + stockdata)
+npx tsx scripts/import-data-multi-db.ts --all
+
+# Import to specific databases
+npx tsx scripts/import-data-multi-db.ts --macro-framework --stockdata
+npx tsx scripts/import-data-multi-db.ts --sqlite --macro-framework
+npx tsx scripts/import-data-multi-db.ts --macro-framework  # default
+```
+
+**Features:**
+- Imports to multiple databases in a single run
+- Only imports new data points (incremental)
+- Faster than running separate imports
+- Safe to run multiple times
+- Automatic metadata synchronization
+
+**Database Options:**
+- `--all`: Import to all three databases
+- `--sqlite`: Include SQLite database (data/macro-data.db)
+- `--macro-framework`: Include macro-framework Postgres (default if no flags)
+- `--stockdata`: Include stockdata Postgres
+
+### Single Database Import (Legacy)
+
+For importing to individual databases:
+
+#### Postgres (macro-framework) - Incremental
+```bash
+npx tsx scripts/pg/import-data-incremental.ts
 ```
 - Only imports new data points
 - Faster than full import
 - Safe to run multiple times
 - Dates are stored as ISO strings (YYYY-MM-DD)
+
+#### SQLite - Incremental (Legacy)
+```bash
+npx tsx scripts/import-data-incremental.ts
+```
+- Only imports new data points to SQLite
+- Legacy support for local development
 
 ### Full Import (Use with caution)
 ```bash
@@ -377,11 +424,36 @@ bash scripts/setup_python.sh
 - pandas
 - sqlite3 (built-in)
 
+## Environment Configuration
+
+The application requires database connection strings in your `.env` file:
+
+```bash
+# Primary database (used by Prisma by default)
+DATABASE_URL="postgresql://user:password@localhost:5432/macro-framework"
+
+# Individual database URLs for multi-db imports
+MACRO_DATABASE_URL="postgresql://user:password@localhost:5432/macro-framework"
+STOCKDATA_DATABASE_URL="postgresql://user:password@localhost:5432/stockdata"
+SQLITE_DATABASE_PATH="./data/macro-data.db"
+```
+
+**Configuration Notes:**
+- `DATABASE_URL`: Default connection used by the application
+- `MACRO_DATABASE_URL`: Explicit connection for macro-framework database (falls back to DATABASE_URL if not set)
+- `STOCKDATA_DATABASE_URL`: Connection for the larger stockdata database
+- `SQLITE_DATABASE_PATH`: Path to SQLite database file (optional, for legacy support)
+
+The multi-database import script will automatically detect which databases are configured and available.
+
 ## Database Schema
 
-The SQLite database (`data/macro-data.db`) contains:
+The application uses multiple databases:
 
-### Tables
+### SQLite (`data/macro-data.db`) - Legacy
+Local database for backwards compatibility and development.
+
+**Tables:**
 - `time_series_data`: Raw time series data
 - `series_metadata`: Metadata about each series
 - `percentile_data`: Historical percentiles
@@ -389,10 +461,30 @@ The SQLite database (`data/macro-data.db`) contains:
 - `rolling_averages`: Moving averages
 - `yoy_growth`: Year-over-year growth rates
 
-### Key Columns
+### Postgres (macro-framework) - Primary
+Optimized database for macro financial data.
+
+**Tables:**
+- `macro_time_series`: Raw time series data
+- `macro_series_metadata`: Metadata about each series
+- `macro_percentile_analysis`: Historical percentiles with YoY changes
+- `macro_regime_timeline`: Regime classification timeline
+
+### Postgres (stockdata) - Comprehensive
+Large database with detailed stock market data, including:
+- Individual stock prices and profiles
+- ETF holdings and prices
+- Crypto prices and divergence metrics
+- Market breadth indicators
+- Insider activity
+- And more...
+
+The macro data tables (`macro_time_series`, `macro_series_metadata`, etc.) exist in both Postgres databases and can be kept in sync using the multi-database import script.
+
+### Key Columns (Common Across Databases)
 - `asset_class`: equities, bonds, commodities, crypto, fx, volatility, stocks
 - `series_name`: Unique identifier (e.g., "US/GSPC", "BTCUSD")
-- `date`: ISO date string
+- `date`: ISO date string (YYYY-MM-DD)
 - `value`: Numeric value
 - `percentile`: Historical percentile (0-100)
 

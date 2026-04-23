@@ -9,7 +9,7 @@ const ALLOCATION_MAP: Record<RegimeFamily, { asset: string; ticker: string; rati
     'Overvaluation': { asset: 'Cash / Bonds', ticker: 'SHY', rationale: 'Equities unattractive vs risk-free — reduce equity exposure' },
     'Bond Stress': { asset: 'Gold / Cash', ticker: 'GLD', rationale: 'Deep negative real rates — gold as primary hedge, cash for optionality' },
     'Crisis': { asset: 'Long Gold / Short Growth', ticker: 'GLD/QQQ', rationale: 'Financial repression with tight money — reduce or short equity exposure' },
-    'Normal': { asset: 'S&P 500', ticker: 'SPY', rationale: 'Balanced conditions — default to broad market exposure' },
+    'None': { asset: 'S&P 500', ticker: 'SPY', rationale: 'Balanced conditions — default to broad market exposure' },
 };
 
 interface Props {

@@ -9,6 +9,7 @@ import RegimeFlagsModal from './regime-flags-modal';
 import TimelineSlider from './regime-timeline-slider';
 import RegimeTimelineBarChart from '@/components/charts/regime-timeline-bar-chart';
 import RegimeStateDisplay from './regime-state-display';
+import RegimeFlagsBar from './regime-flags-bar';
 import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
 import RegimeProximity from './regime-proximity';
@@ -28,9 +29,9 @@ function buildTriggerDescriptions(regime: RegimeFamily, t: CustomThresholds): { 
         'Crisis': { entryDescription: `Entry: Real 10Y ≤ ${t.crisis.entryReal10Y}% AND Real M2 ≤ ${t.crisis.entryRealM2}%`, exitDescription: `Exit: Real 10Y ≥ ${t.crisis.exitReal10Y}% OR Real M2 ≥ ${t.crisis.exitRealM2}%` },
         'Bond Stress': { entryDescription: `Entry: Real 10Y ≤ ${t.bondStress.entryReal10Y}% AND Real 3M ≤ ${t.bondStress.entryReal3M}%`, exitDescription: `Exit: Real 10Y ≥ ${t.bondStress.exitReal10Y}%` },
         'Liquidity Shock': { entryDescription: `Entry: Real M2 ≥ ${t.liquidityShock.entry}%`, exitDescription: `Exit: Real M2 ≤ ${t.liquidityShock.exit}%` },
-        'Normal': { entryDescription: 'Default state when no outlier triggers are active', exitDescription: '' },
+        'None': { entryDescription: 'Default state when no outlier triggers are active', exitDescription: '' },
     };
-    return map[regime] || map['Normal'];
+    return map[regime] || map['None'];
 }
 
 export default function CustomRegimeParameters() {
@@ -232,7 +233,7 @@ export default function CustomRegimeParameters() {
     // Use server-side regime state (walks full timeline with custom thresholds)
     const customRegimeState = regimeState
         ? { regime: regimeState.regime as RegimeFamily, entryDate: regimeState.entryDate, triggerReason: regimeState.triggerReason }
-        : { regime: 'Normal' as RegimeFamily, entryDate: displayDate, triggerReason: 'Loading...' };
+        : { regime: 'None' as RegimeFamily, entryDate: displayDate, triggerReason: 'Loading...' };
 
     const regimeMetadata = REGIME_METADATA[customRegimeState.regime as RegimeFamily];
 
@@ -260,6 +261,58 @@ export default function CustomRegimeParameters() {
             slope200MA: data.slope200MA.value
         }
     };
+
+    // Build structural signals for the flags bar
+    interface Signal {
+        type: 'warning' | 'extreme';
+        short: string;
+        message: string;
+    }
+
+    const signals: Signal[] = [];
+
+    if (yieldCurveInversion?.isInverted) {
+        signals.push({
+            type: 'warning',
+            short: 'YC INV',
+            message: `Yield Curve Inverted (${displayRegimeState.conditions.yieldCurve?.toFixed(2)}%) — historically a leading recession indicator.`
+        });
+    } else if (yieldCurveInversion?.monthsSinceUninversion != null && yieldCurveInversion.monthsSinceUninversion <= 18) {
+        const mo = 18 - yieldCurveInversion.monthsSinceUninversion;
+        signals.push({
+            type: 'warning',
+            short: `YC -${mo}mo`,
+            message: `Yield Curve Recently Uninverted — ${mo} months remaining in the 18-month recession watch window.`
+        });
+    }
+
+    if (displayRegimeState.conditions.eyp != null && displayRegimeState.conditions.eyp < -2) {
+        signals.push({
+            type: 'warning',
+            short: `EYP ${displayRegimeState.conditions.eyp.toFixed(1)}%`,
+            message: `Earnings Yield Premium is ${displayRegimeState.conditions.eyp.toFixed(2)}% — equities are significantly below the risk-free rate.`
+        });
+    }
+
+    if (displayRegimeState.conditions.slope500MAPercentile != null && displayRegimeState.conditions.slope500MAPercentile > 85) {
+        signals.push({
+            type: 'warning',
+            short: 'Overvalued',
+            message: `500-Day MA slope is at the ${displayRegimeState.conditions.slope500MAPercentile.toFixed(0)}th percentile — trend pressure is historically elevated.`
+        });
+    }
+
+    if (displayRegimeState.conditions.slope200MA != null && displayRegimeState.conditions.slope200MA < -0.02) {
+        signals.push({
+            type: 'extreme',
+            short: '200MA ↓',
+            message: `200-Day MA slope is negative (${displayRegimeState.conditions.slope200MA.toFixed(3)}) — the long-term trend is declining.`
+        });
+    }
+
+    const percentileFlagsForBar = Object.values(percentileChanges)
+        .filter(item => item.delta !== null && Math.abs(item.delta) > 10)
+        .map(item => ({ label: item.label, delta: item.delta as number }));
 
     const liquidityRegime = calculateLiquidityRegime(
         data.real3M.value, data.real10Y.value,
@@ -316,12 +369,11 @@ export default function CustomRegimeParameters() {
                         guidance={regimeMetadata.guidance}
                         color={regimeMetadata.color}
                         conditions={displayRegimeState.conditions}
-                        yieldCurveInversion={yieldCurveInversion}
                         triggerDescriptions={triggerDescriptions}
-                        percentileFlags={Object.values(percentileChanges)
-                            .filter(item => item.delta !== null && Math.abs(item.delta) > 10)
-                            .map(item => ({ label: item.label, delta: item.delta as number }))
-                        }
+                    />
+                    <RegimeFlagsBar
+                        signals={signals}
+                        percentileFlags={percentileFlagsForBar}
                     />
                 </div>
             )}

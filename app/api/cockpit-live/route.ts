@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
     const get = async (ac: string, sn: string) => {
         try {
@@ -13,8 +17,10 @@ export async function GET() {
                 ORDER BY date DESC
                 LIMIT 1
             `;
+            console.log(`Fetched ${sn}:`, rows[0]?.date, rows[0]?.value);
             return rows[0] ?? undefined;
-        } catch {
+        } catch (err) {
+            console.error(`Error fetching ${sn}:`, err);
             return undefined;
         }
     };
@@ -38,6 +44,12 @@ export async function GET() {
             m2yoy: { value: m2yoy?.value ?? null, date: m2yoy?.date ?? null },
             eps5yr: { value: eps5yr?.value ?? null, date: eps5yr?.date ?? null },
             eps2yr: { value: eps2yr?.value ?? null, date: eps2yr?.date ?? null },
+        }, {
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+            }
         });
     } catch (error) {
         console.error('cockpit-live error:', error);

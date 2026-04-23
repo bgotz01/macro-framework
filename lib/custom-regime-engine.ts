@@ -45,7 +45,7 @@ export function buildCustomTriggers(t: CustomThresholds): Record<string, Trigger
             exit: (c) => c.eyp !== null && (c.eyp >= t.longDuration.exitEypHigh || c.eyp <= t.longDuration.exitEypLow),
             reason: (c) => `Long Duration: EYP ${c.eyp?.toFixed(2)}%, Real 10Y ${c.real10Y?.toFixed(2)}%`,
         },
-        'Normal': {
+        'None': {
             entry: () => false,
             exit: () => false,
             reason: () => 'Balanced conditions - no extreme triggers',
@@ -127,16 +127,16 @@ export function determineCustomRegime(
         }
     }
 
-    if (currentState && currentState.regime !== 'Normal') {
+    if (currentState && currentState.regime !== 'None') {
         const config = triggers[currentState.regime];
         if (config && !config.exit(conditions)) {
             return currentState;
         }
     }
 
-    const normalMeta = REGIME_METADATA['Normal'];
+    const normalMeta = REGIME_METADATA['None'];
     return {
-        regime: 'Normal',
+        regime: 'None',
         entryDate: currentDate,
         triggerReason: 'Balanced conditions - no extreme triggers',
         description: normalMeta.description,

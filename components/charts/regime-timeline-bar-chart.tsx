@@ -16,7 +16,7 @@ export const REGIME_COLORS: Record<string, string> = {
     'Crisis': '#991b1b',
     'Bond Stress': '#ea580c',
     'Liquidity Shock': '#a855f7',
-    'Normal': '#6b7280',
+    'None': '#6b7280',
 };
 
 export function getRegimeColor(regime: string, extraColors?: Record<string, string>): string {

@@ -14,6 +14,8 @@ interface PeriodDetail {
     forward5Y: number | null;
     entryPrice: number | null;
     exitPrice: number | null;
+    annualizedDuringReturn: number | null;
+    monthlyReturn: number | null;
 }
 
 interface RegimeReturnStats {
@@ -31,6 +33,10 @@ interface RegimeReturnStats {
     median1Y: number | null;
     median3Y: number | null;
     median5Y: number | null;
+    avgAnnualizedDuringReturn: number | null;
+    medianAnnualizedDuringReturn: number | null;
+    avgMonthlyReturn: number | null;
+    medianMonthlyReturn: number | null;
     periods: PeriodDetail[];
 }
 
@@ -82,14 +88,18 @@ function SummaryTable({ data, statType }: { data: RegimeReturnStats[]; statType:
                         <th className="text-center py-3 px-2 font-semibold text-muted-foreground">#</th>
                         <th className="text-center py-3 px-2 font-semibold text-muted-foreground">Avg Duration</th>
                         <th className="text-center py-3 px-3 font-semibold text-muted-foreground">During Regime</th>
-                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground">1Y Forward</th>
-                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground">3Y Forward</th>
-                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground">5Y Forward</th>
+                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground">Monthly</th>
+                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground">Annualized</th>
+                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground bg-muted/30 border-l-2 border-border italic font-normal">1Y Forward</th>
+                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground bg-muted/30 italic font-normal">3Y Forward</th>
+                        <th className="text-center py-3 px-3 font-semibold text-muted-foreground bg-muted/30 italic font-normal">5Y Forward</th>
                     </tr>
                 </thead>
                 <tbody>
                     {data.map((r) => {
                         const during = statType === 'avg' ? r.avgDuringReturn : r.medianDuringReturn;
+                        const monthly = statType === 'avg' ? r.avgMonthlyReturn : r.medianMonthlyReturn;
+                        const annualized = statType === 'avg' ? r.avgAnnualizedDuringReturn : r.medianAnnualizedDuringReturn;
                         const fwd1 = statType === 'avg' ? r.avg1Y : r.median1Y;
                         const fwd3 = statType === 'avg' ? r.avg3Y : r.median3Y;
                         const fwd5 = statType === 'avg' ? r.avg5Y : r.median5Y;
@@ -99,9 +109,11 @@ function SummaryTable({ data, statType }: { data: RegimeReturnStats[]; statType:
                                 <td className="text-center py-3 px-2 text-muted-foreground">{r.occurrences}</td>
                                 <td className="text-center py-3 px-2 text-muted-foreground">{r.avgDurationMonths}mo</td>
                                 <td className={`text-center py-3 px-3 font-mono font-medium ${returnColor(during)}`}>{formatReturn(during)}</td>
-                                <td className={`text-center py-3 px-3 font-mono font-medium ${returnColor(fwd1)}`}>{formatReturn(fwd1)}</td>
-                                <td className={`text-center py-3 px-3 font-mono font-medium ${returnColor(fwd3)}`}>{formatReturn(fwd3)}</td>
-                                <td className={`text-center py-3 px-3 font-mono font-medium ${returnColor(fwd5)}`}>{formatReturn(fwd5)}</td>
+                                <td className={`text-center py-3 px-3 font-mono font-medium ${returnColor(monthly)}`}>{formatReturn(monthly)}</td>
+                                <td className={`text-center py-3 px-3 font-mono font-medium ${returnColor(annualized)}`}>{formatReturn(annualized)}</td>
+                                <td className={`text-center py-3 px-3 font-mono font-normal italic bg-muted/20 border-l-2 border-border ${returnColor(fwd1)}`}>{formatReturn(fwd1)}</td>
+                                <td className={`text-center py-3 px-3 font-mono font-normal italic bg-muted/20 ${returnColor(fwd3)}`}>{formatReturn(fwd3)}</td>
+                                <td className={`text-center py-3 px-3 font-mono font-normal italic bg-muted/20 ${returnColor(fwd5)}`}>{formatReturn(fwd5)}</td>
                             </tr>
                         );
                     })}
@@ -122,9 +134,11 @@ function PeriodTable({ periods }: { periods: PeriodDetail[] }) {
                         <th className="text-center py-2 px-2 font-semibold text-muted-foreground">Entry Price</th>
                         <th className="text-center py-2 px-2 font-semibold text-muted-foreground">Exit Price</th>
                         <th className="text-center py-2 px-3 font-semibold text-muted-foreground">During</th>
-                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground">1Y Fwd</th>
-                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground">3Y Fwd</th>
-                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground">5Y Fwd</th>
+                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground">Monthly</th>
+                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground">Annualized</th>
+                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground bg-muted/30 border-l-2 border-border italic font-normal">1Y Fwd</th>
+                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground bg-muted/30 italic font-normal">3Y Fwd</th>
+                        <th className="text-center py-2 px-3 font-semibold text-muted-foreground bg-muted/30 italic font-normal">5Y Fwd</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -138,9 +152,11 @@ function PeriodTable({ periods }: { periods: PeriodDetail[] }) {
                             <td className="text-center py-2 px-2 font-mono text-muted-foreground">{p.entryPrice?.toLocaleString() ?? '—'}</td>
                             <td className="text-center py-2 px-2 font-mono text-muted-foreground">{p.exitPrice?.toLocaleString() ?? '—'}</td>
                             <td className={`text-center py-2 px-3 font-mono font-medium ${returnColor(p.duringReturn)}`}>{formatReturn(p.duringReturn)}</td>
-                            <td className={`text-center py-2 px-3 font-mono font-medium ${returnColor(p.forward1Y)}`}>{formatReturn(p.forward1Y)}</td>
-                            <td className={`text-center py-2 px-3 font-mono font-medium ${returnColor(p.forward3Y)}`}>{formatReturn(p.forward3Y)}</td>
-                            <td className={`text-center py-2 px-3 font-mono font-medium ${returnColor(p.forward5Y)}`}>{formatReturn(p.forward5Y)}</td>
+                            <td className={`text-center py-2 px-3 font-mono font-medium ${returnColor(p.monthlyReturn)}`}>{formatReturn(p.monthlyReturn)}</td>
+                            <td className={`text-center py-2 px-3 font-mono font-medium ${returnColor(p.annualizedDuringReturn)}`}>{formatReturn(p.annualizedDuringReturn)}</td>
+                            <td className={`text-center py-2 px-3 font-mono font-normal italic bg-muted/20 border-l-2 border-border ${returnColor(p.forward1Y)}`}>{formatReturn(p.forward1Y)}</td>
+                            <td className={`text-center py-2 px-3 font-mono font-normal italic bg-muted/20 ${returnColor(p.forward3Y)}`}>{formatReturn(p.forward3Y)}</td>
+                            <td className={`text-center py-2 px-3 font-mono font-normal italic bg-muted/20 ${returnColor(p.forward5Y)}`}>{formatReturn(p.forward5Y)}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -295,6 +311,11 @@ export default function RegimeReturns() {
                             from regime entry to exit. Forward returns (1Y/3Y/5Y) are measured from the regime entry date.
                             Regime periods are identified from the persistent state machine timeline (1960–present).
                             Forward returns may be null for recent periods where insufficient time has elapsed.
+                        </p>
+                        <p className="mb-2">
+                            <span className="font-semibold">Annualized Returns:</span> When enabled, &quot;During Regime&quot; returns are annualized using the formula:
+                            ((1 + total_return)^(12/months) - 1) × 100. This normalizes returns across regimes of different durations, making them comparable
+                            on a per-year basis. For example, a 30% return over 6 months annualizes to ~69%, while a 30% return over 24 months annualizes to ~14%.
                         </p>
                         <p>
                             <span className="font-semibold">Entry &amp; exit dates</span> are month-end dates (e.g. Apr 30, 2020).

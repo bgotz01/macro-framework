@@ -99,6 +99,100 @@ const DATE_PRESETS: Array<
         { label: 'Custom', value: 'custom' },
     ];
 
+function DatePresetSelector({ datePreset, setDatePreset, DATE_PRESETS, customStartDate, setCustomStartDate, customEndDate, setCustomEndDate }: {
+    datePreset: string;
+    setDatePreset: (preset: string) => void;
+    DATE_PRESETS: readonly { label: string; value: string; start?: string; end?: string; }[];
+    customStartDate: string;
+    setCustomStartDate: (date: string) => void;
+    customEndDate: string;
+    setCustomEndDate: (date: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+
+    const selectedPreset = DATE_PRESETS.find(p => p.value === datePreset);
+
+    return (
+        <div className="space-y-3">
+            <label className="block text-sm font-medium text-card-foreground">
+                Date Range
+            </label>
+
+            {/* Mobile: Expandable selector */}
+            <div className="sm:hidden border border-border rounded-lg overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors min-h-[44px]"
+                >
+                    <span>Range: {selectedPreset?.label}</span>
+                    <span className="text-base leading-none">{open ? '▲' : '▼'}</span>
+                </button>
+                {open && (
+                    <div className="border-t border-border bg-muted/20">
+                        <div className="grid grid-cols-2 gap-2 p-3">
+                            {DATE_PRESETS.map(preset => (
+                                <button
+                                    key={preset.value}
+                                    onClick={() => {
+                                        setDatePreset(preset.value);
+                                        setOpen(false);
+                                    }}
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[36px] ${datePreset === preset.value
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-background text-muted-foreground hover:bg-muted'
+                                        }`}
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop: Inline buttons */}
+            <div className="hidden sm:flex sm:flex-wrap gap-2">
+                {DATE_PRESETS.map(preset => (
+                    <button
+                        key={preset.value}
+                        onClick={() => setDatePreset(preset.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                    >
+                        {preset.label}
+                    </button>
+                ))}
+            </div>
+
+            {datePreset === 'custom' && (
+                <div className="flex gap-3 mt-3">
+                    <div className="flex-1">
+                        <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
+                        <input
+                            type="date"
+                            value={customStartDate}
+                            onChange={(e) => setCustomStartDate(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <label className="block text-xs text-muted-foreground mb-1">End Date</label>
+                        <input
+                            type="date"
+                            value={customEndDate}
+                            onChange={(e) => setCustomEndDate(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function DivergenceChart({
     height = 400,
     className = '',
@@ -452,68 +546,71 @@ export default function DivergenceChart({
                     </div>
                 )}
             </div>
-            {/* Controls */}
+            {/* Controls - Mobile Optimized */}
             <div className="mb-6 space-y-4">
-                {/* View Mode Toggle + Index Toggle */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-3">
-                        <label className="text-sm font-medium text-card-foreground">View Mode:</label>
-                        <div className="flex gap-2">
+                {/* View Mode Toggle + Index Toggle - Mobile Stacked */}
+                <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
+                        <label className="text-sm font-medium text-card-foreground block sm:inline">View Mode:</label>
+                        <div className="grid grid-cols-5 sm:flex gap-1 sm:gap-2">
                             <button
                                 onClick={() => setViewMode('price')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'price' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${viewMode === 'price' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
-                                Price & MAs
+                                Price
                             </button>
                             <button
                                 onClick={() => setViewMode('divergence')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'divergence' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${viewMode === 'divergence' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
-                                Divergence
+                                Div
                             </button>
                             <button
                                 onClick={() => setViewMode('slope')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'slope' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${viewMode === 'slope' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
-                                Slopes
+                                Slope
                             </button>
                             <button
                                 onClick={() => setViewMode('days')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'days' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${viewMode === 'days' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
                                 Days
                             </button>
                             <button
                                 onClick={() => setViewMode('percentile')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${viewMode === 'percentile' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                className={`px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${viewMode === 'percentile' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             >
-                                Percentile
+                                %ile
                             </button>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        {(['sp500', 'ndx'] as const).map(idx => (
-                            <button
-                                key={idx}
-                                onClick={() => setIndex(idx)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${index === idx ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                            >
-                                {idx === 'sp500' ? 'S&P 500' : 'NDX 100'}
-                            </button>
-                        ))}
+                    <div className="space-y-2 sm:space-y-0 sm:flex sm:gap-2">
+                        <label className="text-sm font-medium text-card-foreground block sm:hidden">Index:</label>
+                        <div className="flex gap-2">
+                            {(['sp500', 'ndx'] as const).map(idx => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setIndex(idx)}
+                                    className={`flex-1 sm:flex-none px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${index === idx ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                >
+                                    {idx === 'sp500' ? 'S&P 500' : 'NDX 100'}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Days Metric Selector - only show when in Days view */}
                 {viewMode === 'days' && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3 p-3 rounded-lg bg-muted/50">
                         <label className="text-sm font-medium text-card-foreground">
                             Metric:
                         </label>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setDaysMetric('positiveSlope')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${daysMetric === 'positiveSlope'
+                                className={`flex-1 sm:flex-none px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${daysMetric === 'positiveSlope'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -522,7 +619,7 @@ export default function DivergenceChart({
                             </button>
                             <button
                                 onClick={() => setDaysMetric('priceAbove')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${daysMetric === 'priceAbove'
+                                className={`flex-1 sm:flex-none px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${daysMetric === 'priceAbove'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -535,14 +632,14 @@ export default function DivergenceChart({
 
                 {/* Percentile Metric Selector - only show when in Percentile view */}
                 {viewMode === 'percentile' && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-3 p-3 rounded-lg bg-muted/50">
                         <label className="text-sm font-medium text-card-foreground">
                             Metric:
                         </label>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-2 sm:flex gap-2">
                             <button
                                 onClick={() => setPercentileMetric('divergence')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${percentileMetric === 'divergence'
+                                className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${percentileMetric === 'divergence'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -551,7 +648,7 @@ export default function DivergenceChart({
                             </button>
                             <button
                                 onClick={() => setPercentileMetric('slope')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${percentileMetric === 'slope'
+                                className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${percentileMetric === 'slope'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -560,7 +657,7 @@ export default function DivergenceChart({
                             </button>
                             <button
                                 onClick={() => setPercentileMetric('slopeStreak')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${percentileMetric === 'slopeStreak'
+                                className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${percentileMetric === 'slopeStreak'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -569,7 +666,7 @@ export default function DivergenceChart({
                             </button>
                             <button
                                 onClick={() => setPercentileMetric('priceAbove')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${percentileMetric === 'priceAbove'
+                                className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 min-h-[36px] sm:min-h-0 ${percentileMetric === 'priceAbove'
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                     }`}
@@ -580,14 +677,14 @@ export default function DivergenceChart({
                     </div>
                 )}
 
-                {/* MA Selector */}
-                <div className="space-y-2">
+                {/* MA Selector - Mobile Optimized */}
+                <div className="space-y-3">
                     <label className="block text-sm font-medium text-card-foreground">
                         Select Moving Averages
                     </label>
-                    <div className="flex gap-4">
+                    <div className="grid grid-cols-1 sm:flex gap-2 sm:gap-4">
                         {MA_OPTIONS.map(ma => (
-                            <label key={ma.period} className="flex items-center gap-2 cursor-pointer group">
+                            <label key={ma.period} className="flex items-center gap-2 cursor-pointer group p-2 sm:p-0 rounded-lg hover:bg-muted/50 sm:hover:bg-transparent transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={selectedMAs.includes(ma.period)}
@@ -606,49 +703,16 @@ export default function DivergenceChart({
                     </div>
                 </div>
 
-                {/* Date Preset Selector */}
-                <div className="space-y-3">
-                    <label className="block text-sm font-medium text-card-foreground">
-                        Date Range
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                        {DATE_PRESETS.map(preset => (
-                            <button
-                                key={preset.value}
-                                onClick={() => setDatePreset(preset.value)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${datePreset === preset.value
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
-                            >
-                                {preset.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {datePreset === 'custom' && (
-                        <div className="flex gap-3 mt-3">
-                            <div className="flex-1">
-                                <label className="block text-xs text-muted-foreground mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-xs text-muted-foreground mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg bg-muted text-card-foreground border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
+                {/* Date Preset Selector - Expandable on mobile */}
+                <DatePresetSelector
+                    datePreset={datePreset}
+                    setDatePreset={setDatePreset}
+                    DATE_PRESETS={DATE_PRESETS}
+                    customStartDate={customStartDate}
+                    setCustomStartDate={setCustomStartDate}
+                    customEndDate={customEndDate}
+                    setCustomEndDate={setCustomEndDate}
+                />
             </div>
 
             {/* Chart */}
@@ -663,32 +727,34 @@ export default function DivergenceChart({
             </button>
 
             {/* Data Table */}
-            {showTable && filteredData.length > 0 && (
-                <div className="mt-6">
-                    <HistoricalDataTable
-                        data={filteredData}
-                        seriesName={
-                            viewMode === 'price'
-                                ? 'S&P 500 Price & Moving Averages'
-                                : viewMode === 'divergence'
-                                    ? 'S&P 500 MA Divergence'
-                                    : viewMode === 'slope'
-                                        ? 'S&P 500 MA Slopes'
-                                        : viewMode === 'days'
-                                            ? daysMetric === 'positiveSlope'
-                                                ? 'MA Slope Streaks (Days)'
-                                                : 'Price vs MA Streaks (Days)'
-                                            : percentileMetric === 'divergence'
-                                                ? 'MA Divergence Percentiles'
-                                                : percentileMetric === 'slope'
-                                                    ? 'MA Slope Percentiles'
-                                                    : percentileMetric === 'slopeStreak'
-                                                        ? 'MA Slope Streak Percentiles'
-                                                        : 'MA Price Above Percentiles'
-                        }
-                    />
-                </div>
-            )}
+            {
+                showTable && filteredData.length > 0 && (
+                    <div className="mt-6">
+                        <HistoricalDataTable
+                            data={filteredData}
+                            seriesName={
+                                viewMode === 'price'
+                                    ? 'S&P 500 Price & Moving Averages'
+                                    : viewMode === 'divergence'
+                                        ? 'S&P 500 MA Divergence'
+                                        : viewMode === 'slope'
+                                            ? 'S&P 500 MA Slopes'
+                                            : viewMode === 'days'
+                                                ? daysMetric === 'positiveSlope'
+                                                    ? 'MA Slope Streaks (Days)'
+                                                    : 'Price vs MA Streaks (Days)'
+                                                : percentileMetric === 'divergence'
+                                                    ? 'MA Divergence Percentiles'
+                                                    : percentileMetric === 'slope'
+                                                        ? 'MA Slope Percentiles'
+                                                        : percentileMetric === 'slopeStreak'
+                                                            ? 'MA Slope Streak Percentiles'
+                                                            : 'MA Price Above Percentiles'
+                            }
+                        />
+                    </div>
+                )
+            }
         </div>
     );
 }

@@ -11,9 +11,11 @@ import {
 } from '@/lib/regime-config/flow-trend-config';
 import { REGIME_METADATA, type RegimeFamily } from '@/lib/regime-state-machine';
 import RegimeModal from './regime-modal';
+import RegimeFlagsModal from './regime-flags-modal';
 import TimelineSlider from './regime-timeline-slider';
 import RegimeTimelineBarChart from '@/components/charts/regime-timeline-bar-chart';
 import RegimeStateDisplay from './regime-state-display';
+import RegimeFlagsBar from './regime-flags-bar';
 import RegimeInputVariables from './regime-input-variables';
 import RegimeClassification from './regime-classification';
 import RegimeProximity from './regime-proximity';
@@ -299,6 +301,60 @@ export default function RegimeParameters() {
 
     const regimeMetadata = displayRegimeState ? REGIME_METADATA[displayRegimeState.regime as RegimeFamily] : null;
 
+    // Build structural signals for the flags bar
+    interface Signal {
+        type: 'warning' | 'extreme';
+        short: string;
+        message: string;
+    }
+
+    const signals: Signal[] = [];
+
+    if (displayRegimeState?.conditions) {
+        if (yieldCurveInversion?.isInverted) {
+            signals.push({
+                type: 'warning',
+                short: 'YC INV',
+                message: `Yield Curve Inverted (${displayRegimeState.conditions.yieldCurve?.toFixed(2)}%) — historically a leading recession indicator.`
+            });
+        } else if (yieldCurveInversion?.monthsSinceUninversion != null && yieldCurveInversion.monthsSinceUninversion <= 18) {
+            const mo = 18 - yieldCurveInversion.monthsSinceUninversion;
+            signals.push({
+                type: 'warning',
+                short: `YC -${mo}mo`,
+                message: `Yield Curve Recently Uninverted — ${mo} months remaining in the 18-month recession watch window.`
+            });
+        }
+
+        if (displayRegimeState.conditions.eyp != null && displayRegimeState.conditions.eyp < -2) {
+            signals.push({
+                type: 'warning',
+                short: `EYP ${displayRegimeState.conditions.eyp.toFixed(1)}%`,
+                message: `Earnings Yield Premium is ${displayRegimeState.conditions.eyp.toFixed(2)}% — equities are significantly below the risk-free rate.`
+            });
+        }
+
+        if (displayRegimeState.conditions.slope500MAPercentile != null && displayRegimeState.conditions.slope500MAPercentile > 85) {
+            signals.push({
+                type: 'warning',
+                short: 'Overvalued',
+                message: `500-Day MA slope is at the ${displayRegimeState.conditions.slope500MAPercentile.toFixed(0)}th percentile — trend pressure is historically elevated.`
+            });
+        }
+
+        if (displayRegimeState.conditions.slope200MA != null && displayRegimeState.conditions.slope200MA < -0.02) {
+            signals.push({
+                type: 'extreme',
+                short: '200MA ↓',
+                message: `200-Day MA slope is negative (${displayRegimeState.conditions.slope200MA.toFixed(3)}) — the long-term trend is declining.`
+            });
+        }
+    }
+
+    const percentileFlagsForBar = Object.values(percentileChanges)
+        .filter(item => item.delta !== null && Math.abs(item.delta) > 10)
+        .map(item => ({ label: item.label, delta: item.delta as number }));
+
     return (
         <div className="max-w-7xl mx-auto">
             {/* Full-width header section */}
@@ -320,6 +376,7 @@ export default function RegimeParameters() {
                 </p>
                 <div className="flex gap-2">
                     <RegimeModal />
+                    <RegimeFlagsModal />
                 </div>
             </div>
 
@@ -358,11 +415,10 @@ export default function RegimeParameters() {
                         guidance={regimeMetadata.guidance}
                         color={regimeMetadata.color}
                         conditions={displayRegimeState.conditions}
-                        yieldCurveInversion={yieldCurveInversion}
-                        percentileFlags={Object.values(percentileChanges)
-                            .filter(item => item.delta !== null && Math.abs(item.delta) > 10)
-                            .map(item => ({ label: item.label, delta: item.delta as number }))
-                        }
+                    />
+                    <RegimeFlagsBar
+                        signals={signals}
+                        percentileFlags={percentileFlagsForBar}
                     />
                 </div>
             )}

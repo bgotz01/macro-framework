@@ -191,91 +191,90 @@ export default function TwelveYearSummary() {
                             key={macro.year}
                             className="rounded-xl border border-border/40 bg-background/40 p-5"
                         >
-                            <div className="flex items-start gap-4">
-                                {/* Year */}
-                                <span className="text-2xl font-bold text-primary min-w-[80px]">
-                                    {macro.year}
-                                </span>
+                            {/* Year Header */}
+                            <div className="text-2xl font-bold text-primary mb-4">
+                                {macro.year}
+                            </div>
 
-                                <div className="flex-1 space-y-5">
-                                    {/* MACRO */}
+                            {/* Two Column Layout */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* MACRO - Left Column */}
+                                <div className="flex gap-3">
+                                    <Globe2 className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <div className="text-xs font-semibold tracking-wide text-muted-foreground">
+                                            MACRO
+                                        </div>
+                                        <div className="font-semibold text-foreground">
+                                            {macro.title}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {macro.keywords.map((keyword, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium border border-primary/20"
+                                                >
+                                                    {keyword}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <div className="text-sm text-muted-foreground mt-3">
+                                            {macro.description}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* TECH - Right Column */}
+                                {tech && (
                                     <div className="flex gap-3">
-                                        <Globe2 className="h-4 w-4 mt-1 text-muted-foreground" />
-                                        <div>
+                                        <Cpu className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                                        <div className="flex-1">
                                             <div className="text-xs font-semibold tracking-wide text-muted-foreground">
-                                                MACRO
+                                                TECH
                                             </div>
                                             <div className="font-semibold text-foreground">
-                                                {macro.title}
+                                                {tech.title}
                                             </div>
                                             <div className="flex flex-wrap gap-2 mt-2">
-                                                {macro.keywords.map((keyword, idx) => (
+                                                {tech.keywords.map((keyword, idx) => (
                                                     <span
                                                         key={idx}
-                                                        className="inline-flex items-center px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium border border-primary/20"
+                                                        className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-500/20"
                                                     >
                                                         {keyword}
                                                     </span>
                                                 ))}
                                             </div>
                                             <div className="text-sm text-muted-foreground mt-3">
-                                                {macro.description}
+                                                {tech.description}
+                                            </div>
+
+                                            {/* Releases */}
+                                            <div className="mt-3 rounded-xl border border-border/40 bg-muted/15 p-3">
+                                                <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground mb-2">
+                                                    <Rocket className="h-3.5 w-3.5" />
+                                                    <span>MAJOR RELEASES</span>
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    {tech.releases.map((r) => (
+                                                        <div
+                                                            key={`${tech.year}-${r.label}-${r.date}`}
+                                                            className="flex items-baseline justify-between gap-4 rounded-md border border-border/40 bg-background/30 px-3 py-2"
+                                                        >
+                                                            <span className="text-sm text-foreground">
+                                                                {r.label}
+                                                            </span>
+                                                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                                                {r.date}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* TECH */}
-                                    {tech && (
-                                        <div className="flex gap-3">
-                                            <Cpu className="h-4 w-4 mt-1 text-muted-foreground" />
-                                            <div>
-                                                <div className="text-xs font-semibold tracking-wide text-muted-foreground">
-                                                    TECH
-                                                </div>
-                                                <div className="font-semibold text-foreground">
-                                                    {tech.title}
-                                                </div>
-                                                <div className="flex flex-wrap gap-2 mt-2">
-                                                    {tech.keywords.map((keyword, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium border border-blue-500/20"
-                                                        >
-                                                            {keyword}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                                <div className="text-sm text-muted-foreground mt-3">
-                                                    {tech.description}
-                                                </div>
-
-                                                {/* Releases */}
-                                                <div className="mt-3 rounded-xl border border-border/40 bg-muted/15 p-3">
-                                                    <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground mb-2">
-                                                        <Rocket className="h-3.5 w-3.5" />
-                                                        <span>MAJOR RELEASES</span>
-                                                    </div>
-
-                                                    <div className="space-y-1">
-                                                        {tech.releases.map((r) => (
-                                                            <div
-                                                                key={`${tech.year}-${r.label}-${r.date}`}
-                                                                className="flex items-baseline justify-between gap-4 rounded-md border border-border/40 bg-background/30 px-3 py-2"
-                                                            >
-                                                                <span className="text-sm text-foreground">
-                                                                    {r.label}
-                                                                </span>
-                                                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                                                    {r.date}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         </div>
                     );
