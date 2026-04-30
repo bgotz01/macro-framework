@@ -28,11 +28,16 @@ const SERIES: SeriesConfig[] = [
     { asset_class: 'derived', series_name: 'SP500-200MA-SlopeStreak', key: 'slopeStreak200MA', latestOnly: true },
 ];
 
+// Build a key for grouping rows back to their SeriesConfig
+function seriesKey(asset_class: string, series_name: string) {
+    return `${asset_class}::${series_name}`;
+}
+
 export async function GET(request: NextRequest) {
     const targetDate = request.nextUrl.searchParams.get('date') || 'latest';
 
     try {
-        // Resolve reference date for monthly alignment
+        // Resolve reference date for monthly alignment (single query)
         let referenceDate: string | null = null;
         if (targetDate === 'latest') {
             const rows = await prisma.$queryRaw<{ date: string }[]>`
@@ -43,50 +48,73 @@ export async function GET(request: NextRequest) {
             referenceDate = rows[0]?.date ?? null;
         }
 
-        const result: any = {};
+        // Split series into latestOnly vs monthly-aligned
+        const latestOnlySeries = SERIES.filter(s => s.latestOnly);
+        const monthlySeries = SERIES.filter(s => !s.latestOnly);
 
-        await Promise.all(SERIES.map(async (s) => {
-            let rows: { date: string; value: number; percentile_rank: number | null }[];
+        // Build series name arrays for IN clauses
+        const latestOnlyNames = latestOnlySeries.map(s => s.series_name);
+        const monthlyNames = monthlySeries.map(s => s.series_name);
 
-            if (targetDate === 'latest' && s.latestOnly) {
-                rows = await prisma.$queryRaw`
-                    SELECT date, value, percentile_rank
+        // Fetch all rows in 2 batched queries using DISTINCT ON for "latest per series"
+        const [latestOnlyRows, monthlyRows] = await Promise.all([
+            latestOnlyNames.length > 0
+                ? prisma.$queryRaw<{ asset_class: string; series_name: string; date: string; value: number; percentile_rank: number | null }[]>`
+                    SELECT DISTINCT ON (asset_class, series_name)
+                        asset_class, series_name, date, value, percentile_rank
                     FROM macro_percentile_analysis
-                    WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                    ORDER BY date DESC LIMIT 1
-                `;
-            } else if (targetDate === 'latest' && referenceDate) {
-                rows = await prisma.$queryRaw`
-                    SELECT date, value, percentile_rank
-                    FROM macro_percentile_analysis
-                    WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                      AND date <= ${referenceDate}
-                    ORDER BY date DESC LIMIT 1
-                `;
-            } else if (targetDate === 'latest') {
-                rows = await prisma.$queryRaw`
-                    SELECT date, value, percentile_rank
-                    FROM macro_percentile_analysis
-                    WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                    ORDER BY date DESC LIMIT 1
-                `;
-            } else {
-                rows = await prisma.$queryRaw`
-                    SELECT date, value, percentile_rank
-                    FROM macro_percentile_analysis
-                    WHERE asset_class = ${s.asset_class} AND series_name = ${s.series_name}
-                      AND LEFT(date, 7) = LEFT(${targetDate}, 7)
-                    ORDER BY date DESC LIMIT 1
-                `;
-            }
+                    WHERE series_name = ANY(${latestOnlyNames})
+                    ORDER BY asset_class, series_name, date DESC
+                  `
+                : Promise.resolve([]),
 
-            const row = rows[0];
+            monthlyNames.length > 0
+                ? targetDate === 'latest' && referenceDate
+                    ? prisma.$queryRaw<{ asset_class: string; series_name: string; date: string; value: number; percentile_rank: number | null }[]>`
+                        SELECT DISTINCT ON (asset_class, series_name)
+                            asset_class, series_name, date, value, percentile_rank
+                        FROM macro_percentile_analysis
+                        WHERE series_name = ANY(${monthlyNames})
+                          AND date <= ${referenceDate}
+                        ORDER BY asset_class, series_name, date DESC
+                      `
+                    : targetDate === 'latest'
+                        ? prisma.$queryRaw<{ asset_class: string; series_name: string; date: string; value: number; percentile_rank: number | null }[]>`
+                        SELECT DISTINCT ON (asset_class, series_name)
+                            asset_class, series_name, date, value, percentile_rank
+                        FROM macro_percentile_analysis
+                        WHERE series_name = ANY(${monthlyNames})
+                        ORDER BY asset_class, series_name, date DESC
+                      `
+                        : prisma.$queryRaw<{ asset_class: string; series_name: string; date: string; value: number; percentile_rank: number | null }[]>`
+                        SELECT DISTINCT ON (asset_class, series_name)
+                            asset_class, series_name, date, value, percentile_rank
+                        FROM macro_percentile_analysis
+                        WHERE series_name = ANY(${monthlyNames})
+                          AND LEFT(date, 7) = LEFT(${targetDate}, 7)
+                        ORDER BY asset_class, series_name, date DESC
+                      `
+                : Promise.resolve([]),
+        ]);
+
+        // Index all rows by asset_class::series_name for O(1) lookup
+        const rowMap = new Map<string, { date: string; value: number; percentile_rank: number | null }>();
+        for (const row of [...latestOnlyRows, ...monthlyRows]) {
+            rowMap.set(seriesKey(row.asset_class, row.series_name), row);
+        }
+
+        // Build result object
+        const result: Record<string, { value: number; percentile: number | null; date: string } | null> = {};
+        for (const s of SERIES) {
+            const row = rowMap.get(seriesKey(s.asset_class, s.series_name));
             result[s.key] = row
                 ? { value: row.value, percentile: row.percentile_rank, date: row.date }
                 : null;
-        }));
+        }
 
-        return NextResponse.json(result);
+        return NextResponse.json(result, {
+            headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' },
+        });
     } catch (error) {
         console.error('Error fetching regime data:', error);
         return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });

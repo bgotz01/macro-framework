@@ -16,40 +16,56 @@ export async function GET(request: NextRequest) {
     try {
         const prefix = index === 'ndx' ? 'NDX' : 'SP500';
 
-        const baseRows = await prisma.$queryRaw<any[]>`
+        // Fetch all 5 series in a single pass using conditional aggregation (pivot).
+        // This replaces the 5-way self-join with one sequential scan + GROUP BY date.
+        const seriesDiv = `${prefix}-${ma}MA-Div`;
+        const seriesStreak = `${prefix}-${ma}MA-PriceAboveStreak`;
+        const seriesSlope = `${prefix}-${ma}MA-Slope`;
+        const seriesMa50 = `${prefix}-MA50`;
+        const seriesMa200 = `${prefix}-MA200`;
+
+        const seriesNames = [seriesDiv, seriesStreak, seriesSlope, seriesMa50, seriesMa200];
+
+        const pivotRows = await prisma.$queryRaw<{
+            date: string;
+            divergence_value: number | null;
+            divergence_percentile: number | null;
+            days_above_value: number | null;
+            days_above_percentile: number | null;
+            slope_value: number | null;
+            slope_percentile: number | null;
+            ma50_price: number | null;
+            ma200_price: number | null;
+        }[]>`
             SELECT
-                d.date::text                AS date,
-                d.value                     AS divergence_value,
-                d.percentile_rank           AS divergence_percentile,
-                p.value                     AS days_above_value,
-                p.percentile_rank           AS days_above_percentile,
-                s.value                     AS slope_value,
-                s.percentile_rank           AS slope_percentile,
-                ma50.value                  AS ma50_price,
-                ma200.value                 AS ma200_price
-            FROM macro_percentile_analysis d
-            JOIN macro_percentile_analysis p     ON d.date = p.date
-            JOIN macro_percentile_analysis s     ON d.date = s.date
-            JOIN macro_percentile_analysis ma50  ON d.date = ma50.date
-            JOIN macro_percentile_analysis ma200 ON d.date = ma200.date
-            WHERE d.series_name    = ${`${prefix}-${ma}MA-Div`}
-              AND p.series_name    = ${`${prefix}-${ma}MA-PriceAboveStreak`}
-              AND s.series_name    = ${`${prefix}-${ma}MA-Slope`}
-              AND ma50.series_name = ${`${prefix}-MA50`}
-              AND ma200.series_name= ${`${prefix}-MA200`}
-              AND d.percentile_rank   IS NOT NULL
-              AND p.percentile_rank   IS NOT NULL
-              AND s.percentile_rank   IS NOT NULL
-            ORDER BY d.date ASC
+                date::text AS date,
+                MAX(CASE WHEN series_name = ${seriesDiv}    THEN value           END) AS divergence_value,
+                MAX(CASE WHEN series_name = ${seriesDiv}    THEN percentile_rank END) AS divergence_percentile,
+                MAX(CASE WHEN series_name = ${seriesStreak} THEN value           END) AS days_above_value,
+                MAX(CASE WHEN series_name = ${seriesStreak} THEN percentile_rank END) AS days_above_percentile,
+                MAX(CASE WHEN series_name = ${seriesSlope}  THEN value           END) AS slope_value,
+                MAX(CASE WHEN series_name = ${seriesSlope}  THEN percentile_rank END) AS slope_percentile,
+                MAX(CASE WHEN series_name = ${seriesMa50}   THEN value           END) AS ma50_price,
+                MAX(CASE WHEN series_name = ${seriesMa200}  THEN value           END) AS ma200_price
+            FROM macro_percentile_analysis
+            WHERE series_name = ANY(${seriesNames})
+            GROUP BY date
+            HAVING
+                MAX(CASE WHEN series_name = ${seriesDiv}    THEN percentile_rank END) IS NOT NULL
+                AND MAX(CASE WHEN series_name = ${seriesStreak} THEN percentile_rank END) IS NOT NULL
+                AND MAX(CASE WHEN series_name = ${seriesSlope}  THEN percentile_rank END) IS NOT NULL
+            ORDER BY date ASC
         `;
 
         // Compute rolling percentile of 50/200 MA divergence
-        const divValues = baseRows.map((r: any) =>
-            r.ma200_price > 0 ? (r.ma50_price - r.ma200_price) / r.ma200_price * 100 : 0
+        const divValues = pivotRows.map(r =>
+            (r.ma200_price ?? 0) > 0
+                ? ((r.ma50_price ?? 0) - (r.ma200_price ?? 0)) / (r.ma200_price ?? 1) * 100
+                : 0
         );
         const divPct = rollingPercentile(divValues);
 
-        const data = baseRows.map((r: any, i: number) => ({
+        const data = pivotRows.map((r, i) => ({
             date: r.date,
             divergence_value: r.divergence_value,
             divergence_percentile: r.divergence_percentile,

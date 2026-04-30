@@ -267,3 +267,8 @@ sqlite3 data/macro-data.db "SELECT series_name, COUNT(*) FROM time_series WHERE 
 - `scripts/convert-millions-to-billions.ts` - Unit conversion
 - `scripts/query-db.ts` - Query the database
 - `scripts/list-series.ts` - List all series in database
+
+
+
+# BUILD TIMELINE
+npx tsx scripts/build-regime-timeline.ts
