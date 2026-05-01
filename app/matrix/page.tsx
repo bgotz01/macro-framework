@@ -659,7 +659,7 @@ export default async function MatrixPage() {
                 <div className="text-center mb-8">
                     <h2 className="page-title text-4xl font-semibold mb-2">Interactive Timeline</h2>
                     <p className="text-sm text-muted-foreground">
-                        Drag the timeline to explore historical regime data
+                        Drag the timeline to explore historical regime data · month-end values
                     </p>
                 </div>
                 <MatrixSlider

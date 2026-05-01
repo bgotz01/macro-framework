@@ -25,3 +25,5 @@ W006RC1Q027SBEA - Federal government current tax receipts - Quarterly - Billions
 FDHBFIN - Federal Debt Held by Foreign and International Investors - Quarterly - Billions - https://fred.stlouisfed.org/series/FDHBFIN
 
 LES1252881600Q - Employed full time: Median usual weekly real earnings: Wage and salary workers: 16 years and over - Quarterly - CPI adjusted dollars - https://fred.stlouisfed.org/series/LES1252881600Q
+
+CPI - https://www.bls.gov/regions/mid-atlantic/data/consumerpriceindexhistorical_us_table.htm

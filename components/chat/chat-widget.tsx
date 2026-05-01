@@ -14,14 +14,34 @@ export default function ChatWidget() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const userScrolledUp = useRef(false);
 
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Only auto-scroll if user hasn't scrolled up
+    const scrollToBottom = useCallback((force = false) => {
+        if (force || !userScrolledUp.current) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
     }, []);
 
+    // Track whether user has scrolled away from bottom
+    const handleScroll = useCallback(() => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        userScrolledUp.current = distanceFromBottom > 60;
+    }, []);
+
+    // Force scroll on new user message, respect scroll position during streaming
     useEffect(() => {
-        scrollToBottom();
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg?.role === 'user') {
+            userScrolledUp.current = false;
+            scrollToBottom(true);
+        } else {
+            scrollToBottom(false);
+        }
     }, [messages, scrollToBottom]);
 
     useEffect(() => {
@@ -47,9 +67,7 @@ export default function ChatWidget() {
                 body: JSON.stringify({ messages: newMessages }),
             });
 
-            if (!res.ok) {
-                throw new Error('Failed to get response');
-            }
+            if (!res.ok) throw new Error('Failed to get response');
 
             const reader = res.body?.getReader();
             if (!reader) throw new Error('No reader');
@@ -63,12 +81,19 @@ export default function ChatWidget() {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                assistantContent += decoder.decode(value, { stream: true });
-                const current = assistantContent;
-                setMessages(prev => [
-                    ...prev.slice(0, -1),
-                    { role: 'assistant', content: current },
-                ]);
+
+                // Decode chunk and append — use requestAnimationFrame for smooth rendering
+                const chunk = decoder.decode(value, { stream: true });
+                assistantContent += chunk;
+                const snapshot = assistantContent;
+
+                await new Promise<void>(resolve => requestAnimationFrame(() => {
+                    setMessages(prev => [
+                        ...prev.slice(0, -1),
+                        { role: 'assistant', content: snapshot },
+                    ]);
+                    resolve();
+                }));
             }
         } catch {
             setMessages(prev => [
@@ -109,7 +134,7 @@ export default function ChatWidget() {
 
             {/* Chat Panel */}
             {isOpen && (
-                <div className="fixed bottom-24 right-6 z-50 w-[420px] max-h-[600px] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+                <div className="fixed bottom-24 right-6 z-50 w-[560px] max-h-[700px] rounded-2xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden">
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-border bg-muted/30 flex items-center justify-between flex-shrink-0">
                         <div>
@@ -127,14 +152,18 @@ export default function ChatWidget() {
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[420px]">
+                    <div
+                        ref={messagesContainerRef}
+                        onScroll={handleScroll}
+                        className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[400px] max-h-[540px]"
+                    >
                         {messages.length === 0 && (
                             <div className="text-center text-muted-foreground text-sm py-12">
                                 <p className="mb-3">Ask me anything about the macro framework.</p>
                                 <div className="space-y-2">
                                     {[
-                                        'What is the current regime model?',
-                                        'Explain the System Stress signal',
+                                        'What is the current regime?',
+                                        'Explain the Long Duration regime',
                                         'How is Real Earnings Yield calculated?',
                                     ].map((q) => (
                                         <button

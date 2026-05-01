@@ -179,15 +179,17 @@ export default function CustomRegimeParameters() {
     if (initialLoading || error || !data) {
         return (
             <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-light tracking-wider mb-2"
+                <div className="relative flex items-center justify-center mb-8">
+                    <h2 className="text-2xl font-light tracking-wider"
                         style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
-                        CUSTOM REGIME ENGINE
+                        CURRENT REGIME
                     </h2>
-                    <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
-                        style={{ letterSpacing: '0.2em' }}>
-                        User-Defined Thresholds
-                    </p>
+                    <a
+                        href="/regime-active/default"
+                        className="absolute right-0 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                    >
+                        Default View
+                    </a>
                 </div>
                 <TimelineSlider
                     sliderValue={sliderValue} totalMonths={totalMonths}
@@ -324,37 +326,44 @@ export default function CustomRegimeParameters() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-8">
-                <h2 className="text-2xl font-light tracking-wider mb-2"
+            <div className="relative flex items-center justify-center mb-8">
+                <h2 className="text-2xl font-light tracking-wider"
                     style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
-                    CUSTOM REGIME ENGINE
+                    CURRENT REGIME
                 </h2>
-                <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
-                    style={{ letterSpacing: '0.2em' }}>
-                    User-Defined Thresholds
-                </p>
-                <div className="flex gap-2">
-                    <CustomRegimeModal thresholds={thresholds} onApply={handleApplyThresholds} />
-                    <RegimeModal />
-                    <RegimeFlagsModal />
-                </div>
-                {isCustom && (
-                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                <a
+                    href="/regime-active/default"
+                    className="absolute right-0 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                >
+                    Default View
+                </a>
+            </div>
+
+            <div className="flex gap-2 justify-center mb-4">
+                <CustomRegimeModal thresholds={thresholds} onApply={handleApplyThresholds} />
+                <RegimeModal />
+                <RegimeFlagsModal />
+            </div>
+            {isCustom && (
+                <div className="flex justify-center mb-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
                         Custom thresholds active
                     </div>
-                )}
-                {showApplied && (
-                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium animate-fade-in">
+                </div>
+            )}
+            {showApplied && (
+                <div className="flex justify-center mb-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium animate-fade-in">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Engine recalculated with new thresholds
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Active Regime State — above timeline */}
             {regimeMetadata && (

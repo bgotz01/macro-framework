@@ -63,7 +63,7 @@ export default function DataPage() {
 
                 {/* Annual Returns Card */}
                 <Link
-                    href="/markets/annual-returns"
+                    href="/markets/us-annual-returns"
                     className="group p-8 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg transition-all duration-200"
                 >
                     <div className="flex items-start justify-between mb-4">

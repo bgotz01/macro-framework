@@ -44,8 +44,10 @@ export default function DraggableRegimeMatrix({ initialValues, initialDates }: D
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
 
-    // Calculate total months from start to current
-    const totalMonths = (currentYear - startYear) * 12 + currentMonth - startMonth;
+    // Cap at last month — data is month-end, so the current month isn't complete yet
+    const lastAvailableYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const lastAvailableMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const totalMonths = (lastAvailableYear - startYear) * 12 + lastAvailableMonth - startMonth;
 
     const [sliderValue, setSliderValue] = useState(totalMonths);
     const [debouncedSliderValue, setDebouncedSliderValue] = useState(totalMonths);
@@ -299,8 +301,8 @@ export default function DraggableRegimeMatrix({ initialValues, initialDates }: D
                     <div className="text-right">
                         <div className="text-sm font-semibold text-primary">{displayDate}</div>
                         <div className="text-[10px] text-muted-foreground">
-                            {selectedYear === currentYear && selectedMonth === currentDate.getMonth()
-                                ? 'Current'
+                            {sliderValue === totalMonths
+                                ? 'Latest available'
                                 : `${Math.abs(currentYear * 12 + currentDate.getMonth() - (selectedYear * 12 + selectedMonth))} months ago`}
                         </div>
                     </div>

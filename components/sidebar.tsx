@@ -29,21 +29,10 @@ const sidebarData: SidebarCategory[] = [
                 href: '/cockpit',
             },
             {
-                title: 'Asset Returns',
-                href: '/asset-returns',
-            },
-            {
-                title: 'OS Framework',
-                href: '/os-framework',
-            },
-            {
                 title: 'Architecture',
                 href: '/architecture',
             },
-            {
-                title: 'Wealth Distribution',
-                href: '/wealth-distribution',
-            },
+
         ],
     },
     {
@@ -75,6 +64,7 @@ const sidebarData: SidebarCategory[] = [
                 href: '/markets',
                 children: [
                     { title: 'Highlights', href: '/markets/highlights' },
+                    { title: 'Asset Returns', href: '/markets/asset-returns' },
                     { title: 'US Annual Returns', href: '/markets/us-annual-returns' },
                     { title: 'Annual Filter', href: '/markets/annual-filter' },
 
@@ -82,10 +72,7 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Crude Oil', href: '/markets/crude-oil' },
                 ],
             },
-            {
-                title: 'Hedge Funds',
-                href: '/hedge-funds',
-            },
+
             // {
             //     title: 'CFTC',
             //     href: '/cftc',
@@ -160,6 +147,18 @@ const sidebarData: SidebarCategory[] = [
     {
         category: 'Perspectives',
         items: [
+            {
+                title: 'OS Framework',
+                href: '/os-framework',
+            },
+            {
+                title: 'Wealth Distribution',
+                href: '/wealth-distribution',
+            },
+            {
+                title: 'Hedge Funds',
+                href: '/hedge-funds',
+            },
             {
                 title: 'Framework',
                 href: '/framework',
