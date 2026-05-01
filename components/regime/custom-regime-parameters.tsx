@@ -243,7 +243,7 @@ export default function CustomRegimeParameters() {
     const displayRegimeState = {
         regime: customRegimeState.regime,
         entryDate: customRegimeState.entryDate,
-        currentDate: displayDate,
+        currentDate: regimeState?.currentDate ?? null,
         daysInRegime: regimeState?.daysInRegime ?? 0,
         triggerReason: customRegimeState.triggerReason,
         conditions: {

@@ -105,6 +105,7 @@ const PRECEDENCE_ORDER = [
 
 const NAV_ITEMS = [
     { id: 'overview', label: 'Overview' },
+    { id: 'summary-table', label: 'Entry / Exit Table' },
     { id: 'key-metrics', label: 'Key Metrics' },
     ...REGIMES.map(r => ({ id: r.id, label: r.name, color: r.color })),
     { id: 'precedence', label: 'Precedence' },
@@ -185,6 +186,47 @@ export default function RegimeGuideClient() {
                                         <p className="text-xs text-muted-foreground">{c.desc}</p>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Compact Summary Table */}
+                    <section id="summary-table" className="scroll-mt-6">
+                        <h2 className="text-2xl font-bold mb-4">Entry / Exit Summary</h2>
+                        <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-border/50 bg-muted/40">
+                                            <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-36">Regime</th>
+                                            <th className="text-left px-4 py-3 font-semibold text-muted-foreground">Category</th>
+                                            <th className="text-left px-4 py-3 font-semibold text-green-600 dark:text-green-400">Entry</th>
+                                            <th className="text-left px-4 py-3 font-semibold text-red-600 dark:text-red-400">Exit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {REGIMES.map((regime, i) => (
+                                            <tr
+                                                key={regime.id}
+                                                className={`border-b border-border/30 last:border-0 hover:bg-muted/30 transition-colors cursor-pointer ${i % 2 === 0 ? '' : 'bg-muted/10'}`}
+                                                onClick={() => scrollTo(regime.id)}
+                                            >
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: regime.color }} />
+                                                        <span className="font-medium">{regime.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-muted-foreground">{regime.category}</td>
+                                                <td className="px-4 py-3 font-mono text-xs text-foreground/80">{regime.entry}</td>
+                                                <td className="px-4 py-3 font-mono text-xs text-foreground/80">{regime.exit}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="px-4 py-3 border-t border-border/30 bg-muted/20">
+                                <p className="text-xs text-muted-foreground">Click any row to jump to the full regime detail. Regimes are checked in precedence order — highest priority wins.</p>
                             </div>
                         </div>
                     </section>

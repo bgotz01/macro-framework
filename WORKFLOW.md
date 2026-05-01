@@ -270,5 +270,5 @@ sqlite3 data/macro-data.db "SELECT series_name, COUNT(*) FROM time_series WHERE 
 
 
 
-# BUILD TIMELINE
+## BUILD TIMELINE
 npx tsx scripts/build-regime-timeline.ts

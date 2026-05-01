@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import CpiCalculator from '@/components/cpi-calculator';
 
 const SERIES_OPTIONS = [
     { value: 'CPI-U', label: 'CPI (Index → YoY%)', placeholder: '314.5', source: 'Released 10th–13th of the month', urls: [{ label: 'bls.gov', href: 'https://www.bls.gov/cpi/' }, { label: 'BLS data query', href: 'https://data.bls.gov/pdq/SurveyOutputServlet' }] },
@@ -201,6 +202,13 @@ export default function DataInputPage() {
                 )}
             </div>
 
+            {/* CPI Calculator */}
+            {series === 'CPI-U' && (
+                <div className="mb-6">
+                    <CpiCalculator targetMonth={date} onUseValue={(v) => setValue(v)} />
+                </div>
+            )}
+
             {/* Recent entries */}
             <div className="rounded-xl border border-border bg-card p-6">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
@@ -297,6 +305,7 @@ export default function DataInputPage() {
                                 ) : series === 'CPI-U' ? (
                                     <>
                                         <th className="text-right pb-2">Index</th>
+                                        <th className="text-right pb-2">MoM %</th>
                                         <th className="text-right pb-2">YoY %</th>
                                     </>
                                 ) : (
@@ -306,8 +315,8 @@ export default function DataInputPage() {
                         </thead>
                         <tbody>
                             {recent.length === 0 && !loadingRecent ? (
-                                <tr><td colSpan={series === 'M2' || series === 'CPI-U' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
-                            ) : recent.map(row => (
+                                <tr><td colSpan={series === 'CPI-U' ? 4 : series === 'M2' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
+                            ) : recent.map((row, i) => (
                                 <tr key={row.date} className="border-b border-border/40 last:border-0">
                                     <td className="py-1.5 text-muted-foreground">{row.date}</td>
                                     {series === 'M2' ? (
@@ -320,6 +329,14 @@ export default function DataInputPage() {
                                     ) : series === 'CPI-U' ? (
                                         <>
                                             <td className="py-1.5 text-right font-medium">{row.value?.toFixed(3)}</td>
+                                            <td className="py-1.5 text-right font-medium">
+                                                {(() => {
+                                                    const prev = recent[i + 1];
+                                                    if (!prev || !prev.value || !row.value) return <span className="text-muted-foreground/40">—</span>;
+                                                    const mom = ((row.value - prev.value) / prev.value) * 100;
+                                                    return <span className={mom >= 0 ? 'text-green-400' : 'text-red-400'}>{mom.toFixed(2)}%</span>;
+                                                })()}
+                                            </td>
                                             <td className="py-1.5 text-right font-medium">
                                                 {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
                                             </td>

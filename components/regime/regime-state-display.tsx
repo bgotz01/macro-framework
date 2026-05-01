@@ -66,6 +66,7 @@ interface RegimeStateDisplayProps {
 export default function RegimeStateDisplay({
     regime,
     entryDate,
+    currentDate,
     daysInRegime,
     conditions,
     triggerDescriptions
@@ -190,6 +191,14 @@ export default function RegimeStateDisplay({
                                     <span>Entry: {new Date(entryDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                                     <span>•</span>
                                     <span>{daysInRegime} months in regime</span>
+                                    <span>•</span>
+                                    <span>as of {(() => {
+                                        const d = currentDate || entryDate;
+                                        if (!d) return '—';
+                                        const [y, m, day] = d.split('-').map(Number);
+                                        if (!y || !m || !day) return '—';
+                                        return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                    })()}</span>
                                 </div>
                                 <div className="flex justify-center mt-3">
                                     <svg

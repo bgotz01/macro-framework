@@ -42,26 +42,31 @@ export async function GET(request: NextRequest) {
         }> = {};
 
         await Promise.all(SERIES.map(async (s) => {
-            const [curRows, prevRows] = await Promise.all([
+            const [curRows] = await Promise.all([
                 prisma.$queryRaw<{ date: string; percentile_rank: number }[]>`
                     SELECT date::text as date, percentile_rank
                     FROM macro_percentile_analysis
                     WHERE asset_class = ${s.asset_class}
                       AND series_name = ${s.series_name}
-                      AND LEFT(date, 7) = LEFT(${refDate}, 7)
-                    ORDER BY date DESC LIMIT 1
-                `,
-                prisma.$queryRaw<{ date: string; percentile_rank: number }[]>`
-                    SELECT date::text as date, percentile_rank
-                    FROM macro_percentile_analysis
-                    WHERE asset_class = ${s.asset_class}
-                      AND series_name = ${s.series_name}
-                      AND date < LEFT(${refDate}, 7)
+                      AND date <= ${refDate}
                     ORDER BY date DESC LIMIT 1
                 `,
             ]);
 
             const current = curRows[0]?.percentile_rank ?? null;
+            const currentDate = curRows[0]?.date ?? null;
+
+            // Get previous month relative to the actual current date found (not refDate)
+            // so delta is always month-over-month even when series lags behind
+            const prevRows = currentDate ? await prisma.$queryRaw<{ date: string; percentile_rank: number }[]>`
+                SELECT date::text as date, percentile_rank
+                FROM macro_percentile_analysis
+                WHERE asset_class = ${s.asset_class}
+                  AND series_name = ${s.series_name}
+                  AND LEFT(date, 7) < LEFT(${currentDate}, 7)
+                ORDER BY date DESC LIMIT 1
+            ` : [];
+
             const previous = prevRows[0]?.percentile_rank ?? null;
             const delta = current !== null && previous !== null
                 ? Math.round((current - previous) * 10) / 10
@@ -72,7 +77,7 @@ export async function GET(request: NextRequest) {
                 current,
                 previous,
                 delta,
-                date: curRows[0]?.date ?? null,
+                date: currentDate,
                 prevDate: prevRows[0]?.date ?? null,
             };
         }));

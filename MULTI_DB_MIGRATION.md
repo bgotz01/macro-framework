@@ -7,6 +7,55 @@ The application has been enhanced to support importing data to multiple database
 2. **Postgres (macro-framework)** - Primary production database
 3. **Postgres (stockdata)** - Comprehensive stock data database
 
+---
+
+## 🚀 Run Order — Copy & Paste
+
+### Weekly (new market data available)
+
+```bash
+# 1. Download latest prices from Yahoo Finance → CSV files
+python3 scripts/batch_update_all.py
+
+# 2. Import CSVs into all local DBs
+npx tsx scripts/import-data-multi-db.ts --all
+
+# 3. Calculate all derived metrics (returns, volatility, yields, PE, percentiles, MAs)
+bash scripts/calculate-macro-db.sh
+
+# 4. Push to Neon (production)
+python3 scripts/push-to-neon.py
+```
+
+### Monthly (after entering CPI / M2 / EPS via /data-input)
+
+```bash
+# 1. Calculate all derived metrics
+bash scripts/calculate-macro-db.sh
+
+# 2. Push to Neon (production)
+python3 scripts/push-to-neon.py
+```
+
+### What `calculate-macro-db.sh` runs (in order)
+
+| # | Script | What it calculates |
+|---|--------|--------------------|
+| 1 | `scripts/pg/add-cyclical-returns.ts` | 2Y / 5Y / 10Y returns |
+| 2 | `scripts/pg/add-volatility-metrics.ts` | 63 / 126 / 252 / 504-day rolling volatility |
+| 3 | `scripts/pg/calculate-monthly-bond-yields.ts` | Month-end bond yield series |
+| 4 | `scripts/pg/calculate-derived-series.ts` | Real Yields, Yield Curves, EYP, REY |
+| 4b | `scripts/pg/calculate-pe5yr.ts` | PE-2yr, PE-5yr, Earnings Yield |
+| 5 | `scripts/pg/calculate-percentiles.ts` | Percentile ranks for all key series |
+| 6 | `scripts/pg/calculate-yoy-percentile-change.ts` | YoY percentile changes |
+| 7 | `scripts/pg/calculate-sp500-moving-averages.ts` | 50 / 200 / 500-day MAs |
+| 8 | `scripts/pg/calculate-sp500-ma-divergence.ts` | Price divergence from MAs |
+| 8 | `scripts/pg/calculate-sp500-ma-slope.ts` | Daily MA slope % |
+| 8 | `scripts/pg/calculate-sp500-ma-stats.ts` | Slope streaks, price-above-MA streaks |
+| 9 | `scripts/pg/calculate-ma-percentiles.ts` | Percentile ranks for MA series |
+
+---
+
 ## What Changed
 
 ### New Files Created
@@ -76,18 +125,84 @@ npx tsx scripts/import-data-multi-db.ts --sqlite --macro-framework
 
 ### Complete Workflow
 
-```bash
-# 1. Fetch latest data from Yahoo Finance
-python scripts/batch_update_all.py
+There are two data tracks that must both be done before pushing to Neon:
 
-# 2. Import to all databases
+#### Track A — Market Data (weekly, automated)
+Prices, yields, FX, commodities, etc. fetched from Yahoo Finance.
+
+```bash
+# 1. Download latest prices from Yahoo Finance → CSV files
+python3 scripts/batch_update_all.py
+
+# 2. Import CSVs into all local DBs
 npx tsx scripts/import-data-multi-db.ts --all
 
-# 3. Calculate derived metrics (run on primary database)
-npx tsx scripts/add-cyclical-returns.ts
-npx tsx scripts/add-volatility-metrics.ts
-npx tsx scripts/calculate-percentiles.ts
+# 3. Calculate all derived metrics against macro-framework
+bash scripts/calculate-macro-db.sh
+
+# 4. Push macro-framework → Neon (production)
+python3 scripts/push-to-neon.py
 ```
+
+Or run steps 2–4 in one command:
+```bash
+bash scripts/update-neon.sh
+```
+
+#### Track B — Manual Data (monthly, via UI)
+CPI-U, M2, and SP500 EPS are entered manually via the `/data-input` page in the app.
+The UI writes directly to the local `macro-framework` DB and auto-calculates YoY / TTM inline.
+
+After entering manual data, recalculate all derived metrics and push to Neon:
+
+```bash
+# Recalculate all derived metrics against macro-framework
+bash scripts/calculate-macro-db.sh
+
+# Push macro-framework → Neon
+python3 scripts/push-to-neon.py
+```
+
+> **Note:** Manual data entered via `/data-input` only writes to `macro-framework`.
+> It does not go through `import-data-multi-db.ts`, so `stockdata` will not have
+> CPI/M2/EPS updates. The app reads from `macro-framework` (via Neon in production),
+> so this is fine for production use.
+
+#### Full Combined Run (when both tracks have new data)
+
+```bash
+python3 scripts/batch_update_all.py   # fetch market data
+bash scripts/update-neon.sh           # import + calculate all metrics + push to Neon
+```
+
+Manual data entered via `/data-input` is already in `macro-framework` — `update-neon.sh`
+will pick it up when it runs `calculate-macro-db.sh` and `push-to-neon.py`.
+
+### Batch Scripts Reference
+
+| Script | Description |
+|--------|-------------|
+| `scripts/calculate-all-metrics.sh` | Core metrics runner — accepts a Postgres DB URL as argument |
+| `scripts/calculate-macro-db.sh` | Runs all metrics against local `macro-framework` (Postgres) |
+| `scripts/calculate-stockdata-db.sh` | Runs all metrics against local `stockdata` (Postgres) |
+| `scripts/calculate-sqlite-db.sh` | Runs all metrics against local SQLite (`data/macro-data.db`) |
+| `scripts/calculate-neon-db.sh` | Runs all metrics directly against Neon (production) |
+| `scripts/update-neon.sh` | Full pipeline: import all → calculate all → push to Neon |
+| `scripts/push-to-neon.py` | Incremental push of local `macro-framework` → Neon |
+
+### What `calculate-all-metrics.sh` runs (in order)
+
+1. `scripts/pg/add-cyclical-returns.ts` — 2Y/5Y/10Y returns
+2. `scripts/pg/add-volatility-metrics.ts` — 63/126/252/504-day volatility
+3. `scripts/pg/calculate-monthly-bond-yields.ts` — month-end bond yield series
+4. `scripts/pg/calculate-derived-series.ts` — Real Yields, Yield Curves, EYP, REY
+5. `scripts/pg/calculate-percentiles.ts` — percentile ranks for all key series
+6. `scripts/pg/calculate-yoy-percentile-change.ts` — YoY percentile changes
+7. `scripts/pg/calculate-sp500-moving-averages.ts` — 50/200/500-day MAs
+8. `scripts/pg/calculate-sp500-ma-divergence.ts` — price divergence from MAs
+9. `scripts/pg/calculate-sp500-ma-slope.ts` — daily MA slope %
+10. `scripts/pg/calculate-sp500-ma-stats.ts` — slope streaks, price-above streaks
+11. `scripts/pg/calculate-ma-percentiles.ts` — percentile ranks for MA series
 
 ## Environment Setup
 

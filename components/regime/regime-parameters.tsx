@@ -260,7 +260,7 @@ export default function RegimeParameters() {
         displayRegimeState = {
             regime: calculatedRegime.regime,
             entryDate: calculatedRegime.entryDate,
-            currentDate: displayDate,
+            currentDate: null,
             daysInRegime: 0,
             triggerReason: calculatedRegime.triggerReason,
             conditions: {
