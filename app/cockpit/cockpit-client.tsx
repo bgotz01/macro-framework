@@ -585,6 +585,11 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
                     <div className="text-center mb-3">
                         <div className="text-lg font-bold">{trend.direction}</div>
                         <div className="text-xs" style={{ color: trend.pressureColor }}>{trend.pressure} Pressure</div>
+                        {proximityData.slope200MA.date && (
+                            <div className="text-[10px] text-muted-foreground/60 mt-0.5">
+                                {(() => { const [y, m, d] = proximityData.slope200MA.date!.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center justify-between py-1.5 border-b border-border/30">
                         <span className="text-xs text-muted-foreground">Stage</span>

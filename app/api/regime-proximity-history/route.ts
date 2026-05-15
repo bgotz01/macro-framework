@@ -110,10 +110,10 @@ export async function GET() {
         }
 
         // For each date, compute proximity for each regime
-        const result: Array<{ date: string } & Record<string, number>> = [];
+        const result: Array<Record<string, string | number>> = [];
 
         for (const [date, metrics] of byDate) {
-            const point: { date: string } & Record<string, number> = { date };
+            const point: Record<string, string | number> = { date };
 
             for (const def of REGIME_PROXIMITY_DEFS) {
                 const proximities = def.conditions.map(cond => {
@@ -133,7 +133,7 @@ export async function GET() {
             result.push(point);
         }
 
-        result.sort((a, b) => a.date.localeCompare(b.date));
+        result.sort((a, b) => (a.date as string).localeCompare(b.date as string));
 
         return NextResponse.json({ data: result }, {
             headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },

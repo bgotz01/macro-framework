@@ -226,6 +226,7 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Gold Flip', href: '/case-study/gold-flip' },
                     { title: 'Oil Flip', href: '/case-study/oil-flip' },
                     { title: 'Japan', href: '/case-study/japan' },
+                    { title: 'Inflation', href: '/case-study/inflation' },
                 ],
             },
             {
