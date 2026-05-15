@@ -4,6 +4,8 @@ import RegimeTimelineBarChart from '@/components/charts/regime-timeline-bar-char
 import RegimeHistoryTable from '@/components/regime/regime-history-table';
 import RegimeReturns from '@/components/regime/regime-returns';
 import RegimeHistoricalChart from '@/components/charts/regime-historical-chart';
+import RegimeProximityChart from '@/components/regime/regime-proximity-chart';
+import EquitiesChart from '@/components/charts/equities-chart';
 import { Suspense, useState } from 'react';
 
 export default function RegimeHistoricalPage() {
@@ -29,6 +31,16 @@ export default function RegimeHistoricalPage() {
 
             <div className="mb-16">
                 <RegimeReturns />
+            </div>
+
+            <div className="mb-16">
+                <Suspense fallback={<div className="text-center py-12">Loading proximity history...</div>}>
+                    <RegimeProximityChart />
+                </Suspense>
+            </div>
+
+            <div className="mb-16">
+                <EquitiesChart />
             </div>
         </div>
     );

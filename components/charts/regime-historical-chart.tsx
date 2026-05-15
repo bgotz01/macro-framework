@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
-import { generateYearlyTicks } from '@/lib/chart-utils';
+import { generateMonthlyTicks } from '@/lib/chart-utils';
 import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
-
-export type AssetClass = 'bonds' | 'fx' | 'equities' | 'economic' | 'moneysupply' | 'commodities' | 'volatility' | 'crypto' | 'valuations';
 
 interface RegimeHistoricalChartProps {
     selectedDateRange: { start: string; end: string } | null;
@@ -21,16 +19,9 @@ interface ChartDataPoint {
 
 const CHART_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
 
-const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
-    { value: 'bonds', label: 'Bonds' },
-    { value: 'commodities', label: 'Commodities' },
-    { value: 'crypto', label: 'Crypto' },
-    { value: 'economic', label: 'Economic' },
-    { value: 'equities', label: 'Equities' },
-    { value: 'fx', label: 'Foreign Exchange' },
-    { value: 'moneysupply', label: 'Money Supply' },
-    { value: 'valuations', label: 'Valuations' },
-    { value: 'volatility', label: 'Volatility' }
+const EQUITY_SERIES = [
+    { series_name: 'US/GSPC', display_name: 'S&P 500', units: 'index' },
+    { series_name: 'US/IXIC', display_name: 'Nasdaq Composite', units: 'index' },
 ];
 
 export default function RegimeHistoricalChart({
@@ -38,10 +29,8 @@ export default function RegimeHistoricalChart({
     height = 400,
     className = ''
 }: RegimeHistoricalChartProps) {
-    const [assetClass, setAssetClass] = useState<AssetClass>('equities');
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('US/GSPC');
-    const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
+    const [selectedUnits, setSelectedUnits] = useState<string | undefined>('index');
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
     const [loading, setLoading] = useState(true);
@@ -60,40 +49,6 @@ export default function RegimeHistoricalChart({
         return () => window.removeEventListener('resize', handleResize);
     }, [height]);
 
-    // Load available series when asset class changes
-    useEffect(() => {
-        const loadSeries = async () => {
-            try {
-                const response = await fetch(`/api/data/${assetClass}`);
-                if (!response.ok) {
-                    throw new Error('Failed to load series list');
-                }
-                const result = await response.json();
-                const seriesWithNames = result.seriesInfo.map((s: any) => ({
-                    series_name: s.series_name,
-                    display_name: s.display_name,
-                    units: s.units
-                }));
-                setAvailableSeries(seriesWithNames);
-
-                // Auto-select S&P 500 if available, otherwise first series
-                const sp500Series = seriesWithNames.find((s: { series_name: string; display_name: string; units?: string }) => s.series_name === 'US/GSPC');
-                if (sp500Series) {
-                    setSelectedSeries(sp500Series.series_name);
-                    setSelectedUnits(sp500Series.units);
-                } else if (seriesWithNames.length > 0) {
-                    setSelectedSeries(seriesWithNames[0].series_name);
-                    setSelectedUnits(seriesWithNames[0].units);
-                }
-            } catch (err) {
-                console.error('Error loading series:', err);
-                setAvailableSeries([]);
-            }
-        };
-
-        loadSeries();
-    }, [assetClass]);
-
     // Load data when series changes
     useEffect(() => {
         if (!selectedSeries) return;
@@ -103,7 +58,7 @@ export default function RegimeHistoricalChart({
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(`/api/data/${assetClass}?series=${selectedSeries}`);
+                const response = await fetch(`/api/data/equities?series=${selectedSeries}`);
 
                 if (!response.ok) {
                     throw new Error(`Failed to load data: ${response.statusText}`);
@@ -119,7 +74,7 @@ export default function RegimeHistoricalChart({
         };
 
         loadData();
-    }, [assetClass, selectedSeries]);
+    }, [selectedSeries]);
 
     // Filter data based on selected date range
     useEffect(() => {
@@ -219,10 +174,12 @@ export default function RegimeHistoricalChart({
                             stroke="#9ca3af"
                             tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             tickFormatter={(value) => {
-                                const date = new Date(value);
-                                return date.getFullYear().toString();
+                                const date = new Date(value + 'T00:00:00');
+                                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                                const yyyy = date.getFullYear();
+                                return `${mm}-${yyyy}`;
                             }}
-                            ticks={generateYearlyTicks(chartData)}
+                            ticks={generateMonthlyTicks(chartData)}
                         />
                         <YAxis
                             width={getResponsiveYAxisWidth()}
@@ -263,7 +220,7 @@ export default function RegimeHistoricalChart({
                             stroke={CHART_COLORS[0]}
                             strokeWidth={2}
                             dot={false}
-                            name={selectedSeries.replace('.csv', '').replace(/[-_]/g, ' ')}
+                            name={EQUITY_SERIES.find(s => s.series_name === selectedSeries)?.display_name ?? selectedSeries}
                         />
                         {show200MA && (
                             <Line
@@ -336,47 +293,22 @@ export default function RegimeHistoricalChart({
                     )}
                 </div>
 
-                <div className="flex gap-4">
-                    {/* Asset Class Selector */}
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-card-foreground mb-2">
-                            Asset Class
-                        </label>
-                        <select
-                            value={assetClass}
-                            onChange={(e) => setAssetClass(e.target.value as AssetClass)}
-                            className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            {ASSET_CLASSES.map(ac => (
-                                <option key={ac.value} value={ac.value}>
-                                    {ac.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Series Selector */}
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-card-foreground mb-2">
-                            Time Series
-                        </label>
-                        <select
-                            value={selectedSeries}
-                            onChange={(e) => {
-                                setSelectedSeries(e.target.value);
-                                const series = availableSeries.find(s => s.series_name === e.target.value);
-                                setSelectedUnits(series?.units);
+                <div className="flex gap-2">
+                    {EQUITY_SERIES.map(s => (
+                        <button
+                            key={s.series_name}
+                            onClick={() => {
+                                setSelectedSeries(s.series_name);
+                                setSelectedUnits(s.units);
                             }}
-                            className="w-full px-4 py-2 rounded-lg bg-muted text-card-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-                            disabled={availableSeries.length === 0}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${selectedSeries === s.series_name
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-muted text-card-foreground border-border hover:bg-muted/80'
+                                }`}
                         >
-                            {availableSeries.map(series => (
-                                <option key={series.series_name} value={series.series_name}>
-                                    {series.display_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                            {s.display_name}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Info */}

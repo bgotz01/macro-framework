@@ -146,40 +146,7 @@ interface LiveData {
     eps2yr: { value: number | null; date: string | null };
 }
 
-function LiveSnapshot() {
-    const [live, setLive] = useState<LiveData | null>(null);
-    const [cpiOverride, setCpiOverride] = useState<string>('');
-    const [m2Override, setM2Override] = useState<string>('');
-    const [defaults, setDefaults] = useState({ cpi: '', m2: '' });
-
-    useEffect(() => {
-        fetch('/api/cockpit-live')
-            .then(r => r.json())
-            .then((d: LiveData) => {
-                const cpi = d.cpi.value?.toFixed(2) ?? '';
-                const m2 = d.m2yoy.value?.toFixed(2) ?? '';
-                setLive(d);
-                setCpiOverride(cpi);
-                setM2Override(m2);
-                setDefaults({ cpi, m2 });
-            });
-    }, []);
-
-    const isDirty = live && (cpiOverride !== defaults.cpi || m2Override !== defaults.m2);
-    const reset = () => { setCpiOverride(defaults.cpi); setM2Override(defaults.m2); };
-
-    if (!live) return (
-        <div className="rounded-xl border border-border bg-card p-4 mt-3 animate-pulse h-32" />
-    );
-
-    const cpi = parseFloat(cpiOverride) || live.cpi.value || 0;
-    const m2yoy = parseFloat(m2Override) || live.m2yoy.value || 0;
-    const eps5yr = live.eps5yr.value || 0;
-    const eps2yr = live.eps2yr.value || 0;
-    const tnx = live.tnx.value ?? 0;
-    const irx = live.irx.value ?? 0;
-    const price = live.gspc.value ?? 0;
-
+function calcDerived(tnx: number, irx: number, price: number, cpi: number, m2yoy: number, eps5yr: number, eps2yr: number) {
     const real10Y = tnx - cpi;
     const real3M = irx - cpi;
     const realM2 = m2yoy - cpi;
@@ -189,117 +156,253 @@ function LiveSnapshot() {
     const ey2yr = pe2yr !== null ? (1 / pe2yr) * 100 : null;
     const eyp = ey5yr !== null ? ey5yr - irx : null;
     const realEY = ey5yr !== null ? ey5yr - cpi : null;
+    const eyp2yr = ey2yr !== null ? ey2yr - irx : null;
+    const realEY2yr = ey2yr !== null ? ey2yr - cpi : null;
+    return { real10Y, real3M, realM2, pe5yr, ey5yr, pe2yr, ey2yr, eyp, realEY, eyp2yr, realEY2yr };
+}
+
+function WhatIfModal({ live, onClose }: { live: LiveData; onClose: () => void }) {
+    const [vals, setVals] = useState({
+        tnx: live.tnx.value?.toFixed(2) ?? '',
+        irx: live.irx.value?.toFixed(2) ?? '',
+        price: live.gspc.value?.toFixed(0) ?? '',
+        cpi: live.cpi.value?.toFixed(2) ?? '',
+        m2yoy: live.m2yoy.value?.toFixed(2) ?? '',
+        eps5yr: live.eps5yr.value?.toFixed(2) ?? '',
+        eps2yr: live.eps2yr.value?.toFixed(2) ?? '',
+    });
+
+    const set = (k: keyof typeof vals) => (e: React.ChangeEvent<HTMLInputElement>) =>
+        setVals(v => ({ ...v, [k]: e.target.value }));
+
+    const n = (s: string, fallback: number) => parseFloat(s) || fallback;
+    const tnx = n(vals.tnx, live.tnx.value ?? 0);
+    const irx = n(vals.irx, live.irx.value ?? 0);
+    const price = n(vals.price, live.gspc.value ?? 0);
+    const cpi = n(vals.cpi, live.cpi.value ?? 0);
+    const m2yoy = n(vals.m2yoy, live.m2yoy.value ?? 0);
+    const eps5yr = n(vals.eps5yr, live.eps5yr.value ?? 0);
+    const eps2yr = n(vals.eps2yr, live.eps2yr.value ?? 0);
+
+    const d = calcDerived(tnx, irx, price, cpi, m2yoy, eps5yr, eps2yr);
+    const regime = determineNextRegime(null, {
+        rey: d.realEY, eyp: d.eyp, real10Y: d.real10Y, real3M: d.real3M, realM2: d.realM2,
+        liquidityScore: 0, stage: 'N/A', pressure: 'N/A', risk: 'N/A', direction: 'N/A', trendAge: null,
+    }, new Date().toISOString().split('T')[0]);
+    const regimeMeta = REGIME_METADATA[regime.regime];
+
+    const signColor = (v: number | null) => {
+        if (v === null) return 'text-foreground';
+        return v > 0 ? 'text-green-500' : v < -1 ? 'text-red-500' : 'text-yellow-500';
+    };
+    const peColor = (v: number | null) => {
+        if (v === null) return 'text-foreground';
+        return v < 20 ? 'text-green-500' : v > 30 ? 'text-red-500' : 'text-yellow-500';
+    };
+
+    const inputCls = 'w-20 text-xs font-mono text-right bg-muted rounded px-1.5 py-0.5 border border-border focus:outline-none focus:ring-1 focus:ring-primary';
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+            <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg mx-4 p-5" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <div className="text-sm font-semibold">What-If Scenario</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">Edit any input to see how the regime classification changes</div>
+                    </div>
+                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg leading-none">✕</button>
+                </div>
+
+                {/* Inputs */}
+                <div className="mb-4">
+                    <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Inputs</div>
+                    <table className="w-full">
+                        <tbody>
+                            {([
+                                ['10Y Yield', 'tnx', '%'],
+                                ['3M Yield', 'irx', '%'],
+                                ['S&P 500', 'price', ''],
+                                ['CPI YoY', 'cpi', '%'],
+                                ['M2 YoY', 'm2yoy', '%'],
+                                ['EPS 5yr avg', 'eps5yr', ''],
+                                ['EPS 2yr avg', 'eps2yr', ''],
+                            ] as [string, keyof typeof vals, string][]).map(([label, key, unit]) => (
+                                <tr key={key} className="border-b border-border/20 last:border-0">
+                                    <td className="py-1 pr-3 text-xs text-foreground/80 whitespace-nowrap">{label}</td>
+                                    <td className="py-1 text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <input type="number" step="0.01" value={vals[key]} onChange={set(key)} className={inputCls} />
+                                            {unit && <span className="text-[10px] text-muted-foreground w-3">{unit}</span>}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Derived */}
+                <div className="mb-4">
+                    <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Derived</div>
+                    <table className="w-full">
+                        <tbody>
+                            {([
+                                ['Real 10Y', d.real10Y, '%', 2, signColor(d.real10Y)],
+                                ['Real 3M', d.real3M, '%', 2, signColor(d.real3M)],
+                                ['Real M2', d.realM2, '%', 2, signColor(d.realM2)],
+                                ['EYP 5yr', d.eyp, '%', 2, signColor(d.eyp)],
+                                ['Real EY 5yr', d.realEY, '%', 2, signColor(d.realEY)],
+                                ['PE 5yr', d.pe5yr, 'x', 1, peColor(d.pe5yr)],
+                            ] as [string, number | null, string, number, string][]).map(([label, val, unit, dec, cls]) => (
+                                <tr key={label} className="border-b border-border/20 last:border-0">
+                                    <td className="py-1 pr-3 text-xs text-foreground/80 whitespace-nowrap">{label}</td>
+                                    <td className={`py-1 text-xs font-mono font-medium text-right whitespace-nowrap ${cls}`}>
+                                        {val !== null ? `${val.toFixed(dec)}${unit}` : '—'}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Result */}
+                <div className="rounded-lg px-4 py-3 flex items-center gap-3" style={{ backgroundColor: `${regimeMeta.color}18`, borderLeft: `3px solid ${regimeMeta.color}` }}>
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: regimeMeta.color }} />
+                    <div>
+                        <div className="text-base font-bold tracking-tight" style={{ color: regimeMeta.color }}>{regime.regime}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">{regimeMeta.guidance}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function LiveSnapshot() {
+    const [live, setLive] = useState<LiveData | null>(null);
+    const [showWhatIf, setShowWhatIf] = useState(false);
+
+    useEffect(() => {
+        fetch('/api/cockpit-live')
+            .then(r => r.json())
+            .then((d: LiveData) => setLive(d));
+    }, []);
+
+    if (!live) return (
+        <div className="rounded-xl border border-border bg-card p-4 mt-3 animate-pulse h-32" />
+    );
+
+    const cpi = live.cpi.value ?? 0;
+    const m2yoy = live.m2yoy.value ?? 0;
+    const eps5yr = live.eps5yr.value ?? 0;
+    const eps2yr = live.eps2yr.value ?? 0;
+    const tnx = live.tnx.value ?? 0;
+    const irx = live.irx.value ?? 0;
+    const price = live.gspc.value ?? 0;
+
+    const d = calcDerived(tnx, irx, price, cpi, m2yoy, eps5yr, eps2yr);
 
     const liveRegime = determineNextRegime(null, {
-        rey: realEY, eyp, real10Y, real3M, realM2,
+        rey: d.realEY, eyp: d.eyp, real10Y: d.real10Y, real3M: d.real3M, realM2: d.realM2,
         liquidityScore: 0, stage: 'N/A', pressure: 'N/A', risk: 'N/A', direction: 'N/A', trendAge: null,
     }, new Date().toISOString().split('T')[0]);
     const liveRegimeMeta = REGIME_METADATA[liveRegime.regime];
 
-    const fmtDate = (d: string | null) => {
-        if (!d) return '—';
-        // Parse date string directly to avoid timezone issues
-        const [y, m, day] = d.split('-');
-        const date = new Date(`${y}-${m}-${day}T12:00:00`);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const fmtDate = (s: string | null) => {
+        if (!s) return '—';
+        const [y, m, day] = s.split('-');
+        return new Date(`${y}-${m}-${day}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    const row = (label: string, value: number | null, date: string | null, unit = '%', decimals = 2, color?: string) => (
-        <div className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
-            <div className="flex items-center gap-1.5">
-                <span className="text-xs text-foreground/80">{label}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">{fmtDate(date)}</span>
-            </div>
-            <span className={`text-xs font-mono font-medium ${color ?? 'text-foreground'}`}>
-                {value !== null ? `${value.toFixed(decimals)}${unit}` : '—'}
-            </span>
-        </div>
-    );
-
-    // Color helpers for derived metrics
-    const signColor = (v: number | null, goodPositive = true) => {
+    const signColor = (v: number | null) => {
         if (v === null) return '';
-        if (goodPositive) return v > 0 ? 'text-green-500' : v < -1 ? 'text-red-500' : 'text-yellow-500';
-        return v < 0 ? 'text-green-500' : v > 1 ? 'text-red-500' : 'text-yellow-500';
+        return v > 0 ? 'text-green-500' : v < -1 ? 'text-red-500' : 'text-yellow-500';
     };
     const peColor = (v: number | null) => {
         if (v === null) return '';
-        if (v < 20) return 'text-green-500';
-        if (v > 30) return 'text-red-500';
-        return 'text-yellow-500';
+        return v < 20 ? 'text-green-500' : v > 30 ? 'text-red-500' : 'text-yellow-500';
     };
 
-    const editRow = (label: string, date: string | null, value: string, onChange: (v: string) => void) => (
-        <div className="flex items-center justify-between py-1 border-b border-border/20 last:border-0">
-            <div className="flex items-center gap-1.5">
-                <span className="text-xs text-foreground/80">{label}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">{fmtDate(date)}</span>
-            </div>
-            <input
-                type="number" step="0.01" value={value}
-                onChange={e => onChange(e.target.value)}
-                className="w-16 text-xs font-mono text-right bg-muted rounded px-1.5 py-0.5 border border-border focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-        </div>
+    const row = (label: string, value: number | null, date: string | null, unit = '%', decimals = 2, color?: string) => (
+        <tr key={label} className="border-b border-border/20 last:border-0">
+            <td className="py-1 pr-2 text-xs text-foreground/80 whitespace-nowrap">{label}</td>
+            <td className="py-1 pr-3 text-[10px] text-muted-foreground font-mono whitespace-nowrap">{fmtDate(date)}</td>
+            <td className={`py-1 text-xs font-mono font-medium text-right whitespace-nowrap ${color ?? 'text-foreground'}`}>
+                {value !== null ? `${value.toFixed(decimals)}${unit}` : '—'}
+            </td>
+        </tr>
     );
 
     return (
-        <div className="rounded-xl border border-border bg-card p-4 mt-3 mb-3">
-            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Live Snapshot — Daily</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Derived */}
-                <div>
-                    <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Derived (live)</div>
-                    {row('Real 10Y', real10Y, live.tnx.date, '%', 2, signColor(real10Y))}
-                    {row('Real 3M', real3M, live.irx.date, '%', 2, signColor(real3M))}
-                    {row('Real M2', realM2, live.m2yoy.date, '%', 2, signColor(realM2))}
-                    {row('EYP 5yr', eyp, live.gspc.date, '%', 2, signColor(eyp))}
-                    {row('Real EY 5yr', realEY, live.gspc.date, '%', 2, signColor(realEY))}
+        <>
+            {showWhatIf && <WhatIfModal live={live} onClose={() => setShowWhatIf(false)} />}
+            <div className="rounded-xl border border-border bg-card p-4 mt-3 mb-3">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Live Snapshot — Daily</div>
+                    <button
+                        onClick={() => setShowWhatIf(true)}
+                        className="text-[10px] font-medium text-primary hover:underline"
+                    >
+                        What-if →
+                    </button>
                 </div>
-
-                {/* Macro inputs */}
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">
-                            Macro <span className="normal-case font-normal text-muted-foreground/60">(editable)</span>
-                        </div>
-                        {isDirty && (
-                            <button
-                                onClick={reset}
-                                className="text-[9px] text-primary hover:underline font-medium"
-                            >
-                                reset
-                            </button>
-                        )}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Derived */}
+                    <div>
+                        <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Derived (live)</div>
+                        <table className="w-full">
+                            <tbody>
+                                {row('Real 10Y', d.real10Y, live.tnx.date, '%', 2, signColor(d.real10Y))}
+                                {row('Real 3M', d.real3M, live.irx.date, '%', 2, signColor(d.real3M))}
+                                {row('Real M2', d.realM2, live.m2yoy.date, '%', 2, signColor(d.realM2))}
+                                {row('EYP 5yr', d.eyp, live.gspc.date, '%', 2, signColor(d.eyp))}
+                                {row('Real EY 5yr', d.realEY, live.gspc.date, '%', 2, signColor(d.realEY))}
+                                {row('EYP 2yr', d.eyp2yr, live.gspc.date, '%', 2, signColor(d.eyp2yr))}
+                                {row('Real EY 2yr', d.realEY2yr, live.gspc.date, '%', 2, signColor(d.realEY2yr))}
+                            </tbody>
+                        </table>
                     </div>
-                    {editRow('CPI YoY', live.cpi.date, cpiOverride, setCpiOverride)}
-                    {editRow('M2 YoY', live.m2yoy.date, m2Override, setM2Override)}
-                    {row('EY 5yr', ey5yr, live.eps5yr.date, '%', 2, signColor(ey5yr))}
-                    {row('EY 2yr', ey2yr, live.eps2yr.date, '%', 2, signColor(ey2yr))}
-                    {row('PE 5yr', pe5yr, live.gspc.date, 'x', 1, peColor(pe5yr))}
-                    {row('PE 2yr', pe2yr, live.gspc.date, 'x', 1, peColor(pe2yr))}
+
+                    {/* Macro */}
+                    <div>
+                        <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Macro</div>
+                        <table className="w-full">
+                            <tbody>
+                                {row('CPI YoY', live.cpi.value, live.cpi.date, '%', 2)}
+                                {row('M2 YoY', live.m2yoy.value, live.m2yoy.date, '%', 2)}
+                                {row('EY 5yr', d.ey5yr, live.eps5yr.date, '%', 2, signColor(d.ey5yr))}
+                                {row('EY 2yr', d.ey2yr, live.eps2yr.date, '%', 2, signColor(d.ey2yr))}
+                                {row('PE 5yr', d.pe5yr, live.gspc.date, 'x', 1, peColor(d.pe5yr))}
+                                {row('PE 2yr', d.pe2yr, live.gspc.date, 'x', 1, peColor(d.pe2yr))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Market */}
+                    <div>
+                        <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Market</div>
+                        <table className="w-full">
+                            <tbody>
+                                {row('10Y Yield', live.tnx.value, live.tnx.date)}
+                                {row('3M Yield', live.irx.value, live.irx.date)}
+                                {row('S&P 500', live.gspc.value, live.gspc.date, '', 0)}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                {/* Market */}
-                <div>
-                    <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Market</div>
-                    {row('10Y Yield', live.tnx.value, live.tnx.date)}
-                    {row('3M Yield', live.irx.value, live.irx.date)}
-                    {row('S&P 500', live.gspc.value, live.gspc.date, '', 0)}
+                {/* Live Regime */}
+                <div className="mt-4 pt-4 border-t border-border/40">
+                    <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Live Regime</div>
+                    <div className="rounded-lg px-4 py-3 flex items-center gap-4" style={{ backgroundColor: `${liveRegimeMeta.color}18`, borderLeft: `3px solid ${liveRegimeMeta.color}` }}>
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: liveRegimeMeta.color }} />
+                        <span className="text-base font-bold tracking-tight" style={{ color: liveRegimeMeta.color }}>{liveRegime.regime}</span>
+                        <span className="text-xs text-muted-foreground hidden sm:block">—</span>
+                        <span className="text-xs text-muted-foreground hidden sm:block">{liveRegimeMeta.guidance}</span>
+                    </div>
                 </div>
             </div>
-
-            {/* Live Regime */}
-            <div className="mt-3 pt-3 border-t border-border/40 flex items-center gap-3 flex-wrap">
-                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Live Regime</div>
-                <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: liveRegimeMeta.color }} />
-                    <span className="text-sm font-bold" style={{ color: liveRegimeMeta.color }}>{liveRegime.regime}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">—</span>
-                <span className="text-xs text-muted-foreground">{liveRegimeMeta.guidance}</span>
-            </div>
-        </div>
+        </>
     );
 }
 

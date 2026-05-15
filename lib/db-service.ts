@@ -38,7 +38,7 @@ class DatabaseService {
             orderBy: { display_name: 'asc' },
         });
 
-        const result: SeriesInfo[] = rows.map(row => ({
+        let result: SeriesInfo[] = rows.map(row => ({
             asset_class: row.asset_class,
             series_name: row.series_name,
             display_name: row.display_name ?? row.series_name,
@@ -47,6 +47,12 @@ class DatabaseService {
             geography: row.geography ?? undefined,
             currency: row.currency ?? undefined,
         }));
+
+        // Exclude bond/rate series miscategorised under equities in the DB
+        if (assetClass === 'equities') {
+            const BOND_SERIES = new Set(['US/IRX', 'US/FVX', 'US/TNX', 'US/TYX', 'US/FEDFUNDS', 'US/US-2yr']);
+            result = result.filter(s => !BOND_SERIES.has(s.series_name));
+        }
 
         this.seriesCache.set(assetClass, result);
         return result;

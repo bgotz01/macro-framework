@@ -34,6 +34,7 @@ const DATE_PRESETS: Array<
         { label: '2020s', value: '2020s', start: '2020-01-01', end: '2029-12-31' },
         { label: 'Last 5Y', value: '5y' },
         { label: 'Last 10Y', value: '10y' },
+        { label: 'Last 20Y', value: '20y' },
         { label: 'Custom', value: 'custom' },
     ];
 
@@ -53,13 +54,13 @@ export default function DBChart({
     height = 400,
     className = ''
 }: DBChartProps) {
-    const [assetClass, setAssetClass] = useState<AssetClass>('bonds');
+    const [assetClass, setAssetClass] = useState<AssetClass>('equities');
     const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string }>>([]);
-    const [selectedSeries, setSelectedSeries] = useState<string>('');
+    const [selectedSeries, setSelectedSeries] = useState<string>('US/GSPC');
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
     const [filteredData, setFilteredData] = useState<ChartDataPoint[]>([]);
-    const [datePreset, setDatePreset] = useState<string>('all');
+    const [datePreset, setDatePreset] = useState<string>('10y');
     const [customStartDate, setCustomStartDate] = useState<string>('');
     const [customEndDate, setCustomEndDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -103,10 +104,13 @@ export default function DBChart({
                 }));
                 setAvailableSeries(seriesWithNames);
 
-                // Auto-select first series
-                if (seriesWithNames.length > 0) {
+                // Auto-select first series only if current selection isn't in the new list
+                if (seriesWithNames.length > 0 && !seriesWithNames.find((s: { series_name: string }) => s.series_name === selectedSeries)) {
                     setSelectedSeries(seriesWithNames[0].series_name);
                     setSelectedUnits(seriesWithNames[0].units);
+                } else {
+                    const match = seriesWithNames.find((s: { series_name: string; units?: string }) => s.series_name === selectedSeries);
+                    if (match) setSelectedUnits(match.units);
                 }
             } catch (err) {
                 console.error('Error loading series:', err);
@@ -236,6 +240,10 @@ export default function DBChart({
             const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
             startDate = tenYearsAgo.toISOString().split('T')[0];
             endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '20y') {
+            const now = new Date();
+            startDate = new Date(now.getFullYear() - 20, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
         } else {
             // Decade preset
             const preset = DATE_PRESETS.find(p => p.value === datePreset);
@@ -284,6 +292,10 @@ export default function DBChart({
             const now = new Date();
             const tenYearsAgo = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
             startDate = tenYearsAgo.toISOString().split('T')[0];
+            endDate = now.toISOString().split('T')[0];
+        } else if (datePreset === '20y') {
+            const now = new Date();
+            startDate = new Date(now.getFullYear() - 20, now.getMonth(), now.getDate()).toISOString().split('T')[0];
             endDate = now.toISOString().split('T')[0];
         } else {
             const preset = DATE_PRESETS.find(p => p.value === datePreset);

@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json(result, {
-            headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' },
+            headers: { 'Cache-Control': 'no-store' },
         });
     } catch (error) {
         console.error('Error fetching regime data:', error);

@@ -33,7 +33,7 @@ export async function GET(
                 seriesInfo: seriesInfo
             }, {
                 headers: {
-                    'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+                    'Cache-Control': 'no-store',
                 }
             });
         }
