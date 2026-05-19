@@ -38,20 +38,17 @@ export default function ArchitecturePage() {
 
     return (
         <div className="max-w-3xl mx-auto py-8">
+            {/* Header */}
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">ARCHITECTURE</h1>
+                <p className="page-subtitle">
+                    Traditional Investing, Flipped
+                </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
+
             {/* Inversion section */}
             <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                    The Inversion
-                </p>
-
-                <h2 className="text-3xl font-bold tracking-tight mb-3">
-                    Traditional investing, flipped.
-                </h2>
-
-                <p className="text-muted-foreground mb-14 max-w-xl">
-                    Most investors start with a story and work backward to justify it.
-                    Capital Physics starts with the environment and works forward from there.
-                </p>
 
                 {/* Flow comparison — headers */}
                 <div className="grid grid-cols-2 gap-6 mb-6">

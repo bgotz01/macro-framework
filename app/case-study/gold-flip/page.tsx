@@ -6,11 +6,13 @@ import GoldDrainChart from '@/components/case-study/gold-drain-chart';
 export default function CaseStudy1960sPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-            <div className="text-center">
-                <h1 className="text-2xl font-bold tracking-tight">1960s — The Gold Drain</h1>
-                <p className="text-muted-foreground mt-1">
-                    How the U.S. lost half its gold reserves in a decade, leading to the collapse of Bretton Woods.
+            {/* Header */}
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">GOLD REGIME FLIP</h1>
+                <p className="page-subtitle">
+                    The 1960s Gold Drain
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
 

@@ -116,11 +116,12 @@ export default function JapanComparisonPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">Japan 1980s — Macro Valuation</h1>
-                <p className="text-muted-foreground mt-1">
-                    Nikkei earnings, valuation, and real yield metrics through the Japanese bubble era.
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">JAPAN 1980s</h1>
+                <p className="page-subtitle">
+                    Macro Valuation Through the Bubble Era
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Tab toggle */}

@@ -1,5 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
+import Database from 'better-sqlite3';
+import path from 'path';
+
+// --- Multi-DB helpers ---
+
+let _stockDataClient: PrismaClient | null = null;
+function getStockDataClient(): PrismaClient | null {
+    const url = process.env.STOCKDATA_DATABASE_URL;
+    if (!url) return null;
+    if (!_stockDataClient) {
+        _stockDataClient = new PrismaClient({ datasources: { db: { url } } });
+    }
+    return _stockDataClient;
+}
+
+let _sqliteDb: Database.Database | null = null;
+function getSqliteDb(): Database.Database | null {
+    const dbPath = process.env.SQLITE_DATABASE_PATH || path.join(process.cwd(), 'data', 'macro-data.db');
+    try {
+        if (!_sqliteDb) {
+            const fs = require('fs');
+            if (!fs.existsSync(dbPath)) return null;
+            _sqliteDb = new Database(dbPath);
+        }
+        return _sqliteDb;
+    } catch {
+        return null;
+    }
+}
+
+/** Upsert a row into the stockdata Postgres DB (same schema as macro-framework) */
+async function upsertStockData(date: string, asset_class: string, series_name: string, column_name: string, value: number) {
+    const client = getStockDataClient();
+    if (!client) return;
+    try {
+        await (client as any).macro_time_series.upsert({
+            where: { date_asset_class_series_name_column_name: { date, asset_class, series_name, column_name } },
+            create: { date, asset_class, series_name, column_name, value },
+            update: { value },
+        });
+    } catch (err) {
+        console.error('[stockdata] upsert error:', err);
+    }
+}
+
+async function upsertStockDataPercentile(date: string, asset_class: string, series_name: string, column_name: string, value: number) {
+    const client = getStockDataClient();
+    if (!client) return;
+    try {
+        await (client as any).macro_percentile_analysis.upsert({
+            where: { date_asset_class_series_name_column_name: { date, asset_class, series_name, column_name } },
+            create: { date, asset_class, series_name, column_name, value, percentile_rank: null },
+            update: { value },
+        });
+    } catch (err) {
+        console.error('[stockdata] percentile upsert error:', err);
+    }
+}
+
+/** Upsert a row into the SQLite DB */
+function upsertSqlite(date: string, asset_class: string, series_name: string, column_name: string, value: number) {
+    const db = getSqliteDb();
+    if (!db) return;
+    try {
+        db.prepare(
+            'INSERT INTO time_series (date, asset_class, series_name, column_name, value) VALUES (?, ?, ?, ?, ?) ON CONFLICT(date, asset_class, series_name, column_name) DO UPDATE SET value = excluded.value'
+        ).run(date, asset_class, series_name, column_name, value);
+    } catch (err) {
+        console.error('[sqlite] upsert error:', err);
+    }
+}
 
 const SERIES_CONFIG: Record<string, { asset_class: string; series_name: string; column_name: string; timeSeriesOnly?: boolean; quarterFill?: boolean }> = {
     'CPI-U': { asset_class: 'economic', series_name: 'CPINominal', column_name: 'Value', timeSeriesOnly: true },
@@ -30,6 +102,9 @@ async function upsertTimeSeries(date: string, asset_class: string, series_name: 
         create: { date, asset_class, series_name, column_name, value },
         update: { value },
     });
+    // Replicate to stockdata and SQLite
+    await upsertStockData(date, asset_class, series_name, column_name, value);
+    upsertSqlite(date, asset_class, series_name, column_name, value);
 }
 
 async function upsertPercentile(date: string, asset_class: string, series_name: string, column_name: string, value: number) {
@@ -38,6 +113,8 @@ async function upsertPercentile(date: string, asset_class: string, series_name: 
         create: { date, asset_class, series_name, column_name, value, percentile_rank: null },
         update: { value },
     });
+    // Replicate to stockdata
+    await upsertStockDataPercentile(date, asset_class, series_name, column_name, value);
 }
 
 export async function POST(request: NextRequest) {

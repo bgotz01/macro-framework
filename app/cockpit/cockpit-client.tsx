@@ -458,20 +458,20 @@ export default function CockpitClient({ data }: { data: CockpitData }) {
     return (
         <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-6">
-                <h2
-                    className="text-2xl font-light tracking-wider mb-1"
-                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}
+            <div className="text-center mb-8">
+                <h1
+                    className="page-title text-3xl mb-1"
                 >
                     COCKPIT
-                </h2>
-                <p className="text-xs text-muted-foreground">
+                </h1>
+                <p className="page-subtitle">
                     {sp500Date ? (() => {
                         const [y, m, d] = sp500Date.split('-');
                         return `Data as of ${new Date(`${y}-${m}-${d}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
                     })() : ''}
                     {sp500 ? ` • S&P 500: ${sp500.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : ''}
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Live Snapshot */}

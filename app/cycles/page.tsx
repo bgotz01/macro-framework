@@ -28,16 +28,12 @@ export default function CyclesPage() {
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Economic Cycles
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    Cycles
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    Understanding the various cycles that drive markets and economic behavior
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">CYCLES</h1>
+                <p className="page-subtitle">
+                    Economic cycles that drive markets
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Cycle Cards */}

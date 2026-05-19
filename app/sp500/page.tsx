@@ -124,17 +124,15 @@ export default function SP500StocksPage() {
     return (
         <div className="min-h-screen bg-background p-8">
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    S&P 500 Stocks
-                </h1>
-                <p className="text-lg text-muted-foreground mb-8">
-                    Live market data for all S&P 500 constituents
-                    {latestDate && (
-                        <span className="ml-2 text-sm">
-                            · Updated {new Date(latestDate).toLocaleDateString()}
-                        </span>
-                    )}
-                </p>
+                <div className="text-center mb-8">
+                    <h1 className="page-title text-3xl mb-1">
+                        S&P 500 Stocks
+                    </h1>
+                    <p className="page-subtitle">
+                        Live market data for all S&P 500 constituents
+                    </p>
+                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+                </div>
 
                 {/* Stats Summary */}
                 {statsLoading ? (
@@ -206,6 +204,6 @@ export default function SP500StocksPage() {
                     />
                 ) : null}
             </div>
-        </div>
+        </div >
     );
 }

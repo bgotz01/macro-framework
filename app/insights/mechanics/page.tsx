@@ -3,10 +3,13 @@ import Link from 'next/link';
 export default function GuidePage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <h1 className="text-4xl font-bold mb-4">Guide</h1>
-            <p className="text-xl text-muted-foreground mb-12">
-                Deep dives into key macro concepts and market signals
-            </p>
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">MECHANICS</h1>
+                <p className="page-subtitle">
+                    Key macro concepts and market signals
+                </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
 
             <div className="grid gap-6">
                 <Link

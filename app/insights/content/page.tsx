@@ -170,16 +170,12 @@ export default function ContentPage() {
         <div className="flex gap-8 max-w-7xl mx-auto">
             {/* Main content area */}
             <div className="flex-1 min-w-0">
-                <div className="mb-8">
-                    <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                        Insights
-                    </div>
-                    <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-                        Content Ideas
-                    </h1>
-                    <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-                        Track and manage content ideas. Add new ideas in the sidebar, double-click or hit ✎ to edit.
+                <div className="text-center mb-8">
+                    <h1 className="page-title text-3xl mb-1">CONTENT IDEAS</h1>
+                    <p className="page-subtitle">
+                        Track and manage content ideas
                     </p>
+                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
                 </div>
 
                 {pending.length > 0 && (

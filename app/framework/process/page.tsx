@@ -5,20 +5,13 @@ export default function FrameworkProcessPage() {
         <div className="mx-auto max-w-3xl px-4 py-10 lg:px-6 lg:py-14">
             <div className="space-y-12">
                 {/* Header */}
-                <section className="text-center">
-                    <div className="mx-auto max-w-3xl space-y-4">
-                        <div className="inline-flex items-center rounded-full border border-border/60 bg-background px-3 py-1 text-xs font-medium tracking-wide text-muted-foreground">
-                            Framework
-                        </div>
-                        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                            Two Opposite Decision Flows
-                        </h1>
-                        <p className="mx-auto max-w-2xl text-base text-muted-foreground sm:text-lg">
-                            The typical flow starts with visible winners and gets trapped by permanence.
-                            Our framework reverses this completely.
-                        </p>
-                    </div>
-                </section>
+                <div className="text-center mb-8">
+                    <h1 className="page-title text-3xl mb-1">DECISION FLOWS</h1>
+                    <p className="page-subtitle">
+                        Two Opposite Approaches
+                    </p>
+                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+                </div>
 
                 {/* Typical Flow Section */}
                 <section className="space-y-6">

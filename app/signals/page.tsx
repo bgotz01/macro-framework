@@ -89,12 +89,12 @@ export default function SignalsPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold mb-4">Market Signals</h1>
-                <p className="text-muted-foreground max-w-3xl">
-                    A hierarchical framework for understanding market conditions and optimal asset allocation.
-                    Each signal is evaluated in priority order to determine the current market environment.
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">MARKET SIGNALS</h1>
+                <p className="page-subtitle">
+                    Hierarchical framework for market conditions
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">

@@ -107,8 +107,13 @@ export default function HedgeFundsPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-2 dark:text-white">Hedge Fund Returns</h1>
-            <p className="text-muted-foreground mb-8">2025 YTD performance across major hedge funds</p>
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">HEDGE FUNDS</h1>
+                <p className="page-subtitle">
+                    2025 YTD performance across major hedge funds
+                </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
 
             <div className="rounded-xl border bg-card overflow-hidden">
                 <table className="w-full text-sm">

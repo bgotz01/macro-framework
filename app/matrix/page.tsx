@@ -210,43 +210,41 @@ export default async function MatrixPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Framework • Regime Analysis
-                </div>
-                <h1 className="page-title text-5xl lg:text-6xl font-semibold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     The Two-Axis Regime Framework
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    A systematic approach to classifying market regimes through constraints and expectations
+                <p className="page-subtitle">
+                    Classifying market regimes through constraints and expectations
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
 
-                {/* Quick Links */}
-                <div className="mt-8 flex justify-center gap-4 flex-wrap">
-                    <a
-                        href="/chart"
-                        className="px-6 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-all duration-200 border border-primary/20"
-                    >
-                        📊 Interactive Charts
-                    </a>
-                    <a
-                        href="/matrix/percentile"
-                        className="px-6 py-3 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 font-medium transition-all duration-200 border border-green-500/20"
-                    >
-                        📈 Percentile Analysis
-                    </a>
-                    <a
-                        href="/matrix/decades"
-                        className="px-6 py-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-medium transition-all duration-200 border border-purple-500/20"
-                    >
-                        📅 Decade-End Levels
-                    </a>
-                </div>
+            {/* Quick Links */}
+            <div className="mt-8 flex justify-center gap-4 flex-wrap mb-12">
+                <a
+                    href="/chart"
+                    className="px-6 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-medium transition-all duration-200 border border-primary/20"
+                >
+                    📊 Interactive Charts
+                </a>
+                <a
+                    href="/matrix/percentile"
+                    className="px-6 py-3 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 font-medium transition-all duration-200 border border-green-500/20"
+                >
+                    📈 Percentile Analysis
+                </a>
+                <a
+                    href="/matrix/decades"
+                    className="px-6 py-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-medium transition-all duration-200 border border-purple-500/20"
+                >
+                    📅 Decade-End Levels
+                </a>
             </div>
 
             {/* Conceptual Architecture */}
             <div className="mb-12">
-                <h2 className="page-title text-3xl font-semibold text-center mb-6">Conceptual Architecture</h2>
+                <h2 className="section-title text-2xl text-center mb-6">Conceptual Architecture</h2>
 
                 <div className="grid md:grid-cols-2 gap-6 mb-6">
                     <div className="p-6 rounded-2xl border border-border bg-card">
@@ -330,7 +328,7 @@ export default async function MatrixPage() {
             {/* INFLATION SECTION */}
             <div className="mb-16">
                 <div className="text-center mb-8">
-                    <h2 className="page-title text-4xl font-semibold mb-2">Inflation</h2>
+                    <h2 className="section-title text-2xl mb-1">Inflation</h2>
                     <p className="text-sm text-muted-foreground">Purchasing power and monetary constraint</p>
                 </div>
 
@@ -371,7 +369,7 @@ export default async function MatrixPage() {
             {/* RATES (BONDS) SECTION */}
             <div className="mb-16">
                 <div className="text-center mb-8">
-                    <h2 className="page-title text-4xl font-semibold mb-2">Rates (Bonds)</h2>
+                    <h2 className="section-title text-2xl mb-1">Rates (Bonds)</h2>
                     <p className="text-sm text-muted-foreground">Interest rates, yields, and fixed income valuation</p>
                 </div>
 
@@ -514,7 +512,7 @@ export default async function MatrixPage() {
             {/* EQUITIES SECTION */}
             <div className="mb-16">
                 <div className="text-center mb-8">
-                    <h2 className="page-title text-4xl font-semibold mb-2">Equities</h2>
+                    <h2 className="section-title text-2xl mb-1">Equities</h2>
                     <p className="text-sm text-muted-foreground">Equity valuation and risk premium measures</p>
                 </div>
 
@@ -627,7 +625,7 @@ export default async function MatrixPage() {
             {/* Compact Matrix Test */}
             <div className="mt-16 pt-16 border-t border-border">
                 <div className="text-center mb-8">
-                    <h2 className="page-title text-4xl font-semibold mb-2">Compact View</h2>
+                    <h2 className="section-title text-2xl mb-1">Compact View</h2>
                     <p className="text-sm text-muted-foreground">
                         A condensed view with historical date selection
                     </p>
@@ -657,7 +655,7 @@ export default async function MatrixPage() {
             {/* Matrix Slider */}
             <div className="mt-16 pt-16 border-t border-border">
                 <div className="text-center mb-8">
-                    <h2 className="page-title text-4xl font-semibold mb-2">Interactive Timeline</h2>
+                    <h2 className="section-title text-2xl mb-1">Interactive Timeline</h2>
                     <p className="text-sm text-muted-foreground">
                         Drag the timeline to explore historical regime data · month-end values
                     </p>
@@ -683,6 +681,6 @@ export default async function MatrixPage() {
                     }}
                 />
             </div>
-        </div>
+        </div >
     );
 }

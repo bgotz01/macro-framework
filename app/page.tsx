@@ -1,21 +1,24 @@
 import Link from 'next/link';
 import DataPipeline from '@/components/data-pipeline';
+import CurrentRegimeBanner from '@/components/regime/current-regime-banner';
 
 export default function Home() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
       <div className="text-center mb-16">
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-          Economic Analysis Framework
-        </div>
-        <h1 className="page-title text-5xl lg:text-6xl mb-1 leading-tight">
+        <h1 className="page-title text-3xl mb-1">
           CAPITAL PHYSICS
         </h1>
-        <p className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-6" style={{ letterSpacing: '0.2em' }}>
+        <p className="page-subtitle mb-2">
           Regime Detection • Capital Allocation
         </p>
+        <div className="h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
 
+        {/* Current Regime */}
+        <div className="mt-8">
+          <CurrentRegimeBanner />
+        </div>
       </div>
 
 

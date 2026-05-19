@@ -149,19 +149,10 @@ export default function RegimeParameters() {
         return (
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-8">
-                    <h2
-                        className="text-2xl font-light tracking-wider mb-2"
-                        style={{
-                            fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif',
-                            letterSpacing: '0.15em'
-                        }}
-                    >
+                    <h2 className="page-title text-3xl mb-1">
                         REGIME PARAMETERS
                     </h2>
-                    <p
-                        className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
-                        style={{ letterSpacing: '0.2em' }}
-                    >
+                    <p className="page-subtitle mb-4">
                         Current Market Conditions
                     </p>
                 </div>
@@ -184,19 +175,10 @@ export default function RegimeParameters() {
         return (
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-8">
-                    <h2
-                        className="text-2xl font-light tracking-wider mb-2"
-                        style={{
-                            fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif',
-                            letterSpacing: '0.15em'
-                        }}
-                    >
+                    <h2 className="page-title text-3xl mb-1">
                         REGIME PARAMETERS
                     </h2>
-                    <p
-                        className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
-                        style={{ letterSpacing: '0.2em' }}
-                    >
+                    <p className="page-subtitle mb-4">
                         Current Market Conditions
                     </p>
                 </div>
@@ -359,19 +341,10 @@ export default function RegimeParameters() {
         <div className="max-w-7xl mx-auto">
             {/* Full-width header section */}
             <div className="text-center mb-8">
-                <h2
-                    className="text-2xl font-light tracking-wider mb-2"
-                    style={{
-                        fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif',
-                        letterSpacing: '0.15em'
-                    }}
-                >
+                <h2 className="page-title text-3xl mb-1">
                     REGIME PARAMETERS
                 </h2>
-                <p
-                    className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
-                    style={{ letterSpacing: '0.2em' }}
-                >
+                <p className="page-subtitle mb-4">
                     Current Market Conditions
                 </p>
                 <div className="flex gap-2">

@@ -211,16 +211,14 @@ export default async function DecadesPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Historical Analysis
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     Decade-End Regime Levels
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    Macro regime levels at the end of each decade (December 31st)
+                <p className="page-subtitle">
+                    Macro regime levels at the end of each decade
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Legend */}

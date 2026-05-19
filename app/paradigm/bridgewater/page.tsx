@@ -1,16 +1,14 @@
 export default function BridgewaterPage() {
     return (
         <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Synthesis • Historical Macro
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     Bridgewater
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                <p className="page-subtitle">
                     Historical Macro Study
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             <div className="space-y-8">

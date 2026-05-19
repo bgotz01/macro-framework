@@ -97,7 +97,7 @@ function CategoryRow({
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/30 bg-primary/10 text-2xl">
                         {category.icon}
                     </div>
-                    <h3 className="page-title text-2xl font-bold">{category.title}</h3>
+                    <h3 className="section-title text-2xl">{category.title}</h3>
                 </div>
                 <p className="text-base text-muted-foreground text-center max-w-2xl">{category.subtitle}</p>
             </div>
@@ -257,7 +257,7 @@ export default function WhyTwelve() {
                                 <span className="text-2xl font-bold text-primary">12</span>
                             </div>
                             <div>
-                                <h2 className="page-title text-3xl font-bold">Why 12?</h2>
+                                <h2 className="section-title text-3xl">Why 12?</h2>
                                 <p className="mt-2 text-base text-muted-foreground">
                                     12 feels complete because it's a natural container: divisible, repeatable, and easy to segment into human-sized structure.
                                 </p>

@@ -199,17 +199,16 @@ export default function RegimeReturns() {
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
                 <h2
-                    className="text-2xl font-light tracking-wider mb-2"
-                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}
+                    className="page-title text-3xl mb-1"
                 >
                     REGIME-CONDITIONED RETURNS
                 </h2>
                 <p
-                    className="text-sm font-light text-muted-foreground tracking-widest uppercase mb-4"
-                    style={{ letterSpacing: '0.2em' }}
+                    className="page-subtitle mb-4"
                 >
                     {activeAssetMeta.label} Returns by Market Regime • {activeAssetMeta.subtitle}
                 </p>
+                <div className="mt-3 mb-4 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
                 <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
                     How did {activeAssetMeta.label} perform during each regime, and what were forward returns
                     from the point of regime entry?

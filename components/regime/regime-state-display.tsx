@@ -154,8 +154,7 @@ export default function RegimeStateDisplay({
                             {/* Small title at the very top */}
                             <div className="text-center mb-3">
                                 <h2
-                                    className="text-xs font-light tracking-widest text-muted-foreground uppercase"
-                                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.2em' }}
+                                    className="page-subtitle"
                                 >
                                     ACTIVE REGIME
                                 </h2>

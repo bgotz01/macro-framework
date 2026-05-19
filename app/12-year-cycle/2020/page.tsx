@@ -6,8 +6,11 @@ import CycleNarrative from '@/components/12-year-cycle/cycle-narrative';
 export default function Cycle2020Page() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <h1 className="page-title text-4xl font-bold mb-6">2020 — Digital Economy</h1>
-            <p className="text-lg text-muted-foreground mb-8">Theme: Reality goes virtual</p>
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">2020 — Digital Economy</h1>
+                <p className="page-subtitle">Reality goes virtual</p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
 
             <div className="space-y-8">
                 <PresidentialTerms cycleStartYear={2020} />

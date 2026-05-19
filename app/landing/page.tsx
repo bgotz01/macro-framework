@@ -107,13 +107,13 @@ export default async function LandingPage() {
 
             {/* ── Hero ─────────────────────────────────────────────────────── */}
             <section className="text-center pt-4 pb-14">
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest mb-6">
-                    Capital Physics
-                </div>
-                <h1 className="page-title text-5xl lg:text-6xl mb-4 leading-tight">
-                    Read the Regime.<br />Allocate Accordingly.
+                <h1 className="page-title text-3xl mb-1">
+                    Read the Regime. Allocate Accordingly.
                 </h1>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                <p className="page-subtitle mb-4">
+                    Capital Physics
+                </p>
+                <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                     A systematic macro framework that identifies where we are in the economic cycle,
                     detects regime transitions before they become obvious, and maps capital allocation
                     to the conditions that actually exist.

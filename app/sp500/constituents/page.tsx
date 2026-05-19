@@ -163,10 +163,13 @@ export default function SP500Page() {
     return (
         <div className="min-h-screen bg-background p-8">
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    S&P 500 Index
-                </h1>
-                <p className="text-lg text-muted-foreground mb-8">Constituents, historical changes, and analytics</p>
+                <div className="text-center mb-8">
+                    <h1 className="page-title text-3xl mb-1">
+                        S&P 500 Index
+                    </h1>
+                    <p className="page-subtitle">Constituents, historical changes, and analytics</p>
+                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+                </div>
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">

@@ -32,11 +32,12 @@ const CustomTooltip = ({ active, payload }: any) => {
 export default function WealthDistributionPage() {
     return (
         <div className="container mx-auto p-6 space-y-6">
-            <div className="space-y-2">
-                <h1 className="text-3xl font-bold">America's Wealth Distribution</h1>
-                <p className="text-muted-foreground">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">WEALTH DISTRIBUTION</h1>
+                <p className="page-subtitle">
                     Generational wealth breakdown as of 2025
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             <div className="space-y-4">

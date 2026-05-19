@@ -89,15 +89,15 @@ export default function DataInputPage() {
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
             <div className="text-center mb-8">
-                <h2
-                    className="text-2xl font-light tracking-wider mb-2"
-                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}
+                <h1
+                    className="page-title text-3xl mb-1"
                 >
                     DATA INPUT
-                </h2>
-                <p className="text-sm text-muted-foreground tracking-widest uppercase" style={{ letterSpacing: '0.2em' }}>
+                </h1>
+                <p className="page-subtitle">
                     Manual data entry
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             <div className="rounded-xl border border-border bg-card p-6 mb-6">

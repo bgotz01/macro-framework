@@ -17,8 +17,11 @@ const sections = [
 
 export default function CrudeOilPage() {
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="page-title text-3xl font-bold mb-6 dark:text-white">Crude Oil</h1>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">Crude Oil</h1>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
 
             <nav className="flex flex-wrap gap-2 mb-10">
                 {sections.map(({ id, label }) => (

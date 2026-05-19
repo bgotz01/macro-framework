@@ -8,7 +8,10 @@ import Tech12YearTimeline from '@/components/tech-12-year-timeline';
 export default function TwelveYearCyclePage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <h1 className="page-title text-4xl text-center font-bold mb-6">12-Year Macro Reconfiguration Cycles</h1>
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">12-Year Macro Reconfiguration Cycles</h1>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
 
             <div className="mb-12">
                 {/* Macro Timeline */}

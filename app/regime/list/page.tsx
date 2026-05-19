@@ -167,16 +167,14 @@ export default function RegimePage() {
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Framework • Regime Metrics
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    Regime Framework Metrics
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
+                    REGIME METRICS
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    The foundational variables that define market regimes and constrain outcomes
+                <p className="page-subtitle">
+                    Foundational variables that define market regimes
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Introduction */}

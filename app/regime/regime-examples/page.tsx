@@ -2,14 +2,14 @@ import Link from 'next/link';
 
 const examples = [
     {
-        href: '/regime-examples/long-duration',
+        href: '/regime/regime-examples/long-duration',
         regime: 'Long Duration',
         color: 'blue',
         periods: ['2023–Now', '2005–2007', '1994–2000'],
         description: 'High-growth stocks become the primary trade. Equities yield less than the risk-free rate — investors buy duration and growth over value.',
     },
     {
-        href: '/regime-examples/overvaluation',
+        href: '/regime/regime-examples/overvaluation',
         regime: 'Overvaluation',
         color: 'yellow',
         periods: [],
@@ -34,16 +34,16 @@ const colorMap: Record<string, { badge: string; border: string; icon: string }> 
 export default function RegimeExamplesPage() {
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
                 <h1
-                    className="text-3xl font-light tracking-wider mb-2"
-                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}
+                    className="page-title text-3xl mb-1"
                 >
                     REGIME EXAMPLES
                 </h1>
-                <p className="text-sm font-light text-muted-foreground tracking-widest uppercase" style={{ letterSpacing: '0.2em' }}>
+                <p className="page-subtitle">
                     Historical periods by regime type
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
                 <p className="mt-4 text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                     Each regime produces a distinct set of winning trades. These examples walk through real historical periods — what the macro setup looked like, and which stocks and assets performed.
                 </p>
@@ -98,6 +98,6 @@ export default function RegimeExamplesPage() {
                     );
                 })}
             </div>
-        </div>
+        </div >
     );
 }

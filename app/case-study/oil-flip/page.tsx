@@ -7,19 +7,13 @@ export default function OilFlipPage() {
                 <div className="space-y-10">
 
                     {/* Header */}
-                    <section className="text-center">
-                        <div className="mx-auto max-w-3xl space-y-4">
-                            <div className="inline-flex items-center rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                Case Study
-                            </div>
-                            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-                                Oil Regime Flip
-                            </h1>
-                            <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                                Control of supply determines price behavior.
-                            </p>
-                        </div>
-                    </section>
+                    <div className="text-center mb-8">
+                        <h1 className="page-title text-3xl mb-1">OIL REGIME FLIP</h1>
+                        <p className="page-subtitle">
+                            Control of Supply Determines Price
+                        </p>
+                        <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+                    </div>
 
                     {/* Symmetrical Columns */}
                     <section className="grid md:grid-cols-2 gap-6">

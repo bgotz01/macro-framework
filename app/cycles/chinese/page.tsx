@@ -10,14 +10,11 @@ export default function ChinesePage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Framework • Chinese Zodiac Analysis
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     Chinese Zodiac Market Regime Framework
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                <p className="page-subtitle">
                     12 archetypal market regimes mapped to zodiac animals
                 </p>
             </div>

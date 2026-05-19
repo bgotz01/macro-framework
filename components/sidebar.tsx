@@ -93,10 +93,6 @@ const sidebarData: SidebarCategory[] = [
                 href: '/regime-guide',
             },
             {
-                title: 'Regime Historical',
-                href: '/regime/historical',
-            },
-            {
                 title: 'Trend Pressure',
                 href: '/trend-pressure',
             },
@@ -106,13 +102,6 @@ const sidebarData: SidebarCategory[] = [
             },
 
             {
-                title: 'Regime Examples',
-                href: '/regime-examples',
-                children: [
-                    { title: 'Long Duration', href: '/regime-examples/long-duration' },
-                ],
-            },
-            {
                 title: 'Matrix',
                 href: '/matrix',
                 children: [
@@ -120,6 +109,26 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Decades', href: '/matrix/decades' },
                     { title: 'Percentile', href: '/matrix/percentile' },
                     { title: 'Similar Periods', href: '/matrix/similar' },
+                ],
+            },
+        ],
+    },
+    {
+        category: 'Regime Historical',
+        items: [
+            {
+                title: 'Timeline',
+                href: '/regime/historical',
+            },
+            {
+                title: 'Returns',
+                href: '/regime/returns',
+            },
+            {
+                title: 'Regime Examples',
+                href: '/regime/regime-examples',
+                children: [
+                    { title: 'Long Duration', href: '/regime/regime-examples/long-duration' },
                 ],
             },
         ],

@@ -95,16 +95,14 @@ export default function FrameworkPage() {
     return (
         <div className="max-w-5xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Three Laws of Market Behavior
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     Power Law
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    Understanding market behavior through three fundamental laws that govern economic cycles and investment opportunities.
+                <p className="page-subtitle">
+                    Three Laws of Market Behavior
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Tabs */}

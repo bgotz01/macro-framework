@@ -2,18 +2,16 @@ import Link from 'next/link';
 
 export default function DataPage() {
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Markets • Historical Data
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     Market Data & Analysis
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    Explore historical market data, key metrics, and performance analysis across asset classes
+                <p className="page-subtitle">
+                    Historical market data, key metrics, and performance analysis
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Data Sections */}

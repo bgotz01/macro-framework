@@ -90,13 +90,14 @@ export default function CockpitReturnsPage() {
     const latestDate = equities.find(d => d.latestDate)?.latestDate;
 
     return (
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-8">
-            <div className="mb-8">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Asset Returns</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">Asset Returns</h1>
+                <p className="page-subtitle">
                     1yr, 5yr, 10yr price returns for major global assets
                     {latestDate && <span className="ml-2 opacity-60">as of {latestDate}</span>}
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {loading ? (

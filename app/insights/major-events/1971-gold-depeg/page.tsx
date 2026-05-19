@@ -2,16 +2,12 @@ export default function GoldDepegPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Major Events • 1971
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    1971 Gold Standard Abandonment
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    On August 15, 1971, President Nixon announced the suspension of the dollar's convertibility to gold, ending the Bretton Woods system and fundamentally changing the global monetary system.
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">1971 GOLD STANDARD</h1>
+                <p className="page-subtitle">
+                    The End of Bretton Woods
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Background */}

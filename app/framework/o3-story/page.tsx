@@ -2,16 +2,12 @@ export default function StoryPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-secondary/10 text-secondary-foreground text-sm font-medium mb-4">
-                    Framework • Law 3
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-                    O3: Story
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                    Outlier (New Paradigm)
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">O3: STORY</h1>
+                <p className="page-subtitle">
+                    Outlier · New Paradigm
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* What it is */}

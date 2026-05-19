@@ -173,15 +173,13 @@ export default function AnnualReturnsPage() {
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
             <div className="text-center mb-8">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                    Markets • Historical Data
-                </div>
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                <h1 className="page-title text-3xl mb-1">
                     Annual Returns by Asset Class
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    Historical annual returns across major asset classes from 1928 to 2025
+                <p className="page-subtitle">
+                    Historical annual returns from 1928 to 2025
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Total Averages */}

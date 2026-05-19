@@ -25,6 +25,9 @@ bash scripts/calculate-macro-db.sh
 
 # 4. Push to Neon (production)
 python3 scripts/push-to-neon.py
+
+# 5. Sync macro-framework → stockdata (keeps 9 sigma DB complete)
+python3 scripts/sync-to-stockdata.py
 ```
 
 ### Monthly (after entering CPI / M2 / EPS via /data-input)
@@ -35,6 +38,9 @@ bash scripts/calculate-macro-db.sh
 
 # 2. Push to Neon (production)
 python3 scripts/push-to-neon.py
+
+# 3. Sync macro-framework → stockdata (keeps 9 sigma DB complete)
+python3 scripts/sync-to-stockdata.py
 ```
 
 ### What `calculate-macro-db.sh` runs (in order)
@@ -142,9 +148,12 @@ bash scripts/calculate-macro-db.sh
 
 # 4. Push macro-framework → Neon (production)
 python3 scripts/push-to-neon.py
+
+# 5. Sync macro-framework → stockdata (9 sigma)
+python3 scripts/sync-to-stockdata.py
 ```
 
-Or run steps 2–4 in one command:
+Or run steps 2–5 in one command:
 ```bash
 bash scripts/update-neon.sh
 ```
@@ -161,12 +170,14 @@ bash scripts/calculate-macro-db.sh
 
 # Push macro-framework → Neon
 python3 scripts/push-to-neon.py
+
+# Sync macro-framework → stockdata (9 sigma)
+python3 scripts/sync-to-stockdata.py
 ```
 
-> **Note:** Manual data entered via `/data-input` only writes to `macro-framework`.
-> It does not go through `import-data-multi-db.ts`, so `stockdata` will not have
-> CPI/M2/EPS updates. The app reads from `macro-framework` (via Neon in production),
-> so this is fine for production use.
+> **Note:** Manual data entered via `/data-input` writes to all three databases
+> (`macro-framework`, `stockdata`, and SQLite) simultaneously.
+> The `import-data-multi-db.ts` script is not needed for manual data.
 
 #### Full Combined Run (when both tracks have new data)
 
@@ -175,8 +186,8 @@ python3 scripts/batch_update_all.py   # fetch market data
 bash scripts/update-neon.sh           # import + calculate all metrics + push to Neon
 ```
 
-Manual data entered via `/data-input` is already in `macro-framework` — `update-neon.sh`
-will pick it up when it runs `calculate-macro-db.sh` and `push-to-neon.py`.
+Manual data entered via `/data-input` writes to all three databases simultaneously —
+`update-neon.sh` will pick it up when it runs `calculate-macro-db.sh` and `push-to-neon.py`.
 
 ### Batch Scripts Reference
 
@@ -189,6 +200,7 @@ will pick it up when it runs `calculate-macro-db.sh` and `push-to-neon.py`.
 | `scripts/calculate-neon-db.sh` | Runs all metrics directly against Neon (production) |
 | `scripts/update-neon.sh` | Full pipeline: import all → calculate all → push to Neon |
 | `scripts/push-to-neon.py` | Incremental push of local `macro-framework` → Neon |
+| `scripts/sync-to-stockdata.py` | Incremental sync of local `macro-framework` → stockdata (9 sigma) |
 
 ### What `calculate-all-metrics.sh` runs (in order)
 

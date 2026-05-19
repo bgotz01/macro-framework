@@ -6,11 +6,11 @@ export default function ChartLayout({ children }: { children: React.ReactNode })
             <div className="container mx-auto px-4 py-8">
                 <div className="mb-8 flex items-start justify-between">
                     <div>
-                        <h1 className="page-title text-4xl font-bold text-foreground mb-2">
+                        <h1 className="page-title text-3xl mb-1">
                             Macro Charts
                         </h1>
-                        <p className="text-muted-foreground">
-                            Explore macroeconomic data across different asset classes and time periods
+                        <p className="page-subtitle">
+                            Explore macroeconomic data across asset classes and time periods
                         </p>
                     </div>
                     <a

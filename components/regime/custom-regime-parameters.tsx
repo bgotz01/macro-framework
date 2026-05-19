@@ -179,14 +179,19 @@ export default function CustomRegimeParameters() {
     if (initialLoading || error || !data) {
         return (
             <div className="max-w-7xl mx-auto">
-                <div className="relative flex items-center justify-center mb-8">
-                    <h2 className="text-2xl font-light tracking-wider"
-                        style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+                <div className="text-center mb-8">
+                    <h2 className="page-title text-3xl mb-1">
                         CURRENT REGIME
                     </h2>
+                    <p className="page-subtitle">
+                        Signal Readings & Capital Allocation
+                    </p>
+                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+                </div>
+                <div className="flex justify-center mb-4">
                     <a
                         href="/regime-active/default"
-                        className="absolute right-0 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
                     >
                         Default View
                     </a>
@@ -326,14 +331,19 @@ export default function CustomRegimeParameters() {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="relative flex items-center justify-center mb-8">
-                <h2 className="text-2xl font-light tracking-wider"
-                    style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif', letterSpacing: '0.15em' }}>
+            <div className="text-center mb-8">
+                <h2 className="page-title text-3xl mb-1">
                     CURRENT REGIME
                 </h2>
+                <p className="page-subtitle">
+                    Signal Readings & Capital Allocation
+                </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
+            </div>
+            <div className="flex justify-center mb-4">
                 <a
                     href="/regime-active/default"
-                    className="absolute right-0 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors"
                 >
                     Default View
                 </a>

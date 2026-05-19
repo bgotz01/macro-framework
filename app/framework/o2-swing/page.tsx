@@ -2,16 +2,12 @@ export default function SwingPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-                    Framework • Law 2
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-                    O2: Swing
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                    Identifying regime inversions through structural criteria
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">O2: SWING</h1>
+                <p className="page-subtitle">
+                    Regime Inversions Through Structural Criteria
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Criteria */}

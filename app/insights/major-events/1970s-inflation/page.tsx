@@ -45,16 +45,12 @@ export default function SeventiesInflationPage() {
             <ScrollNav items={scrollNavItems} />
 
             {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-2 rounded-full bg-red-500/10 text-red-600 text-sm font-medium mb-6">
-                    Major Events • 1979-1980
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                    Breaking the 1970s Inflation Trap
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                    How negative real rates and FX pressure forced a credibility reset—and rewired markets.
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">1970s INFLATION TRAP</h1>
+                <p className="page-subtitle">
+                    The Volcker Credibility Reset
                 </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             {/* Overview */}

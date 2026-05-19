@@ -40,11 +40,14 @@ export default function ToDoPage() {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-12">
-                <h1 className="page-title text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <div className="text-center mb-8">
+                <h1 className="page-title text-3xl mb-1">
                     To-Do List
                 </h1>
-                <p className="text-sm text-muted-foreground">Saved locally in your browser</p>
+                <p className="page-subtitle">
+                    Saved locally in your browser
+                </p>
+                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
             </div>
 
             <div className="p-8 rounded-3xl border border-border/50 bg-card">
