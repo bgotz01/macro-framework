@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PageHeader from '@/components/page-header';
 
 const examples = [
     {
@@ -33,17 +34,9 @@ const colorMap: Record<string, { badge: string; border: string; icon: string }> 
 
 export default function RegimeExamplesPage() {
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+            <PageHeader title="REGIME EXAMPLES" subtitle="Historical periods by regime type" />
             <div className="text-center mb-8">
-                <h1
-                    className="page-title text-3xl mb-1"
-                >
-                    REGIME EXAMPLES
-                </h1>
-                <p className="page-subtitle">
-                    Historical periods by regime type
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
                 <p className="mt-4 text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                     Each regime produces a distinct set of winning trades. These examples walk through real historical periods — what the macro setup looked like, and which stocks and assets performed.
                 </p>

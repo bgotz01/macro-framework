@@ -1,6 +1,7 @@
 'use client';
 
 import StockDataTable from '@/components/regime/stock-data-table';
+import PageHeader from '@/components/page-header';
 import Image from 'next/image';
 
 const sections = [
@@ -15,15 +16,9 @@ export default function LongDurationPage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+            <PageHeader title="LONG DURATION" subtitle="Long-Duration Regime Analysis" />
             <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    LONG DURATION
-                </h1>
-                <p className="page-subtitle">
-                    Long-Duration Regime Analysis
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
                 <p className="mt-4 text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed text-left">
                     In a long duration regime, high growth stocks (profitable or not) become the primary trade. The most obvious stocks had already been growing steadily and fit the macro narrative (AI in 2023+, China/commodities in 2005+, tech in 1995+).
                 </p>

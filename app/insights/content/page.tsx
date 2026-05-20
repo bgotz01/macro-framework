@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import PageHeader from '@/components/page-header';
 
 interface ContentIdea {
     id: string;
@@ -170,13 +171,7 @@ export default function ContentPage() {
         <div className="flex gap-8 max-w-7xl mx-auto">
             {/* Main content area */}
             <div className="flex-1 min-w-0">
-                <div className="text-center mb-8">
-                    <h1 className="page-title text-3xl mb-1">CONTENT IDEAS</h1>
-                    <p className="page-subtitle">
-                        Track and manage content ideas
-                    </p>
-                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-                </div>
+                <PageHeader title="CONTENT IDEAS" subtitle="Track and manage content ideas" />
 
                 {pending.length > 0 && (
                     <div className="mb-10">

@@ -1,14 +1,10 @@
+import PageHeader from '@/components/page-header';
+
 export default function GoldDepegPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">1971 GOLD STANDARD</h1>
-                <p className="page-subtitle">
-                    The End of Bretton Woods
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="1971 GOLD STANDARD" subtitle="The End of Bretton Woods" />
 
             {/* Background */}
             <div className="p-8 rounded-3xl border border-border/50 bg-card mb-12">

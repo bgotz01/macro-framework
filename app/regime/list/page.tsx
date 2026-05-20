@@ -1,4 +1,5 @@
 import MetricsList from '@/components/metrics-list';
+import PageHeader from '@/components/page-header';
 
 const metrics = [
     {
@@ -167,15 +168,7 @@ export default function RegimePage() {
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    REGIME METRICS
-                </h1>
-                <p className="page-subtitle">
-                    Foundational variables that define market regimes
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="REGIME METRICS" subtitle="Foundational variables that define market regimes" />
 
             {/* Introduction */}
             <div className="mb-12 p-6 rounded-2xl bg-muted/30 border border-border/50">

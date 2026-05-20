@@ -1,6 +1,7 @@
 import RegimeMatrix from '../../components/regime-matrix';
 import CompactRegimeMatrix from '../../components/compact-regime-matrix';
 import MatrixSlider from '../../components/matrix-slider';
+import PageHeader from '@/components/page-header';
 import { DataServiceNew } from '@/lib/data-service-new';
 import { prisma } from '@/lib/prisma';
 
@@ -208,17 +209,9 @@ export default async function MatrixPage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    The Two-Axis Regime Framework
-                </h1>
-                <p className="page-subtitle">
-                    Classifying market regimes through constraints and expectations
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="REGIME MATRIX" subtitle="Classifying market regimes through constraints and expectations" />
 
             {/* Quick Links */}
             <div className="mt-8 flex justify-center gap-4 flex-wrap mb-12">

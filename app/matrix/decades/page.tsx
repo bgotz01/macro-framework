@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { DecadeData } from '@/types/matrix';
 import { DecadeTable } from '@/components/matrix/decade-table';
 import { CycleTable } from '@/components/matrix/cycle-table';
+import PageHeader from '@/components/page-header';
 
 // Threshold definitions (same as main matrix page)
 const LEVELS = {
@@ -211,15 +212,7 @@ export default async function DecadesPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    Decade-End Regime Levels
-                </h1>
-                <p className="page-subtitle">
-                    Macro regime levels at the end of each decade
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="Decade-End Regime Levels" subtitle="Macro regime levels at the end of each decade" />
 
             {/* Legend */}
             <div className="mb-8 p-6 rounded-2xl border border-border bg-card">

@@ -1,14 +1,10 @@
+import PageHeader from '@/components/page-header';
+
 export default function StoryPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">O3: STORY</h1>
-                <p className="page-subtitle">
-                    Outlier · New Paradigm
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="O3: STORY" subtitle="Outlier · New Paradigm" />
 
             {/* What it is */}
             <div className="p-6 rounded-2xl border border-border/50 bg-card mb-8">

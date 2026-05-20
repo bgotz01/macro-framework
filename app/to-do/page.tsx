@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PageHeader from '@/components/page-header';
 
 export default function ToDoPage() {
     const [todos, setTodos] = useState<string[]>([]);
@@ -40,15 +41,7 @@ export default function ToDoPage() {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    To-Do List
-                </h1>
-                <p className="page-subtitle">
-                    Saved locally in your browser
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="To-Do List" subtitle="Saved locally in your browser" />
 
             <div className="p-8 rounded-3xl border border-border/50 bg-card">
                 <div className="flex gap-3 mb-6">

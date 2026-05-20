@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import CpiCalculator from '@/components/cpi-calculator';
+import PageHeader from '@/components/page-header';
 
 const SERIES_OPTIONS = [
     { value: 'CPI-U', label: 'CPI (Index → YoY%)', placeholder: '314.5', source: 'Released 10th–13th of the month', urls: [{ label: 'bls.gov', href: 'https://www.bls.gov/cpi/' }, { label: 'BLS data query', href: 'https://data.bls.gov/pdq/SurveyOutputServlet' }] },
@@ -88,17 +89,7 @@ export default function DataInputPage() {
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
-            <div className="text-center mb-8">
-                <h1
-                    className="page-title text-3xl mb-1"
-                >
-                    DATA INPUT
-                </h1>
-                <p className="page-subtitle">
-                    Manual data entry
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="DATA INPUT" subtitle="Manual data entry" />
 
             <div className="rounded-xl border border-border bg-card p-6 mb-6">
                 <form onSubmit={handleSubmit} className="space-y-4">

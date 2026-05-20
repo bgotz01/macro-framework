@@ -24,39 +24,39 @@ export default function Home() {
 
       {/* Regime Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-16">
-        <Link href="/regime-guide" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-violet-500/40 transition-all duration-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Link href="/regime-guide" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="relative">
-            <div className="text-xs font-medium text-violet-500 uppercase tracking-widest mb-3">Learn</div>
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">Learn</div>
             <h3 className="text-xl font-semibold text-card-foreground mb-3">Regime Guide</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               How each regime is defined, what drives transitions, and how to interpret the signals.
             </p>
-            <div className="text-xs text-violet-500 font-medium group-hover:translate-x-1 transition-transform duration-200">Explore →</div>
+            <div className="text-xs text-foreground/70 font-medium group-hover:translate-x-1 transition-transform duration-200">Explore →</div>
           </div>
         </Link>
 
-        <Link href="/regime-active" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-emerald-500/40 transition-all duration-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Link href="/regime-active" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="relative">
-            <div className="text-xs font-medium text-emerald-500 uppercase tracking-widest mb-3">Monthly</div>
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">Monthly</div>
             <h3 className="text-xl font-semibold text-card-foreground mb-3">Active Regime</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               Current regime state, signal readings, and capital allocation recommendations. Updated monthly.
             </p>
-            <div className="text-xs text-emerald-500 font-medium group-hover:translate-x-1 transition-transform duration-200">View signals →</div>
+            <div className="text-xs text-foreground/70 font-medium group-hover:translate-x-1 transition-transform duration-200">View signals →</div>
           </div>
         </Link>
 
-        <Link href="/cockpit" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-amber-500/40 transition-all duration-300">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Link href="/cockpit" className="group relative overflow-hidden p-8 rounded-2xl border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="relative">
-            <div className="text-xs font-medium text-amber-500 uppercase tracking-widest mb-3">Live · Daily</div>
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">Live · Daily</div>
             <h3 className="text-xl font-semibold text-card-foreground mb-3">Cockpit</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               Full macro dashboard — liquidity, valuation, price regime and trend pressure in one view.
             </p>
-            <div className="text-xs text-amber-500 font-medium group-hover:translate-x-1 transition-transform duration-200">Open cockpit →</div>
+            <div className="text-xs text-foreground/70 font-medium group-hover:translate-x-1 transition-transform duration-200">Open cockpit →</div>
           </div>
         </Link>
       </div>

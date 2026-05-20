@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PageHeader from '@/components/page-header';
 
 interface Constituent {
     symbol: string;
@@ -163,13 +164,7 @@ export default function SP500Page() {
     return (
         <div className="min-h-screen bg-background p-8">
             <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-8">
-                    <h1 className="page-title text-3xl mb-1">
-                        S&P 500 Index
-                    </h1>
-                    <p className="page-subtitle">Constituents, historical changes, and analytics</p>
-                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-                </div>
+                <PageHeader title="S&P 500 Index" subtitle="Constituents, historical changes, and analytics" />
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">

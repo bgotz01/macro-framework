@@ -1,18 +1,11 @@
 import TransmissionSignals from '@/components/transmission/transmission-signals';
+import PageHeader from '@/components/page-header';
 
 export default function TransmissionEnginePage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    Transmission Engine
-                </h1>
-                <p className="page-subtitle">
-                    Six channels through which macro shocks propagate
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="Transmission Engine" subtitle="Six channels through which macro shocks propagate" />
 
             {/* Introduction */}
             <div className="mb-12 p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border border-blue-200 dark:border-blue-800">

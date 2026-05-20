@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import PageHeader from '@/components/page-header';
 
 interface RegimeInfo {
     id: string;
@@ -122,12 +123,7 @@ export default function RegimeGuideClient() {
     return (
         <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    REGIME GUIDE
-                </h1>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="REGIME GUIDE" />
 
             <div className="flex gap-8 items-start">
                 {/* Sidebar Nav */}

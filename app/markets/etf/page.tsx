@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PageHeader from '@/components/page-header';
 
 interface ETF {
     symbol: string;
@@ -173,15 +174,7 @@ export default function ETFPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             <div>
-                <div className="text-center mb-8">
-                    <h1 className="page-title text-3xl mb-1">
-                        ETF Assets Under Management
-                    </h1>
-                    <p className="page-subtitle">
-                        Top ETFs by AUM and trading volume
-                    </p>
-                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-                </div>
+                <PageHeader title="ETF Assets Under Management" subtitle="Top ETFs by AUM and trading volume" />
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6 border-b border-border">

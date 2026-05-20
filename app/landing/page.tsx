@@ -493,13 +493,13 @@ export default async function LandingPage() {
                         <span>Invest in the Story.</span>
                     </div>
                     <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-                        <Link href="/paradigm" className="hover:text-primary transition-colors">Bridgewater</Link>
+                        <Link href="/vision/paradigm" className="hover:text-primary transition-colors">Bridgewater</Link>
                         <span>+</span>
-                        <Link href="/paradigm" className="hover:text-primary transition-colors">RenCap</Link>
+                        <Link href="/vision/paradigm" className="hover:text-primary transition-colors">RenCap</Link>
                         <span>+</span>
-                        <Link href="/paradigm" className="hover:text-primary transition-colors">Duquesne</Link>
+                        <Link href="/vision/paradigm" className="hover:text-primary transition-colors">Duquesne</Link>
                         <span className="text-border">→</span>
-                        <Link href="/paradigm" className="hover:text-primary transition-colors font-semibold">The Synthesis →</Link>
+                        <Link href="/vision/paradigm" className="hover:text-primary transition-colors font-semibold">The Synthesis →</Link>
                     </div>
                 </div>
             </section>

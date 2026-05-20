@@ -2,18 +2,13 @@
 
 import GoldReservesTable from '@/components/case-study/gold-reserves-table';
 import GoldDrainChart from '@/components/case-study/gold-drain-chart';
+import PageHeader from '@/components/page-header';
 
 export default function CaseStudy1960sPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">GOLD REGIME FLIP</h1>
-                <p className="page-subtitle">
-                    The 1960s Gold Drain
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="GOLD REGIME FLIP" subtitle="The 1960s Gold Drain" />
 
 
 

@@ -2,6 +2,7 @@
 import Timeline, { TimelineEvent } from '@/components/timeline';
 import ChartFixed from '@/components/charts/chart-fixed';
 import ScrollNav from '@/components/scroll-nav';
+import PageHeader from '@/components/page-header';
 
 const pivotEvents: TimelineEvent[] = [
     {
@@ -45,13 +46,7 @@ export default function SeventiesInflationPage() {
             <ScrollNav items={scrollNavItems} />
 
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">1970s INFLATION TRAP</h1>
-                <p className="page-subtitle">
-                    The Volcker Credibility Reset
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="1970s INFLATION TRAP" subtitle="The Volcker Credibility Reset" />
 
             {/* Overview */}
             <div id="overview" className="p-8 rounded-3xl border border-border/50 bg-card mb-12">

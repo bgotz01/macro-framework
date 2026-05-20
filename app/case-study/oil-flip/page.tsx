@@ -1,5 +1,7 @@
 'use client';
 
+import PageHeader from '@/components/page-header';
+
 export default function OilFlipPage() {
     return (
         <div className="min-h-screen bg-background">
@@ -7,13 +9,7 @@ export default function OilFlipPage() {
                 <div className="space-y-10">
 
                     {/* Header */}
-                    <div className="text-center mb-8">
-                        <h1 className="page-title text-3xl mb-1">OIL REGIME FLIP</h1>
-                        <p className="page-subtitle">
-                            Control of Supply Determines Price
-                        </p>
-                        <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-                    </div>
+                    <PageHeader title="OIL REGIME FLIP" subtitle="Control of Supply Determines Price" />
 
                     {/* Symmetrical Columns */}
                     <section className="grid md:grid-cols-2 gap-6">

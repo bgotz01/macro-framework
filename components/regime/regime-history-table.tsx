@@ -106,6 +106,15 @@ export default function RegimeHistoryTable({ onRegimeSelect }: RegimeHistoryTabl
         setCurrentPage(1);
     };
 
+    // Build a map from each period to the next regime (based on chronological order)
+    const nextRegimeMap = new Map<RegimePeriod, string | null>();
+    const chronological = [...periods].sort(
+        (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+    chronological.forEach((period, i) => {
+        nextRegimeMap.set(period, i < chronological.length - 1 ? chronological[i + 1].regime : null);
+    });
+
     const sortedPeriods = [...filteredPeriods].sort((a, b) => {
         let cmp = 0;
         if (sortKey === 'months') {
@@ -216,6 +225,9 @@ export default function RegimeHistoryTable({ onRegimeSelect }: RegimeHistoryTabl
                                                 : <ChevronUp className="w-3 h-3 opacity-30" />}
                                         </span>
                                     </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                        Next Regime
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-background divide-y divide-border/30">
@@ -248,6 +260,12 @@ export default function RegimeHistoryTable({ onRegimeSelect }: RegimeHistoryTabl
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground text-right font-mono">
                                                 {period.months}
+                                            </td>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium border-l-4 ${nextRegimeMap.get(period) ? getRegimeColor(nextRegimeMap.get(period)!) : ''}`}>
+                                                {nextRegimeMap.get(period)
+                                                    ? <span className="text-foreground">{nextRegimeMap.get(period)}</span>
+                                                    : <span className="text-muted-foreground italic">—</span>
+                                                }
                                             </td>
                                         </tr>
                                     );

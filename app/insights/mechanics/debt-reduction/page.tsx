@@ -1,13 +1,9 @@
+import PageHeader from '@/components/page-header';
+
 export default function DebtReductionPage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">DEBT REDUCTION</h1>
-                <p className="page-subtitle">
-                    The Two Release Valves
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="DEBT REDUCTION" subtitle="The Two Release Valves" />
 
             {/* Visual Flow Diagram */}
             <div className="mb-8 sm:mb-12 bg-card border rounded-lg p-4 sm:p-8">

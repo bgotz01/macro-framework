@@ -1,10 +1,9 @@
+import PageHeader from '@/components/page-header';
+
 export default function InvertedYieldCurvePage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">INVERTED YIELD CURVE</h1>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="INVERTED YIELD CURVE" />
 
             <div className="prose prose-lg dark:prose-invert max-w-none">
                 <p className="text-xl text-muted-foreground mb-8">

@@ -4,6 +4,7 @@ import OilConsumption from '@/components/markets/oil-consumption';
 import OilProduction from '@/components/markets/oil-production';
 import OilCostTierBar from '@/components/markets/oil-cost-tier';
 import OilChokepoints from '@/components/markets/oil-chokepoints';
+import PageHeader from '@/components/page-header';
 
 const sections = [
     { id: 'petrodollar', label: 'Petrodollar' },
@@ -18,10 +19,7 @@ const sections = [
 export default function CrudeOilPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">Crude Oil</h1>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="Crude Oil" />
 
             <nav className="flex flex-wrap gap-2 mb-10">
                 {sections.map(({ id, label }) => (

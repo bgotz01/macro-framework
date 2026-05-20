@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import PageHeader from '@/components/page-header';
 
 // Reusable Law Header Component
 interface LawHeaderProps {
@@ -95,15 +96,7 @@ export default function FrameworkPage() {
     return (
         <div className="max-w-5xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    Power Law
-                </h1>
-                <p className="page-subtitle">
-                    Three Laws of Market Behavior
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="POWER LAW" subtitle="Three Laws of Market Behavior" />
 
             {/* Tabs */}
             <div className="flex space-x-2 mb-8 border-b border-border">

@@ -29,8 +29,8 @@ const sidebarData: SidebarCategory[] = [
                 href: '/cockpit',
             },
             {
-                title: 'Architecture',
-                href: '/architecture',
+                title: 'Vision',
+                href: '/vision',
             },
 
         ],
@@ -101,27 +101,17 @@ const sidebarData: SidebarCategory[] = [
                 href: '/context',
             },
 
-            {
-                title: 'Matrix',
-                href: '/matrix',
-                children: [
-                    { title: 'Historical', href: '/matrix/historical' },
-                    { title: 'Decades', href: '/matrix/decades' },
-                    { title: 'Percentile', href: '/matrix/percentile' },
-                    { title: 'Similar Periods', href: '/matrix/similar' },
-                ],
-            },
         ],
     },
     {
         category: 'Regime Historical',
         items: [
             {
-                title: 'Timeline',
+                title: 'Regime Timeline',
                 href: '/regime/historical',
             },
             {
-                title: 'Returns',
+                title: 'Regime Returns',
                 href: '/regime/returns',
             },
             {
@@ -151,6 +141,16 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Normal', href: '/signals/normal' },
                 ],
             },
+            {
+                title: 'Matrix',
+                href: '/matrix',
+                children: [
+                    { title: 'Historical', href: '/matrix/historical' },
+                    { title: 'Decades', href: '/matrix/decades' },
+                    { title: 'Percentile', href: '/matrix/percentile' },
+                    { title: 'Similar Periods', href: '/matrix/similar' },
+                ],
+            },
         ],
     },
     {
@@ -162,11 +162,11 @@ const sidebarData: SidebarCategory[] = [
             },
             {
                 title: 'Wealth Distribution',
-                href: '/wealth-distribution',
+                href: '/perspectives/wealth-distribution',
             },
             {
                 title: 'Hedge Funds',
-                href: '/hedge-funds',
+                href: '/perspectives/hedge-funds',
             },
             {
                 title: 'Framework',
@@ -193,20 +193,7 @@ const sidebarData: SidebarCategory[] = [
                     { title: '2020 — Digital Economy', href: '/12-year-cycle/2020' },
                 ]
             },
-            {
-                title: 'Cycles',
-                href: '/cycles',
-                children: [
-                    { title: '80-Year Cycle', href: '/cycles/80-year' },
-                    { title: 'Debt Cycle', href: '/cycles/debt-cycle' },
-                    { title: 'Credit Cycle', href: '/cycles/credit-cycle' },
-                    { title: 'Business Cycle', href: '/cycles/business-cycle' },
-                ],
-            },
-            {
-                title: 'Paradigm',
-                href: '/paradigm',
-            },
+
         ],
     },
     {

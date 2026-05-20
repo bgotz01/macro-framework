@@ -1,5 +1,6 @@
 import RealMatrixWrapper from '@/components/regime/real-matrix-wrapper';
 import PercentileChart from '@/components/charts/percentile-chart';
+import PageHeader from '@/components/page-header';
 import { prisma } from '@/lib/prisma';
 import { Suspense } from 'react';
 
@@ -45,15 +46,7 @@ export default async function RealPercentileMatrixPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    PERCENTILE MATRIX
-                </h1>
-                <p className="page-subtitle">
-                    Regime Detection
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="PERCENTILE MATRIX" subtitle="Regime Detection" />
 
             <RealMatrixWrapper
                 latestDataDate={latestDate || undefined}

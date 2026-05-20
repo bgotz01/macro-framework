@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import StocksTable, { Stock, Pagination } from '@/components/sp500/stocks-table';
 import ReturnDistribution from '@/components/sp500/return-distribution';
+import PageHeader from '@/components/page-header';
 
 import Link from 'next/link';
 
@@ -124,15 +125,7 @@ export default function SP500StocksPage() {
     return (
         <div className="min-h-screen bg-background p-8">
             <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-8">
-                    <h1 className="page-title text-3xl mb-1">
-                        S&P 500 Stocks
-                    </h1>
-                    <p className="page-subtitle">
-                        Live market data for all S&P 500 constituents
-                    </p>
-                    <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-                </div>
+                <PageHeader title="S&P 500 Stocks" subtitle="Live market data for all S&P 500 constituents" />
 
                 {/* Stats Summary */}
                 {statsLoading ? (

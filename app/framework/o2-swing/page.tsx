@@ -1,14 +1,10 @@
+import PageHeader from '@/components/page-header';
+
 export default function SwingPage() {
     return (
         <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">O2: SWING</h1>
-                <p className="page-subtitle">
-                    Regime Inversions Through Structural Criteria
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="O2: SWING" subtitle="Regime Inversions Through Structural Criteria" />
 
             {/* Criteria */}
             <div className="mb-8">

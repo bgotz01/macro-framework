@@ -3,37 +3,31 @@ const PIPELINE_STEPS = [
         label: 'Market Prices',
         detail: 'Yahoo Finance',
         description: 'Equities, bonds, FX, commodities — fetched daily',
-        color: 'bg-blue-500',
     },
     {
         label: 'Economic Data',
         detail: 'BLS · FRED · Manual',
         description: 'CPI-U, M2, SP500 EPS — entered monthly',
-        color: 'bg-violet-500',
     },
     {
         label: 'Derived Series',
         detail: 'Calculated',
         description: 'Real yields, yield curves, earnings yield spreads',
-        color: 'bg-amber-500',
     },
     {
         label: 'Percentile Ranks',
         detail: 'Historical context',
         description: 'Every metric ranked against its full history',
-        color: 'bg-emerald-500',
     },
     {
         label: 'Regime Model',
         detail: 'Classification',
         description: 'Liquidity, valuation & growth signals → regime state',
-        color: 'bg-rose-500',
     },
     {
         label: 'Capital Allocation',
         detail: 'Portfolio signals',
         description: 'Asset weights derived from regime state',
-        color: 'bg-orange-500',
     },
 ];
 
@@ -51,7 +45,7 @@ export default function DataPipeline() {
                     <div key={i} className="flex items-start gap-3">
                         {/* Left: dot + vertical line */}
                         <div className="flex flex-col items-center shrink-0 pt-0.5">
-                            <div className={`w-2.5 h-2.5 rounded-full ${step.color}`} />
+                            <div className="w-2.5 h-2.5 rounded-full bg-foreground/40" />
                             {i < PIPELINE_STEPS.length - 1 && (
                                 <div className="w-px flex-1 bg-border my-1" style={{ minHeight: '2rem' }} />
                             )}
@@ -59,8 +53,8 @@ export default function DataPipeline() {
                         {/* Right: content */}
                         <div className="pb-4">
                             <div className="text-xs font-semibold text-card-foreground">{step.label}</div>
-                            <div className={`text-xs font-medium mt-0.5 ${step.color.replace('bg-', 'text-')}`}>{step.detail}</div>
-                            <div className="text-xs text-muted-foreground mt-1 leading-snug">{step.description}</div>
+                            <div className="text-xs font-medium mt-0.5 text-muted-foreground">{step.detail}</div>
+                            <div className="text-xs text-muted-foreground/70 mt-1 leading-snug">{step.description}</div>
                         </div>
                     </div>
                 ))}
@@ -73,7 +67,7 @@ export default function DataPipeline() {
                         <div className="flex flex-col items-center flex-1 min-w-0">
                             {/* Top row: dot + connector */}
                             <div className="flex items-center w-full">
-                                <div className={`w-2.5 h-2.5 rounded-full ${step.color} shrink-0`} />
+                                <div className="w-2.5 h-2.5 rounded-full bg-foreground/40 shrink-0" />
                                 {i < PIPELINE_STEPS.length - 1 && (
                                     <>
                                         <div className="flex-1 h-px bg-border" />
@@ -84,8 +78,8 @@ export default function DataPipeline() {
                             {/* Content below dot */}
                             <div className="mt-3 pr-2 w-full">
                                 <div className="text-xs font-semibold text-card-foreground">{step.label}</div>
-                                <div className={`text-xs font-medium mt-0.5 ${step.color.replace('bg-', 'text-')}`}>{step.detail}</div>
-                                <div className="text-xs text-muted-foreground mt-1 leading-snug">{step.description}</div>
+                                <div className="text-xs font-medium mt-0.5 text-muted-foreground">{step.detail}</div>
+                                <div className="text-xs text-muted-foreground/70 mt-1 leading-snug">{step.description}</div>
                             </div>
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PageHeader from '@/components/page-header';
 
 interface AnnualReturn {
     Year: number;
@@ -172,15 +173,7 @@ export default function AnnualReturnsPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    Annual Returns by Asset Class
-                </h1>
-                <p className="page-subtitle">
-                    Historical annual returns from 1928 to 2025
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="Annual Returns by Asset Class" subtitle="Historical annual returns from 1928 to 2025" />
 
             {/* Total Averages */}
             <div className="mb-8">

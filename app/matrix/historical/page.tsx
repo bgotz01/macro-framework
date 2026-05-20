@@ -1,5 +1,6 @@
 import CompactRegimeMatrix from '@/components/compact-regime-matrix';
 import CompactMatrixPercentile from '@/components/compact-matrix-percentile';
+import PageHeader from '@/components/page-header';
 import { DataServiceNew } from '@/lib/data-service-new';
 import { prisma } from '@/lib/prisma';
 
@@ -176,15 +177,7 @@ export default async function HistoricalMatrixPage() {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">
-                    Historical Regime Matrix
-                </h1>
-                <p className="page-subtitle">
-                    Explore macro regime conditions across different time periods
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="Historical Regime Matrix" subtitle="Explore macro regime conditions across different time periods" />
 
             {/* Compact Regime Matrix */}
             <CompactRegimeMatrix initialValues={initialValues} initialDates={initialDates} />

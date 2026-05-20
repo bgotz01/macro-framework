@@ -1,15 +1,10 @@
 import Link from 'next/link';
+import PageHeader from '@/components/page-header';
 
 export default function GuidePage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <div className="text-center mb-8">
-                <h1 className="page-title text-3xl mb-1">MECHANICS</h1>
-                <p className="page-subtitle">
-                    Key macro concepts and market signals
-                </p>
-                <div className="mt-3 h-px w-full max-w-md mx-auto bg-gradient-to-r from-transparent via-foreground/30 to-transparent" />
-            </div>
+            <PageHeader title="MECHANICS" subtitle="Key macro concepts and market signals" />
 
             <div className="grid gap-6">
                 <Link
