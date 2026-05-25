@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import {
-    ArrowRight,
     Beaker,
     CheckCircle2,
     ChevronDown,
@@ -19,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import PageHeader from '@/components/page-header';
 
 type Status = 'live' | 'in-progress' | 'planned' | 'research';
 
@@ -277,42 +277,11 @@ export default function OutlinePage() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-6xl px-4 py-10 md:py-14">
+        <div className="mx-auto w-full max-w-6xl">
             {/* Header */}
+            <PageHeader title="OUTLINE" subtitle="Capital Physics — regime-aware CIO layer for structured capital allocation" />
+
             <div className="flex flex-col gap-6">
-                <div className="flex items-start justify-between gap-6">
-                    <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
-                            <Sparkles className="h-3.5 w-3.5" />
-                            Outline (internal)
-                        </div>
-
-                        <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Capital Physics</h1>
-
-                        <div className="max-w-3xl space-y-3 text-base text-muted-foreground md:text-lg">
-                            <p className="text-foreground font-medium">
-                                We&apos;re building a regime-aware CIO layer that helps millennials and wealth advisors allocate capital using structured, observable market frameworks.
-                            </p>
-
-                            <p>
-                                The system detects macro regimes, models how shocks transmit through markets, and applies the same logic
-                                across regions and eventually down to company behavior.
-                            </p>
-                            <p>
-                                Everything is decomposed into explicit layers — regimes, transmission, behavior, and long-cycle context —
-                                so decisions are driven by structure rather than intuition.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="whitespace-nowrap">Start here</span>
-                        <ArrowRight className="h-4 w-4" />
-                        <a href="#regimes" className="rounded-full border px-3 py-1 hover:bg-muted">
-                            US Macro Regimes
-                        </a>
-                    </div>
-                </div>
 
                 <AnchorNav />
 

@@ -1,19 +1,10 @@
+import PageHeader from '@/components/page-header';
+
 export default function OverviewPage() {
     return (
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-5xl mx-auto">
 
-            {/* Header */}
-            <div className="text-center mb-16">
-                <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-6">
-                    Strategic Framework
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-5 text-card-foreground">
-                    Market Overview
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                    A systematic approach to understanding market regimes, structural trends, and risk factors
-                </p>
-            </div>
+            <PageHeader title="OVERVIEW" subtitle="A systematic approach to understanding market regimes, structural trends, and risk factors" />
 
             {/* Quant vs Macro Divide */}
             <section className="mb-16">

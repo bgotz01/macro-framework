@@ -28,9 +28,28 @@ const sidebarData: SidebarCategory[] = [
                 title: 'Cockpit',
                 href: '/cockpit',
             },
+
+        ],
+    },
+    {
+        category: 'Regime State',
+        items: [
+
             {
-                title: 'Vision',
-                href: '/vision',
+                title: 'Regime Active',
+                href: '/regime-active',
+            },
+            {
+                title: 'Regime Guide',
+                href: '/regime-guide',
+            },
+            {
+                title: 'Trend Pressure',
+                href: '/trend-pressure',
+            },
+            {
+                title: 'Regime Context',
+                href: '/context',
             },
 
         ],
@@ -77,29 +96,6 @@ const sidebarData: SidebarCategory[] = [
             //     title: 'CFTC',
             //     href: '/cftc',
             // },
-
-        ],
-    },
-    {
-        category: 'Regime State',
-        items: [
-
-            {
-                title: 'Regime Active',
-                href: '/regime-active',
-            },
-            {
-                title: 'Regime Guide',
-                href: '/regime-guide',
-            },
-            {
-                title: 'Trend Pressure',
-                href: '/trend-pressure',
-            },
-            {
-                title: 'Regime Context',
-                href: '/context',
-            },
 
         ],
     },

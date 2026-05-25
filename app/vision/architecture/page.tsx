@@ -39,8 +39,7 @@ export default function ArchitecturePage() {
     ];
 
     return (
-        <div className="max-w-3xl mx-auto py-8">
-            {/* Header */}
+        <div className="max-w-3xl mx-auto">
             <PageHeader title="ARCHITECTURE" subtitle="Traditional Investing, Flipped" />
 
             {/* Inversion section */}

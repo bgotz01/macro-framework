@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import PageHeader from '@/components/page-header';
 
 type Pillar = {
     title: string;
@@ -151,10 +152,8 @@ Your identity must look inevitable.`
     );
 
     return (
-        <div className="container mx-auto px-4 py-12 max-w-6xl">
-            <h1 className="text-4xl font-bold mb-8 text-center">
-                🧱 The 4-Pillar Plan
-            </h1>
+        <div className="max-w-6xl mx-auto">
+            <PageHeader title="PLAN" subtitle="The 4-Pillar Strategy" />
 
             {/* 2x2 Grid of 4 Pillars */}
             <div className="grid grid-cols-2 gap-6 mb-12">
