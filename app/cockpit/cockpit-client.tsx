@@ -325,11 +325,11 @@ function LiveSnapshot() {
 
     const row = (label: string, value: number | null, date: string | null, unit = '%', decimals = 2, color?: string) => (
         <tr key={label} className="border-b border-border/20 last:border-0">
-            <td className="py-1 pr-2 text-xs text-foreground/80 whitespace-nowrap">{label}</td>
-            <td className="py-1 pr-3 text-[10px] text-muted-foreground font-mono whitespace-nowrap">{fmtDate(date)}</td>
-            <td className={`py-1 text-xs font-mono font-medium text-right whitespace-nowrap ${color ?? 'text-foreground'}`}>
+            <td className="py-1 pr-4 text-xs text-foreground/80 whitespace-nowrap">{label}</td>
+            <td className={`py-1 pr-4 text-xs font-mono font-medium whitespace-nowrap ${color ?? 'text-foreground'}`}>
                 {value !== null ? `${value.toFixed(decimals)}${unit}` : '—'}
             </td>
+            <td className="py-1 text-[9px] text-muted-foreground/50 font-mono whitespace-nowrap text-right">{fmtDate(date)}</td>
         </tr>
     );
 
@@ -348,9 +348,9 @@ function LiveSnapshot() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Derived */}
-                    <div>
+                    <div className="flex flex-col items-center">
                         <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Derived (live)</div>
-                        <table className="w-full">
+                        <table>
                             <tbody>
                                 {row('Real 10Y', d.real10Y, live.tnx.date, '%', 2, signColor(d.real10Y))}
                                 {row('Real 3M', d.real3M, live.irx.date, '%', 2, signColor(d.real3M))}
@@ -364,9 +364,9 @@ function LiveSnapshot() {
                     </div>
 
                     {/* Macro */}
-                    <div>
+                    <div className="flex flex-col items-center">
                         <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Macro</div>
-                        <table className="w-full">
+                        <table>
                             <tbody>
                                 {row('CPI YoY', live.cpi.value, live.cpi.date, '%', 2)}
                                 {row('M2 YoY', live.m2yoy.value, live.m2yoy.date, '%', 2)}
@@ -379,9 +379,9 @@ function LiveSnapshot() {
                     </div>
 
                     {/* Market */}
-                    <div>
+                    <div className="flex flex-col items-center">
                         <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Market</div>
-                        <table className="w-full">
+                        <table>
                             <tbody>
                                 {row('10Y Yield', live.tnx.value, live.tnx.date)}
                                 {row('3M Yield', live.irx.value, live.irx.date)}

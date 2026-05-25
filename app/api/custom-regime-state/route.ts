@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 interface Conditions {
     rey: number | null;
     eyp: number | null;
@@ -212,6 +214,8 @@ export async function POST(request: NextRequest) {
             currentDate: mapped.length > 0 ? mapped[mapped.length - 1].date : '',
             daysInRegime: monthsInRegime,
             triggerReason: result.triggerReason,
+        }, {
+            headers: { 'Cache-Control': 'no-store' },
         });
     } catch (error) {
         console.error('Error calculating custom regime state:', error);

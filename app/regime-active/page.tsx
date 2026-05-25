@@ -3,6 +3,9 @@ import RegimeChart from '@/components/charts/regime-chart';
 import ChatWidget from '@/components/chat/chat-widget';
 import { Suspense } from 'react';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function RegimeCustomPage() {
     return (
         <div className="max-w-6xl mx-auto px-2 sm:px-4">
