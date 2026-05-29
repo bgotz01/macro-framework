@@ -101,6 +101,15 @@ model sp500_snapshots {
   @@map("sp500_snapshots")
 }
 
+model waitlist {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  created_at DateTime @default(now())
+
+  @@map("waitlist")
+}
+
 model macro_percentile_analysis {
   id                    Int    @id @default(autoincrement())
   date                  String

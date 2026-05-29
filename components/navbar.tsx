@@ -19,7 +19,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#050507]/80 backdrop-blur-xl">
             <div className="flex h-16 items-center justify-between px-6">
-                {/* Logo — aligns with sidebar content */}
+                {/* Logo */}
                 <Link href="/" className="group flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] shadow-lg shadow-blue-500/10 transition group-hover:bg-white/[0.10]">
                         <Radar className="h-4 w-4 text-blue-200" />
@@ -50,9 +50,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                         );
                     })}
                     <div className="ml-3 h-4 w-px bg-white/10" />
-                    <button className="ml-3 rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-sm text-white/70 backdrop-blur transition hover:bg-white/[0.10] hover:text-white">
+                    <Link
+                        href="/request-access"
+                        className="ml-3 rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-sm text-white/70 backdrop-blur transition hover:bg-white/[0.10] hover:text-white"
+                    >
                         Request access
-                    </button>
+                    </Link>
                 </div>
 
                 {/* Mobile menu button */}
