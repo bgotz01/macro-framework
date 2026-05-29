@@ -15,69 +15,25 @@ interface SidebarCategory {
     items: SidebarItem[];
 }
 
-interface SidebarCategory {
-    category: string;
-    items: SidebarItem[];
-}
-
 const sidebarData: SidebarCategory[] = [
     {
         category: 'Overview',
         items: [
-            {
-                title: 'Cockpit',
-                href: '/cockpit',
-            },
-
+            { title: 'Cockpit', href: '/cockpit' },
         ],
     },
     {
         category: 'Regime State',
         items: [
-
-            {
-                title: 'Regime Active',
-                href: '/regime-active',
-            },
-            {
-                title: 'Regime Guide',
-                href: '/regime-guide',
-            },
-            {
-                title: 'Trend Pressure',
-                href: '/trend-pressure',
-            },
-            {
-                title: 'Regime Context',
-                href: '/context',
-            },
-
+            { title: 'Regime Active', href: '/regime-active' },
+            { title: 'Regime Guide', href: '/regime-guide' },
+            { title: 'Trend Pressure', href: '/trend-pressure' },
+            { title: 'Regime Context', href: '/context' },
         ],
     },
     {
         category: 'Markets',
         items: [
-            {
-                title: 'Charts',
-                href: '/chart',
-                children: [
-                    { title: 'All Charts', href: '/chart' },
-                    { title: 'Percentile Chart', href: '/chart/percentile' },
-                    { title: 'Data Explorer', href: '/chart/data' },
-                ],
-            },
-
-
-
-            // {
-            //     title: 'S&P 500',
-            //     href: '/sp500',
-            //     children: [
-            //         { title: 'Constituents', href: '/sp500/constituents' },
-            //         { title: 'Returns', href: '/sp500/returns' },
-            //     ],
-            // },
-
             {
                 title: 'Markets',
                 href: '/markets',
@@ -86,30 +42,17 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Asset Returns', href: '/markets/asset-returns' },
                     { title: 'US Annual Returns', href: '/markets/us-annual-returns' },
                     { title: 'Annual Filter', href: '/markets/annual-filter' },
-
-
                     { title: 'Crude Oil', href: '/markets/crude-oil' },
                 ],
             },
-
-            // {
-            //     title: 'CFTC',
-            //     href: '/cftc',
-            // },
-
+            { title: 'Charts', href: '/chart' },
         ],
     },
     {
         category: 'Regime Historical',
         items: [
-            {
-                title: 'Regime Timeline',
-                href: '/regime/historical',
-            },
-            {
-                title: 'Regime Returns',
-                href: '/regime/returns',
-            },
+            { title: 'Regime Timeline', href: '/regime/historical' },
+            { title: 'Regime Returns', href: '/regime/returns' },
             {
                 title: 'Regime Examples',
                 href: '/regime/regime-examples',
@@ -152,18 +95,9 @@ const sidebarData: SidebarCategory[] = [
     {
         category: 'Perspectives',
         items: [
-            {
-                title: 'OS Framework',
-                href: '/os-framework',
-            },
-            {
-                title: 'Wealth Distribution',
-                href: '/perspectives/wealth-distribution',
-            },
-            {
-                title: 'Hedge Funds',
-                href: '/perspectives/hedge-funds',
-            },
+            { title: 'OS Framework', href: '/os-framework' },
+            { title: 'Wealth Distribution', href: '/perspectives/wealth-distribution' },
+            { title: 'Hedge Funds', href: '/perspectives/hedge-funds' },
             {
                 title: 'Framework',
                 href: '/framework',
@@ -172,7 +106,6 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'O1 Signal', href: '/framework/o1-signal' },
                     { title: 'O2 Swing', href: '/framework/o2-swing' },
                     { title: 'O3 Story', href: '/framework/o3-story' },
-
                 ],
             },
             {
@@ -187,9 +120,8 @@ const sidebarData: SidebarCategory[] = [
                     { title: '1996 — Digital Infrastructure', href: '/12-year-cycle/1996' },
                     { title: '2008 — Monetary Intervention', href: '/12-year-cycle/2008' },
                     { title: '2020 — Digital Economy', href: '/12-year-cycle/2020' },
-                ]
+                ],
             },
-
         ],
     },
     {
@@ -221,19 +153,13 @@ const sidebarData: SidebarCategory[] = [
                     { title: 'Inflation', href: '/case-study/inflation' },
                 ],
             },
-            {
-                title: 'Content Ideas',
-                href: '/insights/content',
-            },
+            { title: 'Content Ideas', href: '/insights/content' },
         ],
     },
     {
         category: 'Tools',
         items: [
-            {
-                title: 'Data Input',
-                href: '/data-input',
-            },
+            { title: 'Data Input', href: '/data-input' },
         ],
     },
 ];
@@ -250,7 +176,6 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     const [expandedItems, setExpandedItems] = useState<string[]>([]);
     const [hasInitialized, setHasInitialized] = useState(false);
 
-    // Auto-expand sections based on current path on initial load
     useEffect(() => {
         if (!hasInitialized) {
             const itemsToExpand: string[] = [];
@@ -258,13 +183,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
                 category.items.forEach(item => {
                     if (pathname.startsWith(item.href)) {
                         itemsToExpand.push(item.href);
-                        if (item.children) {
-                            item.children.forEach(child => {
-                                if (pathname.startsWith(child.href)) {
-                                    itemsToExpand.push(child.href);
-                                }
-                            });
-                        }
+                        item.children?.forEach(child => {
+                            if (pathname.startsWith(child.href)) itemsToExpand.push(child.href);
+                        });
                     }
                 });
             });
@@ -274,11 +195,9 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     }, [pathname, hasInitialized]);
 
     const toggleExpanded = (href: string) => {
-        if (isCollapsed) return; // Don't expand when collapsed
+        if (isCollapsed) return;
         setExpandedItems(prev =>
-            prev.includes(href)
-                ? prev.filter(item => item !== href)
-                : [...prev, href]
+            prev.includes(href) ? prev.filter(i => i !== href) : [...prev, href]
         );
     };
 
@@ -288,27 +207,16 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
     return (
         <>
             <style jsx>{`
-                .sidebar-scroll::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .sidebar-scroll::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .sidebar-scroll::-webkit-scrollbar-thumb {
-                    background: transparent;
-                    border-radius: 3px;
-                }
-                .sidebar-scroll:hover::-webkit-scrollbar-thumb {
-                    background: hsl(var(--muted-foreground));
-                }
-                .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
-                    background: hsl(var(--foreground));
-                }
+                .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+                .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+                .sidebar-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
+                .sidebar-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
             `}</style>
+
             {/* Mobile overlay */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
                     onClick={onClose}
                 />
             )}
@@ -316,191 +224,122 @@ export default function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse
             {/* Sidebar */}
             <aside
                 className={`
-          fixed top-20 left-0 z-50 h-[calc(100vh-5rem)] bg-card/95 backdrop-blur-xl transition-all duration-300 ease-out lg:static lg:z-0
-          ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${isCollapsed ? 'w-16 lg:w-16' : 'w-80 lg:w-80'}
-        `}
+                    fixed top-16 left-0 z-50 h-[calc(100vh-4rem)]
+                    border-r border-white/[0.06] bg-[#050507]/95 backdrop-blur-xl
+                    transition-all duration-300 ease-out
+                    lg:static lg:z-0
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    ${isCollapsed ? 'w-14 lg:w-14' : 'w-72 lg:w-72'}
+                `}
             >
                 <div className="flex h-full flex-col">
-                    <div className="flex-1 overflow-y-auto p-6 sidebar-scroll">
-                        {!isCollapsed && (
-                            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-6">
-                                Navigation
-                            </h2>
-                        )}
-
-                        <nav className={`space-y-6 ${isCollapsed ? 'hidden' : ''}`}>
+                    <div className="sidebar-scroll flex-1 overflow-y-auto px-3 py-5">
+                        <nav className={`space-y-5 ${isCollapsed ? 'hidden' : ''}`}>
                             {sidebarData.map((category) => (
-                                <div key={category.category} className="space-y-2">
-                                    {/* Category Header */}
-                                    <h3 className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest px-4 mb-3 border-b border-muted-foreground/10 pb-2">
+                                <div key={category.category}>
+                                    {/* Category label */}
+                                    <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
                                         {category.category}
-                                    </h3>
+                                    </p>
 
-                                    {/* Category Items */}
-                                    {category.items.map((item) => (
-                                        <div key={item.href} className="animate-slide-in">
-                                            <div className="flex items-center">
-                                                <Link
-                                                    href={item.href}
-                                                    className={`
-                        flex-1 flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 group
-                        ${isActive(item.href)
-                                                            ? 'bg-muted/60 text-foreground'
-                                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
-                                                        }
-                        ${isCollapsed ? 'justify-center' : ''}
-                      `}
-                                                    onClick={() => {
-                                                        // Only close sidebar on mobile
-                                                        if (window.innerWidth < 1024) {
-                                                            onClose();
-                                                        }
-                                                    }}
-                                                    title={isCollapsed ? item.title : undefined}
-                                                >
-                                                    {isCollapsed ? (
-                                                        // Hide content when collapsed - only show hamburger menu
-                                                        null
-                                                    ) : (
-                                                        <span className="flex-1">{item.title}</span>
-                                                    )}
-                                                </Link>
-                                                {item.children && !isCollapsed && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            toggleExpanded(item.href);
-                                                        }}
-                                                        className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
-                                                        aria-label={`Toggle ${item.title} submenu`}
+                                    <div className="space-y-0.5">
+                                        {category.items.map((item) => (
+                                            <div key={item.href}>
+                                                <div className="flex items-center gap-1">
+                                                    <Link
+                                                        href={item.href}
+                                                        onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                                                        className={`flex flex-1 items-center rounded-lg px-3 py-2 text-sm transition-all duration-150 ${isActive(item.href)
+                                                            ? 'bg-white/[0.08] text-white'
+                                                            : 'text-white/45 hover:bg-white/[0.04] hover:text-white/80'
+                                                            }`}
                                                     >
-                                                        <svg
-                                                            className={`h-4 w-4 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(item.href) ? 'rotate-90' : ''
-                                                                }`}
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
+                                                        {item.title}
+                                                    </Link>
+                                                    {item.children && (
+                                                        <button
+                                                            onClick={() => toggleExpanded(item.href)}
+                                                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/[0.04] hover:text-white/60"
                                                         >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M9 5l7 7-7 7"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                )}
-                                            </div>
+                                                            <svg
+                                                                className={`h-3 w-3 transition-transform duration-200 ${isExpanded(item.href) ? 'rotate-90' : ''}`}
+                                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                            >
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
 
-                                            {/* Submenu */}
-                                            {item.children && isExpanded(item.href) && !isCollapsed && (
-                                                <div className="ml-6 mt-2 space-y-1 animate-fade-in">
-                                                    {item.children.map((child) => (
-                                                        <div key={child.href}>
-                                                            <div className="flex items-center">
-                                                                <Link
-                                                                    href={child.href}
-                                                                    className={`
-                                flex-1 flex items-center rounded-lg px-4 py-2.5 text-sm transition-all duration-200 group
-                                ${isActive(child.href)
-                                                                            ? 'bg-muted/50 text-foreground'
-                                                                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                                                                        }
-                              `}
-                                                                    onClick={() => {
-                                                                        // Only close sidebar on mobile
-                                                                        if (window.innerWidth < 1024) {
-                                                                            onClose();
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <span>{child.title}</span>
-                                                                </Link>
-                                                                {child.children && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            toggleExpanded(child.href);
-                                                                        }}
-                                                                        className="p-2 rounded-lg hover:bg-muted/80 transition-colors duration-200 group"
-                                                                        aria-label={`Toggle ${child.title} submenu`}
+                                                {/* Children */}
+                                                {item.children && isExpanded(item.href) && (
+                                                    <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/[0.06] pl-3">
+                                                        {item.children.map((child) => (
+                                                            <div key={child.href}>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Link
+                                                                        href={child.href}
+                                                                        onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                                                                        className={`flex flex-1 items-center rounded-lg px-3 py-1.5 text-sm transition-all duration-150 ${isActive(child.href)
+                                                                            ? 'bg-white/[0.06] text-white/90'
+                                                                            : 'text-white/35 hover:bg-white/[0.04] hover:text-white/70'
+                                                                            }`}
                                                                     >
-                                                                        <svg
-                                                                            className={`h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 ${isExpanded(child.href) ? 'rotate-90' : ''
-                                                                                }`}
-                                                                            fill="none"
-                                                                            stroke="currentColor"
-                                                                            viewBox="0 0 24 24"
+                                                                        {child.title}
+                                                                    </Link>
+                                                                    {child.children && (
+                                                                        <button
+                                                                            onClick={() => toggleExpanded(child.href)}
+                                                                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-white/20 transition hover:text-white/50"
                                                                         >
-                                                                            <path
-                                                                                strokeLinecap="round"
-                                                                                strokeLinejoin="round"
-                                                                                strokeWidth={2}
-                                                                                d="M9 5l7 7-7 7"
-                                                                            />
-                                                                        </svg>
-                                                                    </button>
+                                                                            <svg
+                                                                                className={`h-3 w-3 transition-transform duration-200 ${isExpanded(child.href) ? 'rotate-90' : ''}`}
+                                                                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Grandchildren */}
+                                                                {child.children && isExpanded(child.href) && (
+                                                                    <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/[0.04] pl-3">
+                                                                        {child.children.map((grandchild) => (
+                                                                            <Link
+                                                                                key={grandchild.href}
+                                                                                href={grandchild.href}
+                                                                                onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                                                                                className={`flex items-center rounded-lg px-3 py-1.5 text-xs transition-all duration-150 ${isActive(grandchild.href)
+                                                                                    ? 'bg-white/[0.06] text-white/80'
+                                                                                    : 'text-white/30 hover:bg-white/[0.04] hover:text-white/60'
+                                                                                    }`}
+                                                                            >
+                                                                                {grandchild.title}
+                                                                            </Link>
+                                                                        ))}
+                                                                    </div>
                                                                 )}
                                                             </div>
-
-                                                            {/* Third level submenu */}
-                                                            {child.children && isExpanded(child.href) && (
-                                                                <div className="ml-6 mt-1 space-y-1 animate-fade-in">
-                                                                    {child.children.map((grandchild) => (
-                                                                        <Link
-                                                                            key={grandchild.href}
-                                                                            href={grandchild.href}
-                                                                            className={`
-                                    flex items-center rounded-lg px-4 py-2 text-sm transition-all duration-200 group
-                                    ${isActive(grandchild.href)
-                                                                                    ? 'bg-muted/50 text-foreground'
-                                                                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
-                                                                                }
-                                  `}
-                                                                            onClick={() => {
-                                                                                // Only close sidebar on mobile
-                                                                                if (window.innerWidth < 1024) {
-                                                                                    onClose();
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            <span>{grandchild.title}</span>
-                                                                        </Link>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </nav>
                     </div>
 
-
-
-                    {/* Collapse toggle for desktop */}
-                    <div className="hidden lg:block absolute -right-3 top-6">
+                    {/* Collapse toggle */}
+                    <div className="hidden lg:block absolute -right-3 top-5">
                         <button
                             onClick={onToggleCollapse}
-                            className="p-2 rounded-full bg-card hover:bg-muted/80 transition-all duration-200 group shadow-lg border border-border"
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#050507] text-white/40 shadow-lg transition hover:text-white/70"
                             aria-label="Toggle sidebar"
                         >
-                            {/* Hamburger menu icon */}
-                            <svg
-                                className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors duration-200"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                            >
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round">
                                 <line x1="3" y1="6" x2="21" y2="6" />
                                 <line x1="3" y1="12" x2="21" y2="12" />
                                 <line x1="3" y1="18" x2="21" y2="18" />

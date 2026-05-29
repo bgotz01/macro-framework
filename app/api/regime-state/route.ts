@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     const targetDate = request.nextUrl.searchParams.get('date') || 'latest';
 
@@ -50,6 +52,8 @@ export async function GET(request: NextRequest) {
                 risk: 'N/A',
                 direction: 'N/A',
             },
+        }, {
+            headers: { 'Cache-Control': 'no-store' },
         });
     } catch (error) {
         console.error('Error fetching regime state:', error);

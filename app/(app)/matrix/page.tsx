@@ -1,6 +1,6 @@
-import RegimeMatrix from '../../components/regime-matrix';
-import CompactRegimeMatrix from '../../components/compact-regime-matrix';
-import MatrixSlider from '../../components/matrix-slider';
+import RegimeMatrix from '@/components/regime-matrix';
+import CompactRegimeMatrix from '@/components/compact-regime-matrix';
+import MatrixSlider from '@/components/matrix-slider';
 import PageHeader from '@/components/page-header';
 import { DataServiceNew } from '@/lib/data-service-new';
 import { prisma } from '@/lib/prisma';

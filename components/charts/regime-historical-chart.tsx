@@ -242,9 +242,9 @@ export default function RegimeHistoricalChart({
     return (
         <div className={`p-2 sm:p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
             {/* Header */}
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Regime Period Chart</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+            <div className="mb-5">
+                <h3 className="section-title text-lg text-foreground">Regime Period Chart</h3>
+                <p className="text-sm text-muted-foreground mt-1 tracking-wide">
                     {selectedDateRange
                         ? (() => {
                             const startDate = new Date(selectedDateRange.start).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });

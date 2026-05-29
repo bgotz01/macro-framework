@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 export type ChartType = 'yields' | 'economics' | 'equities' | 'commodities' | 'valuations' | 'fx' | 'returns' | 'volatility' | 'percentile' | 'divergence' | 'all';
 
 const CHART_TYPES: Array<{ value: ChartType; label: string; description: string }> = [
+    { value: 'percentile', label: 'Percentile Analysis', description: 'Historical percentile rankings and trends' },
     { value: 'yields', label: 'Yields & Rates', description: 'Bond yields, Fed Funds, CPI, and yield spreads' },
     { value: 'economics', label: 'Economic Data', description: 'GDP, debt, money supply, and consumption' },
     { value: 'equities', label: 'Equities & Markets', description: 'Stock indices, commodities, and volatility' },
@@ -14,7 +15,6 @@ const CHART_TYPES: Array<{ value: ChartType; label: string; description: string 
     { value: 'fx', label: 'FX & Currencies', description: 'Currency pairs and exchange rates' },
     { value: 'returns', label: 'Cyclical Returns', description: '2Y, 5Y, and 10Y rolling returns for markets' },
     { value: 'volatility', label: 'Volatility', description: '63, 126, and 252-day rolling volatility for equities' },
-    { value: 'percentile', label: 'Percentile Analysis', description: 'Historical percentile rankings and trends' },
     { value: 'divergence', label: 'MA Divergence', description: 'S&P 500 price divergence from moving averages' },
     { value: 'all', label: 'All Data', description: 'Access all available time series' },
 ];

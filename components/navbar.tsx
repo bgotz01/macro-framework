@@ -1,82 +1,70 @@
 'use client';
 
 import Link from 'next/link';
-import { ThemeToggle } from './theme-toggle';
+import { usePathname } from 'next/navigation';
+import { Radar } from 'lucide-react';
 
 interface NavbarProps {
     onMenuClick?: () => void;
 }
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
+    const pathname = usePathname();
+
     const navItems = [
         { href: '/cockpit', label: 'Cockpit' },
-        { href: '/chart', label: 'Charts' },
         { href: '/regime-active', label: 'Regime' },
     ];
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto px-6 lg:px-8">
-                <div className="flex h-20 items-center justify-between">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center space-x-3 group">
-                        <div className="relative">
-                            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-elegant group-hover:shadow-xl transition-all duration-300">
-                                <span className="text-primary-foreground font-bold text-xl">CP</span>
-                            </div>
-                            <div className="absolute inset-0 rounded-xl gradient-primary opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300"></div>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-bold text-xl tracking-tight text-foreground group-hover:text-primary transition-colors duration-200">
-                                Capital Physics
-                            </span>
-                            <span className="text-xs text-muted-foreground font-medium tracking-wide">
-                                Regime Detection
-                            </span>
-                        </div>
-                    </Link>
+        <nav className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#050507]/80 backdrop-blur-xl">
+            <div className="flex h-16 items-center justify-between px-6">
+                {/* Logo — aligns with sidebar content */}
+                <Link href="/" className="group flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] shadow-lg shadow-blue-500/10 transition group-hover:bg-white/[0.10]">
+                        <Radar className="h-4 w-4 text-blue-200" />
+                    </div>
+                    <span className="text-sm font-medium tracking-[0.22em] text-white/75 transition group-hover:text-white">
+                        CAPITAL PHYSICS
+                    </span>
+                </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center space-x-1">
-                        {navItems.map((item) => (
+                {/* Desktop nav */}
+                <div className="hidden items-center gap-1 md:flex">
+                    {navItems.map((item) => {
+                        const active = pathname?.startsWith(item.href);
+                        return (
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className="relative px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-all duration-200 font-medium text-sm group"
+                                className={`relative rounded-lg px-4 py-2 text-sm font-medium transition ${active
+                                    ? 'text-white'
+                                    : 'text-white/45 hover:text-white/80'
+                                    }`}
                             >
-                                <span className="relative z-10">{item.label}</span>
-                                <div className="absolute inset-0 rounded-lg bg-muted opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                                {active && (
+                                    <span className="absolute inset-0 rounded-lg border border-white/10 bg-white/[0.06]" />
+                                )}
+                                <span className="relative">{item.label}</span>
                             </Link>
-                        ))}
-                        <div className="ml-4">
-                            <ThemeToggle />
-                        </div>
-                    </div>
-
-                    {/* Mobile: theme toggle + menu button */}
-                    <div className="md:hidden flex items-center space-x-2">
-                        <ThemeToggle />
-                        <button
-                            className="p-3 rounded-xl hover:bg-muted/80 transition-colors duration-200 group"
-                            onClick={onMenuClick}
-                            aria-label="Open menu"
-                        >
-                            <svg
-                                className="h-6 w-6 text-muted-foreground group-hover:text-foreground transition-colors duration-200"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 6h16M4 12h16M4 18h16"
-                                />
-                            </svg>
-                        </button>
-                    </div>
+                        );
+                    })}
+                    <div className="ml-3 h-4 w-px bg-white/10" />
+                    <button className="ml-3 rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-sm text-white/70 backdrop-blur transition hover:bg-white/[0.10] hover:text-white">
+                        Request access
+                    </button>
                 </div>
+
+                {/* Mobile menu button */}
+                <button
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/60 transition hover:bg-white/[0.10] hover:text-white md:hidden"
+                    onClick={onMenuClick}
+                    aria-label="Open menu"
+                >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
             </div>
         </nav>
     );

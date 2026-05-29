@@ -4,6 +4,16 @@ import createMDX from '@next/mdx';
 const nextConfig = {
   // Configure `pageExtensions` to include markdown and MDX files
   pageExtensions: ['js', 'jsx', 'md', 'mdx', 'ts', 'tsx'],
+
+  // Prevent Vercel from caching API responses
+  headers: async () => [
+    {
+      source: '/api/:path*',
+      headers: [
+        { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+      ],
+    },
+  ],
 };
 
 const withMDX = createMDX({

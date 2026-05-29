@@ -147,7 +147,7 @@ export default function RegimeHistoryTable({ onRegimeSelect }: RegimeHistoryTabl
                 className="w-full px-6 py-4 flex items-center justify-between bg-muted/30 hover:bg-muted/50 transition-colors"
             >
                 <div className="text-left">
-                    <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <h3 className="section-title text-lg text-foreground flex items-center gap-2">
                         <ChevronDown className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                         Regime History
                     </h3>

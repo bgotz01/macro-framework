@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function ChartPage() {
-    redirect('/chart/yields');
+    redirect('/chart/percentile');
 }

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "../components/theme-provider";
-import LayoutWrapper from "../components/layout-wrapper";
 
 export const metadata: Metadata = {
-  title: "Power Law",
-  description: "A comprehensive framework for macro economic analysis and data visualization",
+  title: "Capital Physics",
+  description: "A systematic macro framework for regime detection and capital allocation",
 };
 
 export default function RootLayout({
@@ -20,9 +19,7 @@ export default function RootLayout({
           defaultTheme="dark"
           storageKey="macro-framework-theme"
         >
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
+          {children}
         </ThemeProvider>
       </body>
     </html>

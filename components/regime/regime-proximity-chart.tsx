@@ -58,6 +58,7 @@ const DATE_PRESETS = [
     { label: 'Last 5Y', value: '5y' },
     { label: 'Last 10Y', value: '10y' },
     { label: 'Last 20Y', value: '20y' },
+    { label: 'Custom', value: 'custom' },
 ] as const;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -65,15 +66,25 @@ const DATE_PRESETS = [
 function DatePresetSelector({
     datePreset,
     setDatePreset,
+    customStart,
+    customEnd,
+    setCustomStart,
+    setCustomEnd,
+    dataRange,
 }: {
     datePreset: string;
     setDatePreset: (v: string) => void;
+    customStart: string;
+    customEnd: string;
+    setCustomStart: (v: string) => void;
+    setCustomEnd: (v: string) => void;
+    dataRange: { min: string; max: string };
 }) {
     const [open, setOpen] = useState(false);
     const selected = DATE_PRESETS.find(p => p.value === datePreset);
 
     return (
-        <div className="mb-4">
+        <div className="mb-4 space-y-2">
             {/* Mobile */}
             <div className="sm:hidden border border-border rounded-lg overflow-hidden">
                 <button
@@ -91,36 +102,86 @@ function DatePresetSelector({
                                 <button
                                     type="button"
                                     key={p.value}
-                                    onClick={() => { setDatePreset(p.value); setOpen(false); }}
+                                    onClick={() => { setDatePreset(p.value); if (p.value !== 'custom') setOpen(false); }}
                                     className={`px-2 py-2 rounded-lg text-xs font-medium transition-all min-h-[36px] ${datePreset === p.value
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
-                                            : 'bg-background text-muted-foreground hover:bg-muted'
+                                        ? 'bg-primary text-primary-foreground shadow-sm'
+                                        : 'bg-background text-muted-foreground hover:bg-muted'
                                         }`}
                                 >
                                     {p.label}
                                 </button>
                             ))}
                         </div>
+                        {datePreset === 'custom' && (
+                            <div className="border-t border-border p-3 flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs text-muted-foreground w-12">From</label>
+                                    <input
+                                        type="date"
+                                        value={customStart}
+                                        max={customEnd || undefined}
+                                        onChange={e => setCustomStart(e.target.value)}
+                                        className="flex-1 px-2 py-1.5 rounded-md border border-border bg-background text-foreground text-xs min-h-[36px]"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-xs text-muted-foreground w-12">To</label>
+                                    <input
+                                        type="date"
+                                        value={customEnd}
+                                        min={customStart || undefined}
+                                        onChange={e => setCustomEnd(e.target.value)}
+                                        className="flex-1 px-2 py-1.5 rounded-md border border-border bg-background text-foreground text-xs min-h-[36px]"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
 
             {/* Desktop */}
-            <div className="hidden sm:flex sm:flex-wrap gap-2">
+            <div className="hidden sm:flex sm:flex-wrap gap-2 items-center">
                 {DATE_PRESETS.map(p => (
                     <button
                         type="button"
                         key={p.value}
                         onClick={() => setDatePreset(p.value)}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${datePreset === p.value
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
                     >
                         {p.label}
                     </button>
                 ))}
             </div>
+
+            {/* Custom date inputs (desktop) */}
+            {datePreset === 'custom' && (
+                <div className="hidden sm:flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground">From</label>
+                        <input
+                            type="date"
+                            value={customStart}
+                            max={customEnd || undefined}
+                            onChange={e => setCustomStart(e.target.value)}
+                            className="px-2 py-1 rounded-md border border-border bg-background text-foreground text-sm"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground">To</label>
+                        <input
+                            type="date"
+                            value={customEnd}
+                            min={customStart || undefined}
+                            onChange={e => setCustomEnd(e.target.value)}
+                            className="px-2 py-1 rounded-md border border-border bg-background text-foreground text-sm"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -153,12 +214,12 @@ function RegimeToggle({
                         key={opt.value}
                         onClick={() => setCategory(opt.value)}
                         className={`px-3 py-1 rounded-md text-xs font-semibold border transition-all ${category === opt.value
-                                ? opt.value === 'buy'
-                                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                                    : opt.value === 'sell'
-                                        ? 'bg-red-500/20 border-red-500 text-red-600 dark:text-red-400'
-                                        : 'bg-primary/10 border-primary text-primary'
-                                : 'border-border text-muted-foreground hover:bg-muted'
+                            ? opt.value === 'buy'
+                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                : opt.value === 'sell'
+                                    ? 'bg-red-500/20 border-red-500 text-red-600 dark:text-red-400'
+                                    : 'bg-primary/10 border-primary text-primary'
+                            : 'border-border text-muted-foreground hover:bg-muted'
                             }`}
                     >
                         {opt.label}
@@ -244,11 +305,30 @@ export default function RegimeProximityChart({ height = 420 }: RegimeProximityCh
     const [raw, setRaw] = useState<DataPoint[]>([]);
     const [loading, setLoading] = useState(true);
     const [datePreset, setDatePreset] = useState('10y');
+    const [customStart, setCustomStart] = useState('');
+    const [customEnd, setCustomEnd] = useState('');
     const [category, setCategory] = useState<CategoryFilter>('all');
     const [visible, setVisible] = useState<Set<RegimeKey>>(
         new Set(REGIMES.map(r => r.key))
     );
     const { theme } = useTheme();
+
+    // Compute the min/max dates available in the dataset
+    const dataRange = useMemo(() => {
+        if (!raw.length) return { min: '1960-01-01', max: '2029-12-31' };
+        return { min: raw[0].date, max: raw[raw.length - 1].date };
+    }, [raw]);
+
+    // Initialize custom range to last 5 years when data loads
+    useEffect(() => {
+        if (raw.length && !customStart && !customEnd) {
+            const end = raw[raw.length - 1].date;
+            const startDate = new Date(end);
+            startDate.setFullYear(startDate.getFullYear() - 5);
+            setCustomStart(startDate.toISOString().split('T')[0]);
+            setCustomEnd(end);
+        }
+    }, [raw, customStart, customEnd]);
 
     // Sync visible set when category toggle changes
     const handleSetCategory = useCallback((c: CategoryFilter) => {
@@ -286,6 +366,11 @@ export default function RegimeProximityChart({ height = 420 }: RegimeProximityCh
         if (!raw.length) return [];
         if (datePreset === 'all') return raw;
 
+        if (datePreset === 'custom') {
+            if (!customStart || !customEnd) return raw;
+            return raw.filter(d => d.date >= customStart && d.date <= customEnd);
+        }
+
         const preset = DATE_PRESETS.find(p => p.value === datePreset);
         if (preset && 'start' in preset) {
             return raw.filter(d => d.date >= preset.start && d.date <= preset.end);
@@ -296,7 +381,7 @@ export default function RegimeProximityChart({ height = 420 }: RegimeProximityCh
         cutoff.setFullYear(cutoff.getFullYear() - years);
         const cutoffStr = cutoff.toISOString().split('T')[0];
         return raw.filter(d => d.date >= cutoffStr);
-    }, [raw, datePreset]);
+    }, [raw, datePreset, customStart, customEnd]);
 
     const yearlyTicks = useMemo(() => {
         if (!filtered.length) return [];
@@ -368,15 +453,24 @@ export default function RegimeProximityChart({ height = 420 }: RegimeProximityCh
     }
 
     return (
-        <div className="p-4 sm:p-6 rounded-xl border bg-card">
-            <div className="mb-4">
-                <h3 className="text-sm font-semibold text-foreground">Regime Proximity — Historical</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+        <div className="p-4 sm:p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300">
+            <div className="mb-5">
+                <h3 className="section-title text-lg text-foreground">Regime Proximity</h3>
+                <p className="text-xs text-muted-foreground mt-1 tracking-wide">
                     How close each regime's entry conditions were to triggering, per month (0–100%)
                 </p>
+                <div className="mt-2 h-px w-full max-w-[120px] bg-gradient-to-r from-foreground/20 to-transparent" />
             </div>
 
-            <DatePresetSelector datePreset={datePreset} setDatePreset={setDatePreset} />
+            <DatePresetSelector
+                datePreset={datePreset}
+                setDatePreset={setDatePreset}
+                customStart={customStart}
+                customEnd={customEnd}
+                setCustomStart={setCustomStart}
+                setCustomEnd={setCustomEnd}
+                dataRange={dataRange}
+            />
             <RegimeToggle
                 visible={visible}
                 toggle={toggle}

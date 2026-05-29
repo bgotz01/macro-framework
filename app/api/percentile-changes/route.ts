@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 const SERIES = [
     { key: 'fedFunds', asset_class: 'economic', series_name: 'US/FEDFUNDS', label: 'Fed Rate' },
     { key: 'irx', asset_class: 'bonds', series_name: 'US/IRX-Monthly', label: '3M Yield' },
