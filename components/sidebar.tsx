@@ -53,6 +53,7 @@ const sidebarData: SidebarCategory[] = [
         category: 'Regime Historical',
         items: [
             { title: 'Regime Timeline', href: '/regime/historical' },
+            { title: 'Regime Proximity', href: '/regime/proximity' },
             { title: 'Regime Returns', href: '/regime/returns' },
             {
                 title: 'Regime Examples',
