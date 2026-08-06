@@ -1,3 +1,4 @@
+// IPO data inlined to avoid filesystem access at build time
 import IPOChart from '@/components/charts/ipo-chart';
 
 export interface IPORow {
