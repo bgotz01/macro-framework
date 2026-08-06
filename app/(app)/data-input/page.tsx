@@ -31,22 +31,31 @@ export default function DataInputPage() {
     const [recent, setRecent] = useState<RecentRow[]>([]);
     const [quarterly, setQuarterly] = useState<{ date: string; eps: number }[]>([]);
     const [loadingRecent, setLoadingRecent] = useState(false);
+    const [page, setPage] = useState(0);
     const abortRef = useRef<AbortController | null>(null);
+
+    const PAGE_SIZE = 20;
 
     const loadRecent = useCallback(async (s: string) => {
         // Cancel any in-flight request
-        abortRef.current?.abort();
-        abortRef.current = new AbortController();
+        const prev = abortRef.current;
+        const controller = new AbortController();
+        abortRef.current = controller;
+        // Abort the previous controller after wiring up the new one
+        prev?.abort();
         setLoadingRecent(true);
         try {
-            const res = await fetch(`/api/data-input?series=${s}`, { signal: abortRef.current.signal });
+            const res = await fetch(`/api/data-input?series=${s}`, { signal: controller.signal });
+            if (controller.signal.aborted) return;
             const json = await res.json();
+            setPage(0);
             setRecent(json.data || []);
             setQuarterly(json.quarterly || []);
         } catch (e: any) {
-            if (e.name !== 'AbortError') console.error(e);
+            if (e.name === 'AbortError') return;
+            console.error(e);
         } finally {
-            setLoadingRecent(false);
+            if (!controller.signal.aborted) setLoadingRecent(false);
         }
     }, []);
 
@@ -86,6 +95,11 @@ export default function DataInputPage() {
     const selectedOption = SERIES_OPTIONS.find(o => o.value === series)!;
     const isPercent = false;
     const valueLabel = series === 'M2' ? '($B)' : series === 'CPI-U' ? '(Index)' : '($)';
+
+    const totalPages = Math.ceil(recent.length / PAGE_SIZE);
+    // For CPI MoM% we need the row immediately after the visible slice too,
+    // so keep a reference to the full array for index lookups.
+    const pageRows = recent.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
     return (
         <div className="max-w-2xl mx-auto py-10 px-4">
@@ -138,10 +152,26 @@ export default function DataInputPage() {
                                     {(() => {
                                         const options = [];
                                         const now = new Date();
-                                        // Start from current quarter-end, go back 12 quarters
+                                        // Snap to next quarter boundary
+                                        const currentQMonth = Math.ceil((now.getMonth() + 1) / 3) * 3;
                                         let y = now.getFullYear();
-                                        let m = Math.ceil((now.getMonth() + 1) / 3) * 3; // snap to 3,6,9,12
-                                        for (let i = 0; i < 12; i++) {
+                                        let m = currentQMonth;
+
+                                        // 4 future quarters (forward estimates)
+                                        const futureOptions = [];
+                                        let fy = y, fm = m;
+                                        for (let i = 0; i < 4; i++) {
+                                            fm += 3;
+                                            if (fm > 12) { fm -= 12; fy += 1; }
+                                            const val = `${fy}-${String(fm).padStart(2, '0')}`;
+                                            const label = new Date(fy, fm - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                                            futureOptions.push(<option key={val} value={val}>{label} (est)</option>);
+                                        }
+                                        // Add future options in chronological order
+                                        options.push(...futureOptions.reverse());
+
+                                        // 16 past quarters (actuals), starting from current
+                                        for (let i = 0; i < 16; i++) {
                                             const val = `${y}-${String(m).padStart(2, '0')}`;
                                             const label = new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
                                             options.push(<option key={val} value={val}>{label}</option>);
@@ -284,63 +314,94 @@ export default function DataInputPage() {
                         )}
                     </>
                 ) : (
-                    <table className={`w-full text-sm ${loadingRecent ? 'opacity-40' : ''}`}>
-                        <thead>
-                            <tr className="text-xs text-muted-foreground border-b border-border">
-                                <th className="text-left pb-2">Date</th>
-                                {series === 'M2' ? (
-                                    <>
-                                        <th className="text-right pb-2">Nominal ($B)</th>
-                                        <th className="text-right pb-2">YoY %</th>
-                                    </>
-                                ) : series === 'CPI-U' ? (
-                                    <>
-                                        <th className="text-right pb-2">Index</th>
-                                        <th className="text-right pb-2">MoM %</th>
-                                        <th className="text-right pb-2">YoY %</th>
-                                    </>
-                                ) : (
-                                    <th className="text-right pb-2">Value</th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {recent.length === 0 && !loadingRecent ? (
-                                <tr><td colSpan={series === 'CPI-U' ? 4 : series === 'M2' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
-                            ) : recent.map((row, i) => (
-                                <tr key={row.date} className="border-b border-border/40 last:border-0">
-                                    <td className="py-1.5 text-muted-foreground">{row.date}</td>
+                    <>
+                        <table className={`w-full text-sm ${loadingRecent ? 'opacity-40' : ''}`}>
+                            <thead>
+                                <tr className="text-xs text-muted-foreground border-b border-border">
+                                    <th className="text-left pb-2">Date</th>
                                     {series === 'M2' ? (
                                         <>
-                                            <td className="py-1.5 text-right font-medium">{row.value.toFixed(1)}</td>
-                                            <td className="py-1.5 text-right font-medium">
-                                                {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
-                                            </td>
+                                            <th className="text-right pb-2">Nominal ($B)</th>
+                                            <th className="text-right pb-2">YoY %</th>
                                         </>
                                     ) : series === 'CPI-U' ? (
                                         <>
-                                            <td className="py-1.5 text-right font-medium">{row.value?.toFixed(3)}</td>
-                                            <td className="py-1.5 text-right font-medium">
-                                                {(() => {
-                                                    const prev = recent[i + 1];
-                                                    if (!prev || !prev.value || !row.value) return <span className="text-muted-foreground/40">—</span>;
-                                                    const mom = ((row.value - prev.value) / prev.value) * 100;
-                                                    return <span className={mom >= 0 ? 'text-green-400' : 'text-red-400'}>{mom.toFixed(2)}%</span>;
-                                                })()}
-                                            </td>
-                                            <td className="py-1.5 text-right font-medium">
-                                                {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
-                                            </td>
+                                            <th className="text-right pb-2">Index</th>
+                                            <th className="text-right pb-2">MoM %</th>
+                                            <th className="text-right pb-2">YoY %</th>
                                         </>
                                     ) : (
-                                        <td className="py-1.5 text-right font-medium">
-                                            {isPercent ? `${row.value.toFixed(2)}%` : row.value?.toFixed(2)}
-                                        </td>
+                                        <th className="text-right pb-2">Value</th>
                                     )}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {recent.length === 0 && !loadingRecent ? (
+                                    <tr><td colSpan={series === 'CPI-U' ? 4 : series === 'M2' ? 3 : 2} className="py-4 text-center text-muted-foreground text-xs">No data</td></tr>
+                                ) : pageRows.map((row, localIdx) => {
+                                    const globalIdx = page * PAGE_SIZE + localIdx;
+                                    return (
+                                        <tr key={row.date} className="border-b border-border/40 last:border-0">
+                                            <td className="py-1.5 text-muted-foreground">{row.date}</td>
+                                            {series === 'M2' ? (
+                                                <>
+                                                    <td className="py-1.5 text-right font-medium">{row.value.toFixed(1)}</td>
+                                                    <td className="py-1.5 text-right font-medium">
+                                                        {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
+                                                    </td>
+                                                </>
+                                            ) : series === 'CPI-U' ? (
+                                                <>
+                                                    <td className="py-1.5 text-right font-medium">{row.value?.toFixed(3)}</td>
+                                                    <td className="py-1.5 text-right font-medium">
+                                                        {(() => {
+                                                            const prev = recent[globalIdx + 1];
+                                                            if (!prev || !prev.value || !row.value) return <span className="text-muted-foreground/40">—</span>;
+                                                            const mom = ((row.value - prev.value) / prev.value) * 100;
+                                                            return <span className={mom >= 0 ? 'text-green-400' : 'text-red-400'}>{mom.toFixed(2)}%</span>;
+                                                        })()}
+                                                    </td>
+                                                    <td className="py-1.5 text-right font-medium">
+                                                        {row.yoy != null ? `${row.yoy.toFixed(2)}%` : <span className="text-muted-foreground/40">—</span>}
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <td className="py-1.5 text-right font-medium">
+                                                    {isPercent ? `${row.value.toFixed(2)}%` : row.value?.toFixed(2)}
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/40">
+                                <span className="text-xs text-muted-foreground">
+                                    {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, recent.length)} of {recent.length}
+                                </span>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => setPage(p => p - 1)}
+                                        disabled={page === 0}
+                                        className="px-2.5 py-1 rounded text-xs font-medium bg-muted/60 text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        ← Prev
+                                    </button>
+                                    <span className="px-2.5 py-1 text-xs text-muted-foreground">
+                                        {page + 1} / {totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => setPage(p => p + 1)}
+                                        disabled={page >= totalPages - 1}
+                                        className="px-2.5 py-1 rounded text-xs font-medium bg-muted/60 text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next →
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

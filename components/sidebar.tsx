@@ -46,6 +46,7 @@ const sidebarData: SidebarCategory[] = [
                 ],
             },
             { title: 'Charts', href: '/chart' },
+            { title: 'IPO Data', href: '/ipo-data' },
         ],
     },
     {

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Navbar from './navbar';
 import Sidebar from './sidebar';
+import CouncilChat from './chat/council-chat';
 
 interface LayoutWrapperProps {
     children: React.ReactNode;
@@ -33,6 +34,9 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
                     </div>
                 </main>
             </div>
+
+            {/* Right sidebar council chat — rendered outside the flex row so it overlays cleanly */}
+            <CouncilChat />
         </div>
     );
 }

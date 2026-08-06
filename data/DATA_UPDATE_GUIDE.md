@@ -14,52 +14,72 @@ The application has migrated from SQLite to Postgres, but supports importing to 
 ## Quick Start - Update All Data (Incremental Only)
 
 ```bash
-# Update all consecutively:
+# ─── Two commands cover 99% of use cases ──────────────────────────────────
+
+# 1. Fetch latest daily prices + import to all DBs:
 bash scripts/update-all.sh
 
-# 1. Update all data from Yahoo Finance (recommended)
+# 2. Recalculate monthly derived metrics + regime timeline:
+bash scripts/refresh-regime.sh
+
+# ──────────────────────────────────────────────────────────────────────────
+# Note: update-all.sh already calls refresh-regime internally, so running
+# both is only needed when you've manually added EPS/CPI data via the
+# data-input page and want to refresh the regime without a full price fetch.
+# ──────────────────────────────────────────────────────────────────────────
+```
+
+Or run each step manually:
+
+```bash
+# 1. Fetch latest data from Yahoo Finance
 python scripts/batch_update_all.py
 
 # 2. Import new data into ALL databases (SQLite + both Postgres DBs)
 npx tsx scripts/import-data-multi-db.ts --all
 
 # OR import to specific databases:
-# Import to macro-framework only (default)
-npx tsx scripts/import-data-multi-db.ts --macro-framework
-
-# Import to macro-framework and stockdata
+npx tsx scripts/import-data-multi-db.ts --macro-framework          # default
 npx tsx scripts/import-data-multi-db.ts --macro-framework --stockdata
+npx tsx scripts/import-data-multi-db.ts --all                      # all three
 
-# Import to all three databases
-npx tsx scripts/import-data-multi-db.ts --all
+# 3. Calculate cyclical returns (2Y, 5Y, 10Y)
+npx tsx scripts/pg/add-cyclical-returns.ts
 
-# 3. Calculate cyclical returns (for returns chart - 2Y, 5Y, 10Y returns)
-npx tsx scripts/add-cyclical-returns.ts
+# 4. Calculate volatility metrics (63d, 126d, 252d, 504d)
+npx tsx scripts/pg/add-volatility-metrics.ts
 
-# 4. Calculate volatility metrics (for volatility chart - 63d, 126d, 252d, 504d)
-npx tsx scripts/add-volatility-metrics.ts
+# 5. Calculate monthly bond yields
+npx tsx scripts/pg/calculate-monthly-bond-yields.ts
 
-# 5. Recalculate percentiles (optional, if needed)
-npx tsx scripts/calculate-percentiles.ts
+# 6. Calculate derived series (Real Yields, Yield Curves, EYP, REY)
+npx tsx scripts/pg/calculate-derived-series.ts
 
-# 6. Economic data
-npx tsx scripts/import-new-economic-data.ts
+# 6b. Calculate PE ratios & earnings yield (PE-5yr, PE-2yr, EYP, REY)
+npx tsx scripts/pg/calculate-pe5yr.ts
 
-# 7. Divergence
-npx tsx scripts/calculate-sp500-moving-averages.ts
-npx tsx scripts/calculate-sp500-ma-divergence.ts
-npx tsx scripts/calculate-sp500-ma-slope.ts
-npx tsx scripts/calculate-sp500-ma-stats.ts
-npx tsx scripts/calculate-ma-percentiles.ts
+# 7. Recalculate percentiles
+npx tsx scripts/pg/calculate-percentiles.ts
 
-# DERIVED
-# 1. Push Earnings-Yield-5yr into percentile_analysis (it's in time_series but not percentile_analysis for Feb)
-npx tsx scripts/add-earnings-yield-5yr.ts
+# 7b. Calculate YoY percentile changes
+npx tsx scripts/pg/calculate-yoy-percentile-change.ts
 
-# 2. Rebuild all derived percentiles (EYP-5yr, REY-5yr, Real-10Y, Real-3M, Yield Curve, etc.)
-npx tsx scripts/create-derived-percentiles.ts
+# 8. Import economic data
+npx tsx scripts/pg/import-economic-data.ts
 
-npx tsx scripts/build-regime-timeline.ts
+# 9. Calculate S&P 500 moving averages
+npx tsx scripts/pg/calculate-sp500-moving-averages.ts
+
+# 10. Calculate MA divergence, slope & stats
+npx tsx scripts/pg/calculate-sp500-ma-divergence.ts
+npx tsx scripts/pg/calculate-sp500-ma-slope.ts
+npx tsx scripts/pg/calculate-sp500-ma-stats.ts
+
+# 11. Calculate MA percentiles
+npx tsx scripts/pg/calculate-ma-percentiles.ts
+
+# 12. Rebuild regime timeline (incremental)
+npx tsx scripts/pg/build-regime-timeline.ts
 ```
 
 
@@ -218,20 +238,12 @@ npx tsx scripts/import-data-incremental.ts
 - Only imports new data points to SQLite
 - Legacy support for local development
 
-### Full Import (Use with caution)
-```bash
-npx tsx scripts/import-data.ts
-```
-- Imports all data from scratch
-- Takes longer
-- Use only if database needs rebuilding
-
 ### Import Manually Added Economic Data
 
 If you've added a new CSV file to `data/economic/US/` (like M2SL.csv from FRED):
 
 1. **Add the series to the import script**:
-   Edit `scripts/import-new-economic-data.ts` and add your series to the `SERIES_TO_IMPORT` array:
+   Edit `scripts/pg/import-economic-data.ts` and add your series to the `SERIES_TO_IMPORT` array:
 
    ```typescript
    {
@@ -255,7 +267,7 @@ If you've added a new CSV file to `data/economic/US/` (like M2SL.csv from FRED):
 
 3. **Run the import script**:
    ```bash
-   npx tsx scripts/import-new-economic-data.ts
+   npx tsx scripts/pg/import-economic-data.ts
    ```
 
 4. **Verify the import**:
@@ -269,43 +281,60 @@ If you've added a new CSV file to `data/economic/US/` (like M2SL.csv from FRED):
 
 ## Derived Metrics & Calculations
 
-After importing new data, you may need to recalculate derived metrics:
+After importing new data, recalculate derived metrics. All scripts are in `scripts/pg/`:
 
-### Percentiles
+### Cyclical Returns (2Y, 5Y, 10Y)
 ```bash
-npx tsx scripts/calculate-percentiles.ts
+npx tsx scripts/pg/add-cyclical-returns.ts
 ```
-Calculates historical percentiles for all metrics.
-
-### Rolling Averages
-```bash
-npx tsx scripts/calculate-rolling-averages-incremental.ts
-```
-Updates moving averages (50-day, 200-day, etc.)
-
-### Year-over-Year Growth
-```bash
-tsx scripts/calculate-yoy-growth-incremental.ts
-```
-Calculates YoY percentage changes.
-
-### Monthly Averages
-```bash
-tsx scripts/calculate-monthly-averages-incremental.ts
-```
-Aggregates daily data to monthly.
-
-### Real Yields
-```bash
-tsx scripts/create-real-yields.ts
-```
-Calculates inflation-adjusted yields.
+Calculates rolling 2-year, 5-year, and 10-year returns for equities, commodities, crypto, and volatility.
 
 ### Volatility Metrics (63d, 126d, 252d, 504d)
 ```bash
-npx tsx scripts/add-volatility-metrics.ts
+npx tsx scripts/pg/add-volatility-metrics.ts
 ```
-Calculates rolling volatility (annualized standard deviation) for 3-month, 6-month, 1-year, and 2-year periods. Run this after importing new price data.
+Calculates rolling annualized volatility for 3-month, 6-month, 1-year, and 2-year periods.
+
+### Monthly Bond Yields
+```bash
+npx tsx scripts/pg/calculate-monthly-bond-yields.ts
+```
+
+### Derived Series (Real Yields, Yield Curves, EYP, REY)
+```bash
+npx tsx scripts/pg/calculate-derived-series.ts
+npx tsx scripts/pg/calculate-pe5yr.ts
+```
+
+### Percentiles
+```bash
+npx tsx scripts/pg/calculate-percentiles.ts
+npx tsx scripts/pg/calculate-yoy-percentile-change.ts
+```
+Calculates historical percentiles and YoY changes for all metrics.
+
+### S&P 500 Moving Averages & Divergence
+```bash
+npx tsx scripts/pg/calculate-sp500-moving-averages.ts
+npx tsx scripts/pg/calculate-sp500-ma-divergence.ts
+npx tsx scripts/pg/calculate-sp500-ma-slope.ts
+npx tsx scripts/pg/calculate-sp500-ma-stats.ts
+npx tsx scripts/pg/calculate-ma-percentiles.ts
+```
+
+### Regime Timeline
+```bash
+npx tsx scripts/pg/build-regime-timeline.ts
+```
+
+### Run All Derived Metrics at Once
+```bash
+# Against DATABASE_URL from .env:
+bash scripts/calculate-all-metrics.sh
+
+# Against a specific database URL:
+bash scripts/calculate-all-metrics.sh "postgresql://..."
+```
 
 ## Data Directory Structure
 
@@ -388,23 +417,25 @@ Date,Value
 
 ### Daily Updates
 ```bash
-# Morning routine (before market open)
+# Full pipeline (recommended — runs all steps):
+bash scripts/update-all.sh
+
+# Or just fetch + import if you don't need derived metrics recalculated:
 python scripts/batch_update_all.py
-tsx scripts/import-data-incremental.ts
+npx tsx scripts/import-data-multi-db.ts --all
 ```
 
 ### Weekly Maintenance
 ```bash
-# Recalculate derived metrics
-npx tsx scripts/calculate-rolling-averages-incremental.ts
-npx tsx scripts/calculate-yoy-growth-incremental.ts
-npx tsx scripts/calculate-monthly-averages-incremental.ts
+# Recalculate all derived metrics against the primary database:
+bash scripts/calculate-all-metrics.sh
 ```
 
 ### Monthly Maintenance
 ```bash
-# Full recalculation of percentiles
-npx tsx scripts/calculate-percentiles.ts
+# Full percentile recalculation:
+npx tsx scripts/pg/calculate-percentiles.ts
+npx tsx scripts/pg/calculate-yoy-percentile-change.ts
 ```
 
 ## Python Environment Setup
@@ -538,11 +569,11 @@ tsx scripts/test-volatility-api.ts
 
 ## Notes
 
-- **Incremental updates**: Scripts are configured to fetch data from 2026-01-01 onwards
+- **Incremental updates**: The batch fetch script is configured to pull from a recent start date. Adjust `START_DATE` in `scripts/batch_update_all.py` if you need to backfill further.
 - **Rate limiting**: Scripts include delays to avoid Yahoo Finance rate limits
 - **Data validation**: Scripts automatically remove NaN values
 - **Idempotent**: Safe to run update scripts multiple times
-- **Backup**: Consider backing up `data/macro-data.db` before major updates
+- **Manually maintained data**: Some series (IPO data, international inflation/M2) cannot be auto-downloaded and must be updated manually in their CSV files before re-importing
 
 ## Support
 
