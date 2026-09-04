@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatTooltipValue } from '@/lib/format-utils';
 import { generateYearlyTicks } from '@/lib/chart-utils';
 import { getResponsiveHeight, getResponsiveMargin, getResponsiveFontSize, getResponsiveYAxisWidth } from '@/lib/responsive-chart-utils';
@@ -13,10 +13,68 @@ interface EconomicsChartProps {
 
 interface ChartDataPoint {
     date: string;
-    [key: string]: any;
+    Value: number;
+    [key: string]: string | number | null | undefined;
+}
+
+interface EconomicSeriesInfo {
+    series_name: string;
+    display_name: string;
+    units?: string;
+    geography?: string;
 }
 
 const CHART_COLORS = ['#2563eb', '#dc2626'];
+
+function getLatestValuePoint(points: ChartDataPoint[]): ChartDataPoint | null {
+    return points.reduce<ChartDataPoint | null>((latest, point) => {
+        if (typeof point.Value !== 'number' || !Number.isFinite(point.Value)) return latest;
+        return !latest || point.date > latest.date ? point : latest;
+    }, null);
+}
+
+function formatDisplayDate(date: string): string {
+    const [year, month, day] = date.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function inferFrequency(points: ChartDataPoint[]): string {
+    const validDates = [...new Set(
+        points
+            .filter(point => typeof point.Value === 'number' && Number.isFinite(point.Value))
+            .map(point => point.date)
+    )].sort();
+
+    if (validDates.length < 2) return '—';
+
+    const monthIndexes = validDates.map(date => {
+        const [year, month] = date.split('-').map(Number);
+        return year * 12 + month - 1;
+    });
+    const spanInMonths = monthIndexes[monthIndexes.length - 1] - monthIndexes[0] + 1;
+
+    // More than one observation per month indicates a weekly-or-higher cadence.
+    if (validDates.length / spanInMonths > 1.5) return 'Weekly';
+
+    // Collapse legacy first/month-end duplicates before measuring the cadence.
+    const uniqueMonths = [...new Set(monthIndexes)];
+    const intervals = uniqueMonths
+        .slice(1)
+        .map((month, index) => month - uniqueMonths[index])
+        .filter(interval => interval > 0)
+        .sort((a, b) => a - b);
+
+    if (intervals.length === 0) return '—';
+    const medianInterval = intervals[Math.floor(intervals.length / 2)];
+    if (medianInterval <= 1) return 'Monthly';
+    if (medianInterval <= 4) return 'Quarterly';
+    if (medianInterval <= 13) return 'Annual';
+    return 'Irregular';
+}
 
 const DATE_PRESETS: Array<
     | { label: string; value: string }
@@ -39,7 +97,7 @@ export default function EconomicsChart({
     height = 400,
     className = ''
 }: EconomicsChartProps) {
-    const [availableSeries, setAvailableSeries] = useState<Array<{ series_name: string; display_name: string; units?: string; geography?: string }>>([]);
+    const [availableSeries, setAvailableSeries] = useState<EconomicSeriesInfo[]>([]);
     const [selectedSeries, setSelectedSeries] = useState<string>('');
     const [selectedUnits, setSelectedUnits] = useState<string | undefined>(undefined);
     const [data, setData] = useState<ChartDataPoint[]>([]);
@@ -60,8 +118,8 @@ export default function EconomicsChart({
         return () => window.removeEventListener('resize', handleResize);
     }, [height]);
 
-    // Ratio calculation state
-    const [calculationMode, setCalculationMode] = useState<'single' | 'ratio'>('single');
+    // Calculation state
+    const [calculationMode, setCalculationMode] = useState<'single' | 'ratio' | 'percent-gdp'>('single');
     const [series1, setSeries1] = useState<string>('');
     const [series2, setSeries2] = useState<string>('');
     const [ratioData, setRatioData] = useState<ChartDataPoint[]>([]);
@@ -74,12 +132,12 @@ export default function EconomicsChart({
                 if (!response.ok) {
                     throw new Error('Failed to load series list');
                 }
-                const result = await response.json();
+                const result = await response.json() as { seriesInfo: EconomicSeriesInfo[] };
 
                 // Filter out percent-based series
                 const seriesWithNames = result.seriesInfo
-                    .filter((s: any) => s.units !== 'percent')
-                    .map((s: any) => ({
+                    .filter(s => s.units !== 'percent')
+                    .map(s => ({
                         series_name: s.series_name,
                         display_name: s.display_name,
                         units: s.units,
@@ -134,9 +192,16 @@ export default function EconomicsChart({
         loadData();
     }, [selectedSeries, calculationMode]);
 
-    // Calculate ratio when in ratio mode
+    // Calculate a ratio or percentage of GDP.
     useEffect(() => {
-        if (calculationMode !== 'ratio' || !series1 || !series2) {
+        if (calculationMode === 'single') {
+            setRatioData([]);
+            return;
+        }
+
+        const numeratorSeries = calculationMode === 'percent-gdp' ? selectedSeries : series1;
+        const denominatorSeries = calculationMode === 'percent-gdp' ? 'GDP' : series2;
+        if (!numeratorSeries || !denominatorSeries) {
             setRatioData([]);
             return;
         }
@@ -144,10 +209,11 @@ export default function EconomicsChart({
         const loadRatioData = async () => {
             try {
                 setLoading(true);
+                setError(null);
 
                 const [response1, response2] = await Promise.all([
-                    fetch(`/api/data/economic?series=${encodeURIComponent(series1)}`),
-                    fetch(`/api/data/economic?series=${encodeURIComponent(series2)}`)
+                    fetch(`/api/data/economic?series=${encodeURIComponent(numeratorSeries)}`),
+                    fetch(`/api/data/economic?series=${encodeURIComponent(denominatorSeries)}`)
                 ]);
 
                 if (!response1.ok || !response2.ok) {
@@ -203,7 +269,7 @@ export default function EconomicsChart({
 
                             return {
                                 date: date,
-                                Value: value1 / value2
+                                Value: (value1 / value2) * (calculationMode === 'percent-gdp' ? 100 : 1)
                             };
                         })
                         .filter((point: ChartDataPoint | null) => point !== null) as ChartDataPoint[];
@@ -225,27 +291,26 @@ export default function EconomicsChart({
 
                             return {
                                 date: displayDate,
-                                Value: data1.value / data2.value
+                                Value: (data1.value / data2.value) * (calculationMode === 'percent-gdp' ? 100 : 1)
                             };
                         })
                         .filter((point: ChartDataPoint | null) => point !== null) as ChartDataPoint[];
                 }
 
                 setRatioData(calculated);
-                setSelectedUnits('ratio'); // Ratios are unitless
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to calculate ratio');
+                setError(err instanceof Error ? err.message : 'Failed to calculate series');
             } finally {
                 setLoading(false);
             }
         };
 
         loadRatioData();
-    }, [calculationMode, series1, series2]);
+    }, [calculationMode, selectedSeries, series1, series2]);
 
     // Filter data based on date range
     useEffect(() => {
-        const sourceData = calculationMode === 'ratio' ? ratioData : data;
+        const sourceData = calculationMode === 'single' ? data : ratioData;
 
         if (sourceData.length === 0) {
             setFilteredData([]);
@@ -350,6 +415,12 @@ export default function EconomicsChart({
         });
     };
 
+    const chartUnits = calculationMode === 'percent-gdp'
+        ? 'percent'
+        : calculationMode === 'ratio'
+            ? 'ratio'
+            : selectedUnits;
+
     const renderContent = () => {
         if (loading) {
             return (
@@ -370,7 +441,8 @@ export default function EconomicsChart({
             );
         }
 
-        if (data.length === 0) {
+        const sourceData = calculationMode === 'single' ? data : ratioData;
+        if (sourceData.length === 0) {
             return (
                 <div className="flex items-center justify-center" style={{ height }}>
                     <p className="text-muted-foreground">No data available</p>
@@ -378,7 +450,6 @@ export default function EconomicsChart({
             );
         }
 
-        const sourceData = calculationMode === 'ratio' ? ratioData : data;
         const chartData = filteredData.length > 0 ? filteredData : sourceData;
         const noDataInRange = datePreset !== 'all' && filteredData.length === 0;
 
@@ -410,11 +481,11 @@ export default function EconomicsChart({
                             tick={{ fill: '#9ca3af', fontSize: getResponsiveFontSize() }}
                             domain={['auto', 'auto']}
                             tickFormatter={(value) => {
-                                if (selectedUnits === 'billions') {
+                                if (chartUnits === 'billions') {
                                     return `${(value / 1).toFixed(0)}B`;
-                                } else if (selectedUnits === 'millions') {
+                                } else if (chartUnits === 'millions') {
                                     return `${(value / 1).toFixed(0)}M`;
-                                } else if (selectedUnits === 'index') {
+                                } else if (chartUnits === 'index') {
                                     return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
                                 } else {
                                     return value.toFixed(2);
@@ -430,7 +501,7 @@ export default function EconomicsChart({
                                 fontSize: getResponsiveFontSize()
                             }}
                             labelStyle={{ color: '#9ca3af' }}
-                            formatter={(value: any) => formatTooltipValue(Number(value), selectedUnits)}
+                            formatter={(value) => formatTooltipValue(Number(value), chartUnits)}
                         />
                         <Legend wrapperStyle={{ color: '#9ca3af' }} />
                         <Line
@@ -441,7 +512,9 @@ export default function EconomicsChart({
                             dot={false}
                             name={calculationMode === 'ratio'
                                 ? `${availableSeries.find(s => s.series_name === series1)?.display_name || series1} / ${availableSeries.find(s => s.series_name === series2)?.display_name || series2}`
-                                : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
+                                : calculationMode === 'percent-gdp'
+                                    ? `${availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries} as % of GDP`
+                                    : availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries
                             }
                         />
                     </LineChart>
@@ -450,37 +523,80 @@ export default function EconomicsChart({
         );
     };
 
+    const latestSourceData = calculationMode === 'single' ? data : ratioData;
+    const latestPoint = getLatestValuePoint(latestSourceData);
+    const selectedDisplayName = availableSeries.find(series => series.series_name === selectedSeries)?.display_name || selectedSeries;
+    const ratioDisplayName = `${availableSeries.find(series => series.series_name === series1)?.display_name || series1} / ${availableSeries.find(series => series.series_name === series2)?.display_name || series2}`;
+    const latestDisplayName = calculationMode === 'ratio'
+        ? ratioDisplayName
+        : calculationMode === 'percent-gdp'
+            ? `${selectedDisplayName} as % of GDP`
+            : selectedDisplayName;
+    const latestFrequency = inferFrequency(latestSourceData);
+
     return (
         <div className={`p-6 rounded-2xl border border-border/50 bg-card hover:shadow-elegant transition-all duration-300 ${className}`}>
-            {/* Controls */}
-            <div className="mb-6 space-y-4">
-                {/* Mode Selector */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <label className="text-sm font-medium text-card-foreground">
-                        Chart Mode:
-                    </label>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setCalculationMode('single')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'single'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Single Series
-                        </button>
-                        <button
-                            onClick={() => setCalculationMode('ratio')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${calculationMode === 'ratio'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                }`}
-                        >
-                            Ratio (S1 / S2)
-                        </button>
-                    </div>
+            {/* Latest observation and chart mode */}
+            <div className="mb-6 flex flex-col gap-4 border-b border-border/60 pb-4 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                    {!loading && !error && latestPoint ? (
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-[minmax(12rem,2fr)_repeat(3,minmax(7rem,1fr))]">
+                            <div className="min-w-0">
+                                <div className="text-xs font-medium text-muted-foreground">Series</div>
+                                <div className="mt-1 truncate text-sm font-semibold text-card-foreground" title={latestDisplayName}>
+                                    {latestDisplayName}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-muted-foreground">Latest value</div>
+                                <div className="mt-1 text-sm font-semibold text-primary">
+                                    {calculationMode === 'ratio'
+                                        ? Number(latestPoint.Value).toFixed(4)
+                                        : formatTooltipValue(Number(latestPoint.Value), chartUnits)}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-muted-foreground">As of</div>
+                                <div className="mt-1 text-sm font-semibold text-card-foreground">
+                                    {formatDisplayDate(latestPoint.date)}
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs font-medium text-muted-foreground">Frequency</div>
+                                <div className="mt-1 text-sm font-semibold text-card-foreground">{latestFrequency}</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="h-12" />
+                    )}
                 </div>
 
+                <div
+                    className="inline-flex self-start rounded-full border border-border/70 bg-muted/40 p-1 lg:ml-auto lg:flex-shrink-0"
+                    aria-label="Chart mode"
+                    role="group"
+                >
+                    {([
+                        { value: 'single', label: 'Series' },
+                        { value: 'ratio', label: 'Ratio' },
+                        { value: 'percent-gdp', label: '% of GDP' },
+                    ] as const).map(mode => (
+                        <button
+                            key={mode.value}
+                            onClick={() => setCalculationMode(mode.value)}
+                            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${calculationMode === mode.value
+                                ? 'bg-card text-card-foreground shadow-sm ring-1 ring-border/50'
+                                : 'text-muted-foreground hover:text-card-foreground'
+                                }`}
+                        >
+                            {mode.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Controls */}
+            <div className="mb-6 space-y-4">
                 {calculationMode === 'ratio' ? (
                     /* Ratio Mode: Two Series Selectors */
                     <div className="flex items-end gap-3">
@@ -534,10 +650,10 @@ export default function EconomicsChart({
                         </div>
                     </div>
                 ) : (
-                    /* Single Series Mode */
+                    /* Single series or percentage-of-GDP mode */
                     <div>
                         <label className="block text-sm font-medium text-card-foreground mb-2">
-                            Economic Indicator
+                            {calculationMode === 'percent-gdp' ? 'Indicator to compare with GDP' : 'Economic Indicator'}
                         </label>
                         <select
                             value={selectedSeries}
@@ -551,6 +667,11 @@ export default function EconomicsChart({
                         >
                             {renderCategorizedOptions()}
                         </select>
+                        {calculationMode === 'percent-gdp' && (
+                            <p className="mt-1.5 text-xs text-muted-foreground">
+                                Uses matching GDP observations and displays the result as a percentage.
+                            </p>
+                        )}
                     </div>
                 )}
 
@@ -601,95 +722,6 @@ export default function EconomicsChart({
 
             {/* Chart */}
             {renderContent()}
-
-            {/* Latest Data Display */}
-            {!loading && !error && (calculationMode === 'single' ? data.length > 0 : ratioData.length > 0) && (
-                <div className="mt-6 p-4 rounded-lg bg-muted/50">
-                    <h4 className="text-sm font-semibold text-card-foreground mb-3">
-                        Latest Data
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {calculationMode === 'single' && data.length > 0 && (
-                            <>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Value</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
-                                        {formatTooltipValue(data[data.length - 1].Value, selectedUnits)}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
-                                        {(() => {
-                                            // Find the most recent date in the data
-                                            const latestDate = data.reduce((latest, current) =>
-                                                current.date > latest ? current.date : latest, data[0].date
-                                            );
-                                            // Parse date as local date to avoid timezone issues
-                                            const [year, month, day] = latestDate.split('-').map(Number);
-                                            const localDate = new Date(year, month - 1, day);
-                                            return localDate.toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Series</div>
-                                    <div className="text-sm font-medium text-card-foreground">
-                                        {availableSeries.find(s => s.series_name === selectedSeries)?.display_name || selectedSeries}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                        FRED: {selectedSeries}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                        {calculationMode === 'ratio' && ratioData.length > 0 && (
-                            <>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Current Ratio</div>
-                                    <div className="text-2xl font-bold text-card-foreground">
-                                        {ratioData[ratioData.length - 1].Value.toFixed(4)}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">As of</div>
-                                    <div className="text-lg font-semibold text-card-foreground">
-                                        {(() => {
-                                            // Find the most recent date in the ratio data
-                                            const latestDate = ratioData.reduce((latest, current) =>
-                                                current.date > latest ? current.date : latest, ratioData[0].date
-                                            );
-                                            // Parse date as local date to avoid timezone issues
-                                            const [year, month, day] = latestDate.split('-').map(Number);
-                                            const localDate = new Date(year, month - 1, day);
-                                            return localDate.toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-muted-foreground mb-1">Calculation</div>
-                                    <div className="text-sm font-medium text-card-foreground">
-                                        {availableSeries.find(s => s.series_name === series1)?.display_name || series1}
-                                        {' / '}
-                                        {availableSeries.find(s => s.series_name === series2)?.display_name || series2}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                        FRED: {series1} / {series2}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

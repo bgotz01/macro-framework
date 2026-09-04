@@ -6,7 +6,7 @@ import PageHeader from '@/components/page-header';
 
 const SERIES_OPTIONS = [
     { value: 'CPI-U', label: 'CPI (Index → YoY%)', placeholder: '314.5', source: 'Released 10th–13th of the month', urls: [{ label: 'bls.gov', href: 'https://www.bls.gov/cpi/' }, { label: 'BLS data query', href: 'https://data.bls.gov/pdq/SurveyOutputServlet' }] },
-    { value: 'M2', label: 'M2 ($B → YoY%)', placeholder: '22442.1', source: 'Released 4th Tuesday of every month', urls: [{ label: 'fred.stlouisfed.org', href: 'https://fred.stlouisfed.org/series/WM2NS' }] },
+    { value: 'M2', label: 'M2SL ($B → YoY%)', placeholder: '22442.1', source: 'Released 4th Tuesday of every month', urls: [{ label: 'fred.stlouisfed.org', href: 'https://fred.stlouisfed.org/series/M2SL' }] },
     {
         value: 'SP500-EPS', label: 'SP500 EPS ($)', placeholder: '234.06', source: 'Quarterly', urls: [
             { label: 'gurufocus.com', href: 'https://www.gurufocus.com/economic_indicators/4281/sp-500-eps-with-estimate-ttm' },
@@ -32,30 +32,27 @@ export default function DataInputPage() {
     const [quarterly, setQuarterly] = useState<{ date: string; eps: number }[]>([]);
     const [loadingRecent, setLoadingRecent] = useState(false);
     const [page, setPage] = useState(0);
-    const abortRef = useRef<AbortController | null>(null);
+    const reqIdRef = useRef(0);
 
     const PAGE_SIZE = 20;
 
     const loadRecent = useCallback(async (s: string) => {
-        // Cancel any in-flight request
-        const prev = abortRef.current;
-        const controller = new AbortController();
-        abortRef.current = controller;
-        // Abort the previous controller after wiring up the new one
-        prev?.abort();
+        // Tag this request; only the newest one is allowed to write state,
+        // so responses from superseded requests are dropped on arrival.
+        const reqId = ++reqIdRef.current;
         setLoadingRecent(true);
         try {
-            const res = await fetch(`/api/data-input?series=${s}`, { signal: controller.signal });
-            if (controller.signal.aborted) return;
+            const res = await fetch(`/api/data-input?series=${s}`);
             const json = await res.json();
+            if (reqId !== reqIdRef.current) return;
             setPage(0);
             setRecent(json.data || []);
             setQuarterly(json.quarterly || []);
-        } catch (e: any) {
-            if (e.name === 'AbortError') return;
+        } catch (e) {
+            if (reqId !== reqIdRef.current) return;
             console.error(e);
         } finally {
-            if (!controller.signal.aborted) setLoadingRecent(false);
+            if (reqId === reqIdRef.current) setLoadingRecent(false);
         }
     }, []);
 
